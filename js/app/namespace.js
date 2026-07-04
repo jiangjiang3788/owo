@@ -1,15 +1,19 @@
 // --- OwoApp namespace bootstrap ---
-// V1 架构过渡期使用的唯一新命名空间。
-// 当前项目仍是 script 顺序加载，不在第一版强行引入 ESM/import。
+// V1/V2/V3/V4 架构过渡期使用的唯一新命名空间。
+// 当前项目仍是 script 顺序加载，不在 V4 强行引入 ESM/import。
 (function bootstrapOwoNamespace(global) {
     const app = global.OwoApp || {};
 
     app.app = app.app || {};
+    app.app.state = app.app.state || {};
     app.core = app.core || {};
     app.features = app.features || {};
     app.platform = app.platform || {};
     app.shared = app.shared || {};
     app.compat = app.compat || {};
+
+    app.platform.browser = app.platform.browser || {};
+    app.platform.storage = app.platform.storage || {};
 
     app.shared.utils = app.shared.utils || {};
     app.shared.ui = app.shared.ui || {};
