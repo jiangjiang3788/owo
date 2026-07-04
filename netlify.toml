@@ -1,15 +1,6 @@
-# Netlify static deploy configuration for OWO.
-# This project is still a classic static app; the build step only runs gates
-# and copies deployable files into dist/.
-
 [build]
-  command = "node tools/arch-check.js && node tools/netlify-build.js"
-  publish = "dist"
+  publish = "."
 
-[build.environment]
-  NODE_VERSION = "20"
-
-# Current assets are not fingerprinted, so prefer correctness over aggressive cache.
 [[headers]]
   for = "/*"
   [headers.values]

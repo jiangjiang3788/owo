@@ -1,0 +1,116 @@
+{
+  "canonicalSymbols": [
+    {
+      "symbol": "pad",
+      "owner": "OwoApp.shared.utils.pad",
+      "ownerFile": "js/shared/utils/number.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.pad",
+      "state": "canonical"
+    },
+    {
+      "symbol": "getRandomValue",
+      "owner": "OwoApp.shared.utils.getRandomValue",
+      "ownerFile": "js/shared/utils/text.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.getRandomValue",
+      "state": "canonical"
+    },
+    {
+      "symbol": "generateUUID",
+      "owner": "OwoApp.shared.utils.generateUUID",
+      "ownerFile": "js/shared/utils/id.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.generateUUID",
+      "state": "canonical"
+    },
+    {
+      "symbol": "getLocalTimeInTimezone",
+      "owner": "OwoApp.shared.utils.getLocalTimeInTimezone",
+      "ownerFile": "js/shared/utils/time.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.getLocalTimeInTimezone",
+      "state": "canonical"
+    },
+    {
+      "symbol": "formatTimeDivider",
+      "owner": "OwoApp.shared.utils.formatTimeDivider",
+      "ownerFile": "js/shared/utils/time.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.formatTimeDivider",
+      "state": "canonical"
+    },
+    {
+      "symbol": "getFormattedTimestamp",
+      "owner": "OwoApp.shared.utils.getFormattedTimestamp",
+      "ownerFile": "js/shared/utils/time.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.getFormattedTimestamp",
+      "state": "canonical"
+    },
+    {
+      "symbol": "formatTimeGap",
+      "owner": "OwoApp.shared.utils.formatTimeGap",
+      "ownerFile": "js/shared/utils/time.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.formatTimeGap",
+      "state": "canonical"
+    },
+    {
+      "symbol": "showAppConfirmDialog",
+      "owner": "OwoApp.shared.ui.showAppConfirmDialog",
+      "ownerFile": "js/shared/ui/confirmDialog.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.showAppConfirmDialog",
+      "state": "canonical"
+    },
+    {
+      "symbol": "compressImage",
+      "owner": "OwoApp.platform.browser.compressImage",
+      "ownerFile": "js/platform/browser/imageAdapter.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.compressImage",
+      "state": "canonical"
+    },
+    {
+      "symbol": "showSystemNotification",
+      "owner": "OwoApp.platform.browser.showSystemNotification",
+      "ownerFile": "js/platform/browser/notificationAdapter.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.showSystemNotification",
+      "state": "canonical"
+    },
+    {
+      "symbol": "saveData",
+      "owner": "OwoApp.platform.storage.repository.saveData",
+      "ownerFile": "js/platform/storage/repository.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "window.saveData",
+      "state": "canonical"
+    },
+    {
+      "symbol": "saveCharacter",
+      "owner": "OwoApp.platform.storage.repository.saveCharacter",
+      "ownerFile": "js/platform/storage/repository.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "window.saveCharacter",
+      "state": "canonical"
+    },
+    {
+      "symbol": "saveGroup",
+      "owner": "OwoApp.platform.storage.repository.saveGroup",
+      "ownerFile": "js/platform/storage/repository.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "window.saveGroup",
+      "state": "canonical"
+    },
+    {
+      "symbol": "saveGlobalSettings",
+      "owner": "OwoApp.platform.storage.repository.saveGlobalSettings",
+      "ownerFile": "js/platform/storage/repository.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "window.saveGlobalSettings",
+      "state": "canonical"
+    }
+  ]
+}
