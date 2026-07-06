@@ -45,6 +45,8 @@ After opening the app, run:
 ```js
 window.OwoApp.core.memory.tableSemantics
 window.OwoApp.features.memoryTable.publicApi
+window.OwoApp.core.memory.tableUpdateXmlSemantics
+window.OwoApp.features.memoryTable.updateDiagnosticsService
 window.OwoApp.platform.ai.embeddingAdapter
 window.OwoApp.features.vectorMemory.publicApi
 window.OwoApp.core.memory.journalSemantics
@@ -60,6 +62,8 @@ Then run:
 ```js
 typeof window.OwoApp.core.memory.tableSemantics.normalizeTemplate
 typeof window.OwoApp.features.memoryTable.model.ensureMemoryTableState
+typeof window.OwoApp.core.memory.tableUpdateXmlSemantics.extractMemoryUpdatesXml
+typeof window.OwoApp.features.memoryTable.updateDiagnosticsService.parseMemoryUpdates
 typeof window.OwoApp.platform.ai.embeddingAdapter.fetchEmbeddings
 typeof window.OwoApp.features.vectorMemory.contextService.prepareVectorMemoryContext
 typeof window.OwoApp.core.memory.journalSemantics.normalizeJournal
@@ -82,6 +86,7 @@ Each result should be `"function"`.
 | MEM-TABLE-06 | History | Open value history after editing fields. | History entries are shown and do not break field display. |
 | MEM-TABLE-07 | Import / export | Export a template package and import it back. | Imported template is normalized once and does not create malformed fields. |
 | MEM-TABLE-08 | Auto update controls | Toggle auto update and use “update to latest”. | Cursor information updates without changing chat prompt behavior. |
+| MEM-TABLE-XML-01 | XML bad format diagnostics | Trigger a table memory update with a model response wrapped in Markdown, with prose before/after XML, or missing the root node. | The update path extracts or diagnoses the XML; failures write rawContent / cleanedContent / extractedXml / parserError to the request console. |
 
 ## Vector Memory smoke
 

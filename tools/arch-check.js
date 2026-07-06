@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * OWO architecture check for product release v0.2.2.
+ * OWO architecture check for product release v0.2.8.
  * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
@@ -60,7 +60,7 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO architecture check · product release v0.2.2 · historical gates V1-V38.1\n');
+console.log('OWO architecture check · product release v0.2.8 · historical gates V1-V38.1\n');
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -72,7 +72,7 @@ for (const file of jsFiles) {
   } else if (lines > MAX_SOFT_LINES && isNewStructure) {
     warn(`${r} ${lines} 行，超过 ${MAX_SOFT_LINES}，需要解释或拆分`);
   } else if (lines > MAX_HARD_LINES && !r.startsWith('js/modules/')) {
-    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.2 暂不阻断，但后续必须拆分`);
+    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.8 暂不阻断，但后续必须拆分`);
   }
 }
 
@@ -1264,12 +1264,16 @@ for (const marker of [
 // 23. V23 memory table vertical slice gate：结构化记忆的语义/model/service/view 已从 legacy 大文件中抽出
 const memoryTableLegacyPath = path.join(root, 'js/modules/memory_table.js');
 const memoryTableSemanticsPath = path.join(root, 'js/core/memory/tableSemantics.js');
+const memoryTableUpdateXmlSemanticsPath = path.join(root, 'js/core/memory/tableUpdateXmlSemantics.js');
 const memoryTableModelPath = path.join(root, 'js/features/memoryTable/model.js');
 const memoryTableServicePath = path.join(root, 'js/features/memoryTable/service.js');
 const memoryTableViewPath = path.join(root, 'js/features/memoryTable/view.js');
+const memoryTableUpdateDiagnosticsPath = path.join(root, 'js/features/memoryTable/updateDiagnosticsService.js');
 const memoryTablePublicPath = path.join(root, 'js/features/memoryTable/public.js');
 if (indexText) {
   requireScriptBefore(indexText, 'js/core/memory/tableSemantics.js', 'js/modules/memory_table.js', '避免 memory_table.js 继续持有模板/字段纯语义实现');
+  requireScriptBefore(indexText, 'js/core/memory/tableUpdateXmlSemantics.js', 'js/features/memoryTable/updateDiagnosticsService.js', '保证表格记忆 XML 诊断语义先加载');
+  requireScriptBefore(indexText, 'js/features/memoryTable/updateDiagnosticsService.js', 'js/features/memoryTable/public.js', '保证 public facade 能导出诊断 service');
   requireScriptBefore(indexText, 'js/features/memoryTable/model.js', 'js/modules/memory_table.js', '避免 memory_table.js 继续持有 chat.memoryTables 状态模型');
   requireScriptBefore(indexText, 'js/features/memoryTable/service.js', 'js/modules/memory_table.js', '避免 memory_table.js 继续持有运行时 state 绑定');
   requireScriptBefore(indexText, 'js/features/memoryTable/view.js', 'js/modules/memory_table.js', '避免 memory_table.js 继续持有列表 view model');
@@ -1277,9 +1281,11 @@ if (indexText) {
 }
 for (const [file, label] of [
   [memoryTableSemanticsPath, 'V23 memory table semantics owner'],
+  [memoryTableUpdateXmlSemanticsPath, 'v0.2.3 memory table update XML semantics owner'],
   [memoryTableModelPath, 'V23 memory table model owner'],
   [memoryTableServicePath, 'V23 memory table service owner'],
   [memoryTableViewPath, 'V23 memory table view owner'],
+  [memoryTableUpdateDiagnosticsPath, 'v0.2.3 memory table update diagnostics service'],
   [memoryTablePublicPath, 'V23 memory table public facade']
 ]) {
   if (!fs.existsSync(file)) error(`缺少 ${label}：${rel(file)}`);
@@ -1289,6 +1295,14 @@ if (fs.existsSync(memoryTableSemanticsPath)) {
   for (const required of ['normalizeTemplate', 'normalizeFieldType', 'normalizeFieldValue', 'createStarterTemplate', 'getFieldDisplayValue']) {
     if (!new RegExp(required + '\\s*[,:=]|function\\s+' + required + '\\s*\\(').test(text)) {
       error(`tableSemantics.js 必须提供 ${required}`);
+    }
+  }
+}
+if (fs.existsSync(memoryTableUpdateXmlSemanticsPath)) {
+  const text = read(memoryTableUpdateXmlSemanticsPath);
+  for (const required of ['extractMemoryUpdatesXml', 'buildWrappedMemoryUpdatesXml', 'createMemoryUpdateDiagnostic', 'formatDiagnosticForError']) {
+    if (!new RegExp(required + '\\s*[,:=]|function\\s+' + required + '\\s*\\(').test(text)) {
+      error(`tableUpdateXmlSemantics.js 必须提供 ${required}`);
     }
   }
 }
@@ -1311,6 +1325,17 @@ if (fs.existsSync(memoryTableServicePath)) {
     }
   }
 }
+if (fs.existsSync(memoryTableUpdateDiagnosticsPath)) {
+  const text = read(memoryTableUpdateDiagnosticsPath);
+  for (const required of ['parseMemoryUpdates', 'assertParsedMemoryUpdates', 'recordMemoryTableDiagnostic']) {
+    if (!new RegExp(required + '\\s*[,:=]|function\\s+' + required + '\\s*\\(').test(text)) {
+      error(`memoryTable/updateDiagnosticsService.js 必须提供 ${required}`);
+    }
+  }
+  if (/document\.|fetch\s*\(|window\.saveData\b|window\.fetchAiResponse\b/.test(text)) {
+    error('memoryTable/updateDiagnosticsService.js 不允许操作 DOM、fetch 或旧保存/AI 全局');
+  }
+}
 if (fs.existsSync(memoryTableViewPath)) {
   const text = read(memoryTableViewPath);
   for (const required of ['getVisibleFieldItems', 'formatDateTime', 'escapeHtml']) {
@@ -1326,8 +1351,10 @@ if (fs.existsSync(memoryTableLegacyPath)) {
   const text = read(memoryTableLegacyPath);
   for (const marker of [
     '@compat canonical: OwoApp.core.memory.tableSemantics',
+    '@compat canonical: OwoApp.core.memory.tableUpdateXmlSemantics',
     '@compat canonical: OwoApp.features.memoryTable.model',
     '@compat canonical: OwoApp.features.memoryTable.service',
+    '@compat canonical: OwoApp.features.memoryTable.updateDiagnosticsService',
     '@compat canonical: OwoApp.features.memoryTable.view'
   ]) {
     if (!text.includes(marker)) error(`memory_table.js 缺少 V23 compatibility 标记：${marker}`);

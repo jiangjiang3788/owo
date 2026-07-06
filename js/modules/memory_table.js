@@ -15,12 +15,16 @@
     };
 
     const memoryTableSemantics = window.OwoApp.core.memory.tableSemantics;
+    const memoryTableUpdateXmlSemantics = window.OwoApp.core.memory.tableUpdateXmlSemantics;
     const memoryTableModel = window.OwoApp.features.memoryTable.model;
     const memoryTableService = window.OwoApp.features.memoryTable.service;
+    const memoryTableUpdateDiagnosticsService = window.OwoApp.features.memoryTable.updateDiagnosticsService;
     const memoryTableView = window.OwoApp.features.memoryTable.view;
 
     // @compat canonical: OwoApp.core.memory.tableSemantics
     const deepClone = memoryTableSemantics.deepClone;
+
+    // @compat canonical: OwoApp.core.memory.tableUpdateXmlSemantics
     const createMemoryId = memoryTableSemantics.createMemoryId;
     const moveArrayItem = memoryTableSemantics.moveArrayItem;
     const createStarterTemplate = memoryTableSemantics.createStarterTemplate;
@@ -65,6 +69,9 @@
     const setMemoryTableAutoUpdateCursorByMessage = memoryTableModel.setMemoryTableAutoUpdateCursorByMessage;
     const setMemoryTableAutoUpdateCursorByEndIndex = memoryTableModel.setMemoryTableAutoUpdateCursorByEndIndex;
     const resetMemoryTableAutoUpdateCursorToLatest = memoryTableModel.resetMemoryTableAutoUpdateCursorToLatest;
+
+    // @compat canonical: OwoApp.features.memoryTable.updateDiagnosticsService
+    const assertParsedMemoryUpdates = memoryTableUpdateDiagnosticsService.assertParsedMemoryUpdates;
 
     // @compat canonical: OwoApp.features.memoryTable.service
     function ensureMemoryTemplateStore() {
@@ -1521,13 +1528,13 @@ ${tableContext}`;
 
     function applyMemoryUpdatesFromXml(chat, rawContent, options = {}) {
         ensureMemoryTableState(chat);
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(`<root>${rawContent || ''}</root>`, 'text/xml');
-        if (xmlDoc.querySelector('parsererror')) {
-            throw new Error('结构化记忆返回格式解析失败');
-        }
-
-        const updates = Array.from(xmlDoc.querySelectorAll('memory_update'));
+        const parseResult = assertParsedMemoryUpdates(rawContent, {
+            chat,
+            templates: db.memoryTableTemplates || [],
+            source: options.source || 'api',
+            targetTemplateIds: options.targetTemplateIds
+        });
+        const updates = parseResult.updates;
         if (updates.length === 0) {
             chat.memoryTables.lastChangedFieldPaths = [];
             return [];

@@ -1705,7 +1705,7 @@
 }
 
 #chat-expansion-panel.visible {
-    height: 35%; /* 固定高度 */
+    height: 32%; /* v0.2.4：更接近微信工具面板的紧凑高度 */
     border-top: 1px solid #eee;
 }
 
@@ -1731,7 +1731,7 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    padding-bottom: 20px; /* 给指示点留空间 */
+    padding-bottom: 14px; /* 给指示点留空间 */
 }
 
 .function-swiper-wrapper {
@@ -1755,8 +1755,8 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(2, 1fr);
-    gap: 15px;
-    padding: 20px 20px 0 20px; /* 底部padding由 container 提供 */
+    gap: 10px 8px;
+    padding: 14px 14px 0 14px; /* v0.2.4 紧凑工具面板 */
     scroll-snap-align: start;
     box-sizing: border-box;
     align-content: flex-start;
@@ -1765,8 +1765,8 @@
 .function-pagination {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 0;
+    gap: 6px;
+    padding: 6px 0;
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -1794,15 +1794,15 @@
 }
 
 .expansion-item-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 15px;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
     background-color: #fff;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     transition: background-color 0.2s;
 }
 

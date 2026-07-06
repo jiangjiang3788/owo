@@ -5,6 +5,8 @@
 
     feature.publicApi = {
         semantics: app.core.memory.tableSemantics,
+        updateXmlSemantics: app.core.memory.tableUpdateXmlSemantics,
+        updateDiagnosticsService: feature.updateDiagnosticsService,
         model: feature.model,
         service: feature.service,
         view: feature.view,
@@ -14,6 +16,8 @@
                 modelOwner: 'OwoApp.features.memoryTable.model',
                 serviceOwner: 'OwoApp.features.memoryTable.service',
                 viewOwner: 'OwoApp.features.memoryTable.view',
+                updateXmlSemanticsOwner: 'OwoApp.core.memory.tableUpdateXmlSemantics',
+                updateDiagnosticsOwner: 'OwoApp.features.memoryTable.updateDiagnosticsService',
                 legacyShell: 'js/modules/memory_table.js'
             };
         }

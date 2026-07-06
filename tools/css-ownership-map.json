@@ -298,7 +298,14 @@
       "owner": "features/debugConsole",
       "role": "feature-module",
       "status": "canonical",
-      "maxLines": 220
+      "maxLines": 280
+    },
+    {
+      "path": "css/modules/quick_dock.css",
+      "owner": "features/quickDock",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 280
     }
   ]
 }

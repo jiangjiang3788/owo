@@ -194,6 +194,19 @@
         return safeJsonClone(trace);
     }
 
+    function recordDiagnostic(meta = {}) {
+        const createdAt = Date.now();
+        const trace = {
+            id: nextTraceId(), status: meta.status || 'diagnostic', label: meta.label || '诊断记录',
+            source: meta.source || 'diagnostic', provider: meta.provider || '', model: meta.model || '',
+            endpoint: sanitizeEndpoint(meta.endpoint || ''), fetchOptions: { method: 'DIAGNOSTIC', headers: {} },
+            requestBody: safeJsonClone(meta.requestBody), startedAt: createdAt, startedAtIso: nowIso(),
+            completedAt: createdAt, completedAtIso: nowIso(), durationMs: 0, diagnostic: safeJsonClone(meta.diagnostic),
+            responseJson: safeJsonClone(meta.responseJson), errorMessage: meta.errorMessage || ''
+        };
+        return safeJsonClone(upsertTrace(trace));
+    }
+
     async function captureResponse(traceId, response, basePayload) {
         if (!response) {
             recordRequestSuccess(traceId, basePayload);
@@ -270,6 +283,7 @@
         recordRequestStart,
         recordRequestSuccess,
         recordRequestFailure,
+        recordDiagnostic,
         getRecentTraces,
         clearTraces,
         subscribe,

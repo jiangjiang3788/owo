@@ -1,16 +1,13 @@
-// --- Debug console view (v0.2.2) ---
-// 只负责请求控制台展示、复制、清空；不承担 AI 请求、解析或持久化职责。
+// --- Debug console view (v0.2.8) ---
+// 只负责请求记录展示、复制、清空；入口完全交给 quickDock，不再创建独立“请求”悬浮按钮。
 (function registerDebugConsoleView(global) {
     const OwoApp = global.OwoApp;
     const feature = OwoApp.features.debugConsole;
     const service = feature.service;
     const toast = OwoApp.shared && OwoApp.shared.ui && OwoApp.shared.ui.showToast;
-    let rootEl = null;
-    let panelEl = null;
-    let listEl = null;
-    let countEl = null;
-    let emptyEl = null;
-    let unsubscribe = null;
+    let standaloneRootEl = null;
+    let standalonePanelEl = null;
+    const embeddedMounts = new Map();
 
     function showToast(message) {
         if (typeof toast === 'function') toast(message);
@@ -20,10 +17,13 @@
         return String(value || 'pending').replace(/[^a-z0-9_-]/gi, '');
     }
 
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>\"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[char]));
+    }
+
     function formatTime(trace) {
         if (!trace || !trace.startedAt) return '--:--';
-        const date = new Date(trace.startedAt);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return new Date(trace.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
     function formatDuration(trace) {
@@ -31,67 +31,45 @@
         return trace.durationMs + 'ms';
     }
 
-    function setText(el, text) {
-        if (el) el.textContent = text == null ? '' : String(text);
-    }
-
-    function createButton(action, text, className) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = className || 'request-console-mini-btn';
-        btn.dataset.action = action;
-        btn.textContent = text;
-        return btn;
-    }
-
-    function createTraceCard(trace) {
-        const card = document.createElement('article');
-        card.className = 'request-trace-card request-trace-card--' + safeClassPart(trace.status);
-        card.dataset.traceId = trace.id;
-
-        const main = document.createElement('div');
-        main.className = 'request-trace-main';
-        const title = document.createElement('div');
-        title.className = 'request-trace-title';
-        setText(title, trace.label || trace.source || 'AI 请求');
-        const meta = document.createElement('div');
-        meta.className = 'request-trace-meta';
+    function buildTraceCard(trace) {
         const provider = [trace.provider, trace.model].filter(Boolean).join(' / ') || '未标记模型';
-        setText(meta, provider + ' · ' + formatTime(trace) + ' · ' + formatDuration(trace));
-        const endpoint = document.createElement('div');
-        endpoint.className = 'request-trace-endpoint';
-        setText(endpoint, trace.endpoint || '无 endpoint');
-        main.appendChild(title);
-        main.appendChild(meta);
-        main.appendChild(endpoint);
-
-        const actions = document.createElement('div');
-        actions.className = 'request-trace-actions';
-        const status = document.createElement('span');
-        status.className = 'request-trace-status';
-        setText(status, service.getStatusLabel(trace.status));
-        actions.appendChild(status);
-        actions.appendChild(createButton('copy-one', '复制'));
-        actions.appendChild(createButton('toggle-detail', '详情'));
-
-        const detail = document.createElement('pre');
-        detail.className = 'request-trace-detail';
-        detail.hidden = true;
-        setText(detail, service.formatTraceForCopy(trace));
-
-        card.appendChild(main);
-        card.appendChild(actions);
-        card.appendChild(detail);
-        return card;
+        const detail = service.formatTraceForCopy(trace);
+        return `<article class="request-trace-card request-trace-card--${safeClassPart(trace.status)}" data-trace-id="${escapeHtml(trace.id)}">
+            <div class="request-trace-main">
+                <div class="request-trace-title">${escapeHtml(trace.label || trace.source || 'AI 请求')}</div>
+                <div class="request-trace-meta">${escapeHtml(provider + ' · ' + formatTime(trace) + ' · ' + formatDuration(trace))}</div>
+                <div class="request-trace-endpoint">${escapeHtml(trace.endpoint || '无 endpoint')}</div>
+            </div>
+            <div class="request-trace-actions">
+                <span class="request-trace-status">${escapeHtml(service.getStatusLabel(trace.status))}</span>
+                <button type="button" class="request-console-mini-btn" data-dc-action="copy-one">复制</button>
+                <button type="button" class="request-console-mini-btn" data-dc-action="toggle-detail">详情</button>
+            </div>
+            <pre class="request-trace-detail" hidden>${escapeHtml(detail)}</pre>
+        </article>`;
     }
 
-    function render() {
-        if (!listEl) return;
+    function buildPanelHtml(options) {
         const traces = service.listTraces();
-        setText(countEl, traces.length + '/' + (OwoApp.platform.ai.requestTraceStore.getMaxTraceCount() || 80));
-        listEl.innerHTML = '';
-        if (emptyEl) emptyEl.hidden = traces.length > 0;
-        traces.forEach(trace => listEl.appendChild(createTraceCard(trace)));
+        const maxCount = OwoApp.platform.ai.requestTraceStore.getMaxTraceCount() || 80;
+        const cards = traces.map(buildTraceCard).join('');
+        const empty = traces.length ? 'hidden' : '';
+        const backButton = options && options.onBack
+            ? '<button type="button" data-dc-action="back">返回</button>'
+            : '';
+        return `<header class="request-console-header">
+            <div><strong>请求控制台</strong><span>AI 请求 / 诊断完整数据</span></div>
+            <div class="request-console-header-actions">
+                <span class="request-console-count">${traces.length}/${maxCount}</span>
+                <button type="button" data-dc-action="copy-all">复制全部</button>
+                <button type="button" data-dc-action="clear">清空</button>
+                ${backButton}
+                <button type="button" data-dc-action="close">×</button>
+            </div>
+        </header>
+        <p class="request-console-note">请求体、模型返回和表格记忆 XML 诊断会记录到这里；密钥类 header 和 URL 参数默认打码。这个面板现在完全挂在悬浮球里。</p>
+        <div class="request-console-empty" ${empty}>暂无请求。发送聊天、总结、识图或表格记忆后会自动出现。</div>
+        <div class="request-console-list">${cards}</div>`;
     }
 
     async function copyText(text) {
@@ -121,31 +99,26 @@
     }
 
     async function copyTrace(traceId) {
-        const text = service.formatTraceForCopy(traceId);
-        const ok = await copyText(text);
+        const ok = await copyText(service.formatTraceForCopy(traceId));
         showToast(ok ? '已复制请求数据' : '复制失败，请展开后手动复制');
     }
 
     async function copyAll() {
-        const text = service.formatAllTracesForCopy();
-        const ok = await copyText(text);
+        const ok = await copyText(service.formatAllTracesForCopy());
         showToast(ok ? '已复制全部请求数据' : '复制失败，请手动复制');
     }
 
-    function closestAction(target) {
-        return target && target.closest ? target.closest('[data-action]') : null;
-    }
-
-    function handleClick(event) {
-        const actionEl = closestAction(event.target);
+    function handlePanelClick(event, options) {
+        const actionEl = event.target && event.target.closest ? event.target.closest('[data-dc-action]') : null;
         if (!actionEl) return;
-        const action = actionEl.dataset.action;
-        if (action === 'toggle') {
-            toggle();
+        const action = actionEl.dataset.dcAction;
+        if (action === 'close') {
+            if (options && typeof options.onClose === 'function') options.onClose();
+            else closeStandalone();
             return;
         }
-        if (action === 'close') {
-            close();
+        if (action === 'back') {
+            if (options && typeof options.onBack === 'function') options.onBack();
             return;
         }
         if (action === 'copy-all') {
@@ -169,64 +142,65 @@
         }
     }
 
-    function mount() {
-        if (rootEl || !document.body) return;
-        rootEl = document.createElement('div');
-        rootEl.className = 'request-console-root';
-        rootEl.innerHTML = '<button type="button" class="request-console-entry" data-action="toggle" title="请求控制台">请求</button>'
-            + '<section class="request-console-panel" aria-label="请求控制台" hidden>'
-            + '<header class="request-console-header"><div><strong>请求控制台</strong><span>AI 请求完整数据</span></div>'
-            + '<div class="request-console-header-actions"><span class="request-console-count"></span>'
-            + '<button type="button" data-action="copy-all">复制全部</button><button type="button" data-action="clear">清空</button><button type="button" data-action="close">×</button></div></header>'
-            + '<p class="request-console-note">请求体和模型返回会记录到这里；密钥类 header 和 URL 参数默认打码。</p>'
-            + '<div class="request-console-empty">暂无请求。发送聊天、总结、识图或表格记忆后会自动出现。</div>'
-            + '<div class="request-console-list"></div></section>';
-        document.body.appendChild(rootEl);
-        panelEl = rootEl.querySelector('.request-console-panel');
-        listEl = rootEl.querySelector('.request-console-list');
-        countEl = rootEl.querySelector('.request-console-count');
-        emptyEl = rootEl.querySelector('.request-console-empty');
-        rootEl.addEventListener('click', handleClick);
-        unsubscribe = service.subscribe(render);
-        render();
+    function destroyEmbedded(container) {
+        const mount = embeddedMounts.get(container);
+        if (!mount) return;
+        container.removeEventListener('click', mount.clickHandler);
+        if (mount.unsubscribe) mount.unsubscribe();
+        embeddedMounts.delete(container);
     }
 
-    function open() {
-        mount();
-        if (!panelEl) return;
-        panelEl.hidden = false;
-        rootEl.classList.add('request-console-root--open');
-        render();
+    function renderEmbedded(container, options) {
+        if (!container) return;
+        destroyEmbedded(container);
+        const normalizedOptions = options || {};
+        const renderIntoContainer = () => {
+            container.innerHTML = buildPanelHtml(normalizedOptions);
+        };
+        const clickHandler = event => handlePanelClick(event, normalizedOptions);
+        container.addEventListener('click', clickHandler);
+        const unsubscribe = service.subscribe(renderIntoContainer);
+        embeddedMounts.set(container, { clickHandler, unsubscribe });
+        renderIntoContainer();
     }
 
-    function close() {
-        if (!panelEl) return;
-        panelEl.hidden = true;
-        rootEl.classList.remove('request-console-root--open');
+    function openStandalone() {
+        if (!document.body) return;
+        if (!standaloneRootEl) {
+            standaloneRootEl = document.createElement('div');
+            standaloneRootEl.className = 'request-console-root request-console-root--standalone';
+            standaloneRootEl.innerHTML = '<section class="request-console-panel"></section>';
+            document.body.appendChild(standaloneRootEl);
+            standalonePanelEl = standaloneRootEl.querySelector('.request-console-panel');
+        }
+        renderEmbedded(standalonePanelEl, { onClose: closeStandalone });
+        standaloneRootEl.hidden = false;
     }
 
-    function toggle() {
-        mount();
-        if (!panelEl || panelEl.hidden) open();
-        else close();
+    function closeStandalone() {
+        if (!standaloneRootEl) return;
+        destroyEmbedded(standalonePanelEl);
+        standaloneRootEl.hidden = true;
+    }
+
+    function toggleStandalone() {
+        if (!standaloneRootEl || standaloneRootEl.hidden) openStandalone();
+        else closeStandalone();
     }
 
     function destroy() {
-        if (unsubscribe) unsubscribe();
-        unsubscribe = null;
-        if (rootEl) rootEl.remove();
-        rootEl = null;
-        panelEl = null;
-        listEl = null;
-        countEl = null;
-        emptyEl = null;
+        Array.from(embeddedMounts.keys()).forEach(destroyEmbedded);
+        if (standaloneRootEl) standaloneRootEl.remove();
+        standaloneRootEl = null;
+        standalonePanelEl = null;
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', mount, { once: true });
-    } else {
-        mount();
-    }
-
-    feature.view = { mount, open, close, toggle, destroy, render };
+    feature.view = {
+        renderEmbedded,
+        destroyEmbedded,
+        open: openStandalone,
+        close: closeStandalone,
+        toggle: toggleStandalone,
+        destroy
+    };
 })(window);

@@ -80,6 +80,7 @@
     app.features.settings.apiSettings.model = app.features.settings.apiSettings.model || {};
     app.features.settings.apiSettings.apiPresetService = app.features.settings.apiSettings.apiPresetService || {};
     app.features.settings.apiSettings.apiModelListService = app.features.settings.apiSettings.apiModelListService || {};
+    app.features.settings.apiSettings.apiModelSwitchService = app.features.settings.apiSettings.apiModelSwitchService || {};
     app.features.settings.apiSettings.mainApiSettingsView = app.features.settings.apiSettings.mainApiSettingsView || {};
     app.features.settings.apiSettings.subApiSettingsView = app.features.settings.apiSettings.subApiSettingsView || {};
     app.features.settings.apiSettings.weatherApiSettingsView = app.features.settings.apiSettings.weatherApiSettingsView || {};
@@ -107,6 +108,14 @@
     app.features.debugConsole.service = app.features.debugConsole.service || {};
     app.features.debugConsole.view = app.features.debugConsole.view || {};
     app.features.debugConsole.publicApi = app.features.debugConsole.publicApi || {};
+    app.features.cloudBackup = app.features.cloudBackup || {};
+    app.features.cloudBackup.service = app.features.cloudBackup.service || {};
+    app.features.cloudBackup.publicApi = app.features.cloudBackup.publicApi || {};
+    app.features.quickDock = app.features.quickDock || {};
+    app.features.quickDock.model = app.features.quickDock.model || {};
+    app.features.quickDock.service = app.features.quickDock.service || {};
+    app.features.quickDock.view = app.features.quickDock.view || {};
+    app.features.quickDock.publicApi = app.features.quickDock.publicApi || {};
     app.platform = app.platform || {};
     app.platform.ai = app.platform.ai || {};
     app.platform.ai.providerConfig = app.platform.ai.providerConfig || {};
@@ -131,6 +140,7 @@
     app.platform.storage.loadRepair = app.platform.storage.loadRepair || {};
     app.platform.storage.storageAnalysis = app.platform.storage.storageAnalysis || {};
     app.platform.storage.backupAdapter = app.platform.storage.backupAdapter || {};
+    app.platform.storage.githubBackupAdapter = app.platform.storage.githubBackupAdapter || {};
 
     app.shared.utils = app.shared.utils || {};
     app.shared.ui = app.shared.ui || {};

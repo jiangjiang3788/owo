@@ -23,7 +23,10 @@
         exportApiPresets: apiSettings.mainApiSettingsView.exportApiPresets,
         importApiPresets: apiSettings.mainApiSettingsView.importApiPresets,
         setupSubApiSettings: apiSettings.subApiSettingsView.setupSubApiSettings,
-        setupSubApiPresets: apiSettings.subApiSettingsView.setupSubApiPresets
+        setupSubApiPresets: apiSettings.subApiSettingsView.setupSubApiPresets,
+        getCurrentMainModel: apiSettings.apiModelSwitchService.getCurrentMainModel,
+        listMainModels: apiSettings.apiModelSwitchService.listMainModels,
+        switchMainModel: apiSettings.apiModelSwitchService.switchMainModel
     };
 
     apiSettings.publicApi = publicApi;

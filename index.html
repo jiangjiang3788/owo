@@ -76,6 +76,7 @@
     <link rel="stylesheet" href="css/modules/voice_selector.css">
     <link rel="stylesheet" href="css/modules/character_import.css">
     <link rel="stylesheet" href="css/modules/debug_console.css">
+    <link rel="stylesheet" href="css/modules/quick_dock.css">
 </head>
 
 <body>
@@ -1638,6 +1639,7 @@
                             <button type="button" class="btn btn-small btn-secondary" onclick="insertFormatText('message-edit-textarea', 'voice')" style="padding:4px 8px;">插入语音</button>
                             <button type="button" class="btn btn-small btn-secondary" onclick="insertFormatText('message-edit-textarea', 'quote')" style="padding:4px 8px;">插入引用</button>
                             <button type="button" class="btn btn-small btn-secondary" onclick="insertFormatText('message-edit-textarea', 'visual')" style="padding:4px 8px;">插入动作</button>
+                            <button type="button" id="insert-message-below-btn" class="btn btn-small btn-secondary" style="padding:4px 8px;">新增消息</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -1658,7 +1660,6 @@
                         <!-- 新增的删除按钮，默认隐藏 -->
                         <button type="button" id="debug-delete-msg-btn" class="btn btn-danger"
                             style="flex: 1; display: none;">删除</button>
-                        <button type="button" id="insert-message-below-btn" class="btn btn-secondary" style="flex: 1;">新增消息</button>
                         <button type="submit" class="btn btn-primary" style="flex: 1;">保存</button>
                         <button type="button" id="cancel-edit-modal-btn" class="btn btn-neutral"
                             style="flex: 1;">取消</button>
@@ -6036,12 +6037,13 @@
     <script src="js/platform/browser/hapticAdapter.js"></script>
     <script src="js/platform/browser/batteryAdapter.js"></script>
     <script src="js/platform/ai/providerConfig.js"></script>
-    <script src="js/platform/ai/requestTraceStore.js"></script> <!-- v0.2.2 AI 请求追踪底座：记录请求/响应，供 debug console 复制 -->
+    <script src="js/platform/ai/requestTraceStore.js"></script> <!-- v0.2.8 AI 请求追踪底座：记录请求/响应，供 debug console 复制 -->
     <script src="js/platform/ai/embeddingAdapter.js"></script>
     <script src="js/platform/ai/providerRequestAdapter.js"></script>
-    <script src="js/features/debugConsole/service.js"></script> <!-- v0.2.2 请求控制台 service：聚合 trace store 数据 -->
-    <script src="js/features/debugConsole/view.js"></script> <!-- v0.2.2 请求控制台 UI：复制完整请求/响应 -->
-    <script src="js/features/debugConsole/public.js"></script> <!-- v0.2.2 请求控制台 public facade -->
+    <script src="js/features/debugConsole/service.js"></script> <!-- v0.2.8 请求控制台 service：聚合 trace store 数据 -->
+    <script src="js/features/debugConsole/view.js"></script> <!-- v0.2.8 请求控制台 UI：复制完整请求/响应 -->
+    <script src="js/features/debugConsole/public.js"></script> <!-- v0.2.8 请求控制台 public facade -->
+    <script src="js/features/home/homeAppCatalog.js"></script> <!-- v0.2.4 主屏 app catalog：设置类入口集中到第二页 -->
     <script src="js/platform/storage/dexieMigrations.js"></script>
     <script src="js/platform/storage/dexieAdapter.js"></script>
     <script src="js/platform/storage/dexieWriter.js"></script>
@@ -6050,6 +6052,7 @@
     <script src="js/platform/storage/repository.js"></script>
     <script src="js/platform/storage/storageAnalysis.js"></script>
     <script src="js/platform/storage/backupAdapter.js"></script>
+    <script src="js/platform/storage/githubBackupAdapter.js"></script> <!-- v0.2.5 GitHub API 备份适配：上传/恢复不再归 tutorial.js -->
     <script src="js/utils.js"></script> <!-- 工具函数：图片压缩、Toast提示、随机数等 -->
     <script src="js/db.js"></script> <!-- 数据层：Dexie数据库配置、全局变量定义、数据存取 -->
 
@@ -6081,6 +6084,7 @@
     <script src="js/features/settings/apiSettings/apiSettingsModel.js"></script> <!-- V18 API 设置模型：provider URL / model list request 归一化 -->
     <script src="js/features/settings/apiSettings/apiPresetService.js"></script> <!-- V18 API 预设 service：主/副 API preset CRUD -->
     <script src="js/features/settings/apiSettings/apiModelListService.js"></script> <!-- V18 API 模型列表 service：仅用于设置页拉取模型 -->
+    <script src="js/features/settings/apiSettings/apiModelSwitchService.js"></script> <!-- v0.2.5 主 API 模型快速切换 service：供后续悬浮球调用 -->
     <script src="js/features/settings/apiSettings/mainApiSettingsView.js"></script> <!-- V18 主 API 设置 UI 绑定 -->
     <script src="js/features/settings/apiSettings/subApiSettingsView.js"></script> <!-- V18 副 API 设置 UI 绑定 -->
     <script src="js/features/settings/apiSettings/weatherApiSettingsView.js"></script> <!-- V18 天气 API 设置 UI 绑定 -->
@@ -6125,9 +6129,11 @@
     <script src="js/features/journal/public.js"></script> <!-- V25 回忆日记 public facade -->
     <script src="js/modules/journal.js"></script> <!-- 回忆日记生成 -->
     <script src="js/core/memory/tableSemantics.js"></script> <!-- V23 结构化记忆纯语义：模板/字段/行和值归一化 -->
+    <script src="js/core/memory/tableUpdateXmlSemantics.js"></script> <!-- v0.2.3 表格记忆 XML 返回清洗与诊断语义 -->
     <script src="js/features/memoryTable/model.js"></script> <!-- V23 结构化记忆 model：chat.memoryTables 状态和历史 -->
     <script src="js/features/memoryTable/service.js"></script> <!-- V23 结构化记忆 service：绑定运行时 state，不碰 prompt/vector -->
     <script src="js/features/memoryTable/view.js"></script> <!-- V23 结构化记忆 view model：列表展示和安全文本格式化 -->
+    <script src="js/features/memoryTable/updateDiagnosticsService.js"></script> <!-- v0.2.3 表格记忆 XML 返回诊断 service -->
     <script src="js/features/memoryTable/public.js"></script> <!-- V23 结构化记忆 public facade -->
     <script src="js/features/vectorMemory/model.js"></script> <!-- V24 向量记忆 model：模板、状态、历史、自动总结游标 -->
     <script src="js/features/vectorMemory/contextService.js"></script> <!-- V24 向量记忆 context service：检索上下文和 embedding 补齐 -->
@@ -6136,6 +6142,12 @@
     <script src="js/modules/vector_memory.js"></script> <!-- 向量记忆 -->
     <script src="js/modules/reminder.js"></script> <!-- 提醒事项 -->
     <script src="js/modules/storage.js"></script> <!-- 存储空间分析图表 -->
+    <script src="js/features/cloudBackup/service.js"></script> <!-- v0.2.5 GitHub 云备份 service：教程页/悬浮球共享用例入口 -->
+    <script src="js/features/cloudBackup/public.js"></script> <!-- v0.2.5 GitHub 云备份 public facade -->
+    <script src="js/features/quickDock/model.js"></script> <!-- v0.2.8 悬浮球状态模型：只负责面板状态 -->
+    <script src="js/features/quickDock/service.js"></script> <!-- v0.2.8 悬浮球用例编排：模型切换/云备份/提示词/控制台 -->
+    <script src="js/features/quickDock/view.js"></script> <!-- v0.2.8 悬浮球 UI：可关闭大面板、提示词真实换行 -->
+    <script src="js/features/quickDock/public.js"></script> <!-- v0.2.8 悬浮球 public facade -->
     <script src="js/modules/widgets.js"></script> <!-- 桌面小组件设置 -->
     <script src="js/modules/tutorial.js"></script> <!-- 教程、更新日志、GitHub备份 -->
     <script src="js/modules/more_menu.js"></script> <!-- 更多菜单与状态栏管理 -->

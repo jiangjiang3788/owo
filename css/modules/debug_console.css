@@ -1,4 +1,4 @@
-/* Debug console feature styles (v0.2.2 owner: features/debugConsole) */
+/* Debug console feature styles (v0.2.6 owner: features/debugConsole) */
 .request-console-root {
     position: fixed;
     right: 14px;
@@ -21,12 +21,17 @@
     backdrop-filter: blur(12px);
 }
 
-.request-console-panel {
+
+.request-console-panel[hidden] {
+    display: none !important;
+}
+
+    .request-console-panel {
     position: absolute;
     right: 0;
     bottom: 58px;
-    width: min(92vw, 430px);
-    max-height: min(70vh, 620px);
+    width: min(96vw, 720px);
+    max-height: min(84vh, 760px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -124,6 +129,11 @@
     background: rgba(36, 143, 81, 0.08);
 }
 
+.request-trace-card--diagnostic,
+.request-trace-card--warning {
+    background: rgba(255, 188, 66, 0.12);
+}
+
 .request-trace-card--http_error,
 .request-trace-card--error {
     background: rgba(205, 64, 64, 0.08);
@@ -184,9 +194,10 @@
         bottom: 78px;
     }
 
+
     .request-console-panel {
         width: calc(100vw - 20px);
-        max-height: 72vh;
+        max-height: calc(100vh - 96px);
     }
 
     .request-trace-card {
@@ -196,4 +207,32 @@
     .request-trace-actions {
         justify-content: flex-start;
     }
+}
+
+/* v0.2.8: 请求功能入口完全归 quickDock，debugConsole 只提供嵌入式面板 */
+.request-console-entry {
+    display: none !important;
+}
+
+.request-console-root--standalone {
+    right: 16px;
+    bottom: 20px;
+    z-index: 10030;
+}
+
+.request-console-root--standalone[hidden] {
+    display: none !important;
+}
+
+.quick-dock-panel--request .request-console-header {
+    flex: 0 0 auto;
+}
+
+.quick-dock-panel--request .request-console-note {
+    flex: 0 0 auto;
+}
+
+.quick-dock-panel--request .request-console-list {
+    flex: 1 1 auto;
+    min-height: 0;
 }

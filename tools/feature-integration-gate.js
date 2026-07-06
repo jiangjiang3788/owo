@@ -21,7 +21,10 @@ const publicFacades = [
   'js/features/theater/public.js',
   'js/features/peek/public.js',
   'js/features/videoCall/public.js',
-  'js/features/wallet/public.js'
+  'js/features/wallet/public.js',
+  'js/features/debugConsole/public.js',
+  'js/features/cloudBackup/public.js',
+  'js/features/quickDock/public.js'
 ];
 for (const rel of publicFacades) {
   if (!exists(rel)) error(`缺少 public facade：${rel}`);
@@ -72,6 +75,30 @@ function requireBefore(a, b) {
 requireBefore('js/features/theater/public.js', 'js/modules/chat_render.js');
 requireBefore('js/features/wallet/public.js', 'js/modules/chat_render.js');
 requireBefore('js/app/featureIntegrationRegistry.js', 'js/main.js');
+requireBefore('js/features/settings/apiSettings/public.js', 'js/features/quickDock/service.js');
+requireBefore('js/features/cloudBackup/public.js', 'js/features/quickDock/service.js');
+requireBefore('js/features/debugConsole/public.js', 'js/features/quickDock/service.js');
+requireBefore('js/features/quickDock/model.js', 'js/features/quickDock/service.js');
+requireBefore('js/features/quickDock/service.js', 'js/features/quickDock/view.js');
+requireBefore('js/features/quickDock/view.js', 'js/features/quickDock/public.js');
+requireContains('js/features/debugConsole/view.js', 'renderEmbedded');
+requireContains('js/features/debugConsole/public.js', 'renderEmbeddedRequestConsole');
+requireContains('js/features/quickDock/view.js', "state.activePanel === 'requests'");
+requireContains('js/features/quickDock/public.js', 'openRequestPanel');
+if (/DOMContentLoaded[^\n]+mount/.test(read('js/features/debugConsole/view.js')) || /request-console-entry/.test(read('js/features/debugConsole/view.js'))) {
+  error('debugConsole/view.js 不应再自动挂载独立请求悬浮按钮；请求入口必须在 quickDock 内。');
+}
+
+const quickDockService = read('js/features/quickDock/service.js');
+if (/GitHubMgr|tutorial\.js/.test(quickDockService)) {
+  error('quickDock/service.js 不应直接调用 GitHubMgr 或教程页旧对象；请走 cloudBackup publicApi');
+}
+if (/document\.getElementById\(['"]api-|querySelector\(['"]#api-/.test(quickDockService)) {
+  error('quickDock/service.js 不应直接读取 API 设置页 DOM；请走 apiSettings publicApi');
+}
+requireContains('js/features/quickDock/service.js', 'OwoApp.features.settings.apiSettings.publicApi');
+requireContains('js/features/quickDock/service.js', 'OwoApp.features.cloudBackup.publicApi');
+requireContains('js/features/quickDock/service.js', 'OwoApp.features.debugConsole.publicApi');
 
 if (hasError) process.exit(1);
 console.log('✅ V33 feature integration gate passed');

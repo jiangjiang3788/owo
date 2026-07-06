@@ -467,7 +467,7 @@ body.night-mode-active code {
 
 .page-indicator {
     position: absolute;
-    bottom: 160px; /* Adjust based on dock height */
+    bottom: 32px; /* v0.2.4：设置入口移入第二页后不再为 dock 预留大高度 */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -672,7 +672,7 @@ body.night-mode-active code {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    gap: 15px;
+    gap: 12px;
     justify-content: center;
     align-content: flex-start;
     margin-top: 20px;
@@ -818,8 +818,8 @@ body.night-mode-active code {
     backdrop-filter: none;
     border-radius: var(--border-radius);
     margin: 0 20px;
-    min-height: 80px;
-    gap: 15px;
+    min-height: 18px;
+    gap: 12px;
     flex-shrink: 0;
 }
 
@@ -921,4 +921,14 @@ body.night-mode-active code {
     align-items: center;
     justify-content: center;
     padding: 0 4px;
+}
+
+.home-dock-spacer {
+    pointer-events: none;
+    min-height: 18px;
+    padding: 0;
+}
+
+.home-settings-page .app-icon .app-name {
+    display: block;
 }

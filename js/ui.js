@@ -376,8 +376,41 @@ function updateBubbleCssPreview(previewContainer, css, useDefault, theme) {
 let currentPageIndex = 0;
 
 function setupHomeScreen() {
-    const getIcon = (id) => db.customIcons[id] || defaultIcons[id].url;
-    const getName = (id) => (db.customAppNames && db.customAppNames[id]) || defaultIcons[id].name;
+    const getIcon = (id) => db.customIcons[id] || (defaultIcons[id] && defaultIcons[id].url) || '';
+    const getName = (id) => (db.customAppNames && db.customAppNames[id]) || (defaultIcons[id] && defaultIcons[id].name) || 'App';
+    const homeCatalog = window.OwoApp && window.OwoApp.features && window.OwoApp.features.home && window.OwoApp.features.home.homeAppCatalog;
+    const homeAppPages = homeCatalog && typeof homeCatalog.getHomeAppPages === 'function'
+        ? homeCatalog.getHomeAppPages()
+        : [
+            [
+                { target: 'chat-list-screen', iconId: 'chat-list-screen', nameId: 'chat-list-screen' },
+                { target: 'world-book-screen', iconId: 'world-book-screen', nameId: 'world-book-screen' },
+                { target: 'pomodoro-screen', iconId: 'pomodoro-screen', nameId: 'pomodoro-screen' },
+                { target: 'forum-screen', iconId: 'forum-screen', nameId: 'forum-screen' },
+                { target: 'piggy-bank-screen', iconId: 'piggy-bank-screen', nameId: 'piggy-bank-screen' },
+                { target: 'theater-screen', iconId: 'theater-screen', nameId: 'theater-screen' }
+            ],
+            [
+                { target: 'api-settings-screen', iconId: 'api-settings-screen', nameId: 'api-settings-screen' },
+                { target: 'wallpaper-screen', iconId: 'wallpaper-screen', nameId: 'wallpaper-screen' },
+                { target: 'customize-screen', iconId: 'customize-screen', nameId: 'customize-screen' },
+                { target: 'tutorial-screen', iconId: 'tutorial-screen', nameId: 'tutorial-screen' },
+                { target: 'appearance-settings-screen', iconId: 'appearance-settings-screen', nameId: 'appearance-settings-screen' },
+                { id: 'day-mode-btn', iconId: 'day-mode-btn', nameId: 'day-mode-btn' },
+                { id: 'night-mode-btn', iconId: 'night-mode-btn', nameId: 'night-mode-btn' },
+                { target: 'storage-analysis-screen', iconId: 'storage-analysis-screen', nameId: 'storage-analysis-screen' },
+                { action: 'magic-room-app', iconId: 'magic-room-screen', nameId: 'magic-room-screen' }
+            ]
+        ];
+    const renderHomeAppIcon = (app) => {
+        const attr = app.target ? `data-target="${app.target}"` : app.action ? `data-action="${app.action}"` : '';
+        const idAttr = app.id ? `id="${app.id}"` : '';
+        const iconId = app.iconId || app.target || app.id;
+        const nameId = app.nameId || iconId;
+        const altText = getName(nameId);
+        return `<a href="#" class="app-icon" ${idAttr} ${attr}><img src="${getIcon(iconId)}" alt="${altText}" class="icon-img"><span class="app-name">${altText}</span></a>`;
+    };
+    const renderHomeAppGrid = (apps) => apps.map(renderHomeAppIcon).join('');
     if (!db.insWidgetSettings) {
         db.insWidgetSettings = {
             avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg',
@@ -439,38 +472,14 @@ function setupHomeScreen() {
                         </div>
                    </div>
                 </div>
-                <a href="#" class="app-icon" data-target="chat-list-screen"><img src="${getIcon('chat-list-screen')}" alt="404" class="icon-img"><span class="app-name">${getName('chat-list-screen')}</span></a>
-                <a href="#" class="app-icon" data-target="api-settings-screen"><img src="${getIcon('api-settings-screen')}" alt="API" class="icon-img"><span class="app-name">${getName('api-settings-screen')}</span></a>
-                <a href="#" class="app-icon" data-target="wallpaper-screen"><img src="${getIcon('wallpaper-screen')}" alt="Wallpaper" class="icon-img"><span class="app-name">${getName('wallpaper-screen')}</span></a>
-                <a href="#" class="app-icon" data-target="world-book-screen"><img src="${getIcon('world-book-screen')}" alt="World Book" class="icon-img"><span class="app-name">${getName('world-book-screen')}</span></a>
-                <a href="#" class="app-icon" data-target="customize-screen"><img src="${getIcon('customize-screen')}" alt="Customize" class="icon-img"><span class="app-name">${getName('customize-screen')}</span></a>
-                <a href="#" class="app-icon" data-target="tutorial-screen"><img src="${getIcon('tutorial-screen')}" alt="Tutorial" class="icon-img"><span class="app-name">${getName('tutorial-screen')}</span></a>
+                ${renderHomeAppGrid(homeAppPages[0] || [])}
                 <div class="heart-photo-widget"></div>
             </div>
         </div>
 
-        <div class="home-screen-page">
+        <div class="home-screen-page home-settings-page">
              <div class="app-grid">
-                <a href="#" class="app-icon" data-target="pomodoro-screen">
-                    <img src="${getIcon('pomodoro-screen')}" alt="番茄钟" class="icon-img">
-                    <span class="app-name">${getName('pomodoro-screen')}</span>
-                </a>
-                <a href="#" class="app-icon" data-target="forum-screen">
-                    <img src="${getIcon('forum-screen')}" alt="论坛" class="icon-img">
-                    <span class="app-name">${getName('forum-screen')}</span>
-                </a>
-                <a href="#" class="app-icon" data-target="piggy-bank-screen">
-                    <img src="${getIcon('piggy-bank-screen')}" alt="存钱罐" class="icon-img">
-                    <span class="app-name">${getName('piggy-bank-screen')}</span>
-                </a>
-                <a href="#" class="app-icon" data-target="theater-screen">
-                    <img src="${getIcon('theater-screen')}" alt="小剧场" class="icon-img">
-                    <span class="app-name">${getName('theater-screen')}</span>
-                </a>
-                <a href="#" class="app-icon" data-target="appearance-settings-screen">
-                    <img src="${getIcon('appearance-settings-screen')}" alt="外观" class="icon-img">
-                    <span class="app-name">${getName('appearance-settings-screen')}</span>
-                </a>
+                ${renderHomeAppGrid(homeAppPages[1] || [])}
              </div>
         </div>
 
@@ -479,12 +488,7 @@ function setupHomeScreen() {
         <span class="dot active" data-page="0"></span>
         <span class="dot" data-page="1"></span>
     </div>
-    <div class="dock">
-        <a href="#" class="app-icon" id="day-mode-btn"><img src="${getIcon('day-mode-btn')}" alt="日间" class="icon-img"></a>
-        <a href="#" class="app-icon" id="night-mode-btn"><img src="${getIcon('night-mode-btn')}" alt="夜间" class="icon-img"></a>
-        <a href="#" class="app-icon" data-target="storage-analysis-screen"><img src="${getIcon('storage-analysis-screen')}" alt="存储" class="icon-img"></a>
-        <a href="#" class="app-icon" data-action="magic-room-app"><img src="${getIcon('magic-room-screen')}" alt="魔法屋" class="icon-img"></a>
-    </div>`;
+    <div class="dock home-dock-spacer" aria-hidden="true"></div>`;
     homeScreen.innerHTML = homeScreenHTML;
 
     const polaroidImage = db.homeWidgetSettings?.polaroidImage;
@@ -507,9 +511,9 @@ function setupHomeScreen() {
         applyHomeScreenMode('night');
     });
     /* 外观设置：点击进入页面，由 showScreen 时调用 renderAppearanceSettingsScreen */
-    document.querySelector('[data-target="world-book-screen"]').addEventListener('click', renderWorldBookList);
-    document.querySelector('[data-target="customize-screen"]').addEventListener('click', renderCustomizeForm);
-    document.querySelector('[data-target="tutorial-screen"]').addEventListener('click', () => {
+    document.querySelector('[data-target="world-book-screen"]')?.addEventListener('click', renderWorldBookList);
+    document.querySelector('[data-target="customize-screen"]')?.addEventListener('click', renderCustomizeForm);
+    document.querySelector('[data-target="tutorial-screen"]')?.addEventListener('click', () => {
         renderTutorialContent();
         
         // 绑定全局消息弹窗开关事件

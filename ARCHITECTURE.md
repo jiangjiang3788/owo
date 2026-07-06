@@ -859,3 +859,35 @@ node tools/arch-check.js
 用户可见的占位功能入口不应发布。凡是点击后只提示“开发中 / 敬请期待”的入口，必须从 UI、默认图标、自定义图标列表中移除；如果后续重新实现，应作为真实 feature 走 public facade 接入。
 
 V34～V36 的 screen template placeholder 是模板 hydrate 的技术容器，不属于占位功能，不能误删。
+
+## v0.2.6 quickDock prerequisite ownership
+
+v0.2.6 为后续悬浮球准备能力 facade，先拆 owner，再做 UI。
+
+- 主 API 模型切换 owner：`js/features/settings/apiSettings/apiModelSwitchService.js`。
+- 模型切换出口：`OwoApp.features.settings.apiSettings.publicApi.listMainModels()`、`switchMainModel()`。
+- GitHub API 适配 owner：`js/platform/storage/githubBackupAdapter.js`，只负责 GitHub API、gzip/base64 文件和备份数据，不读写 DOM。
+- 云备份用例 owner：`js/features/cloudBackup/service.js`。
+- 云备份出口：`OwoApp.features.cloudBackup.publicApi.backupNow()`、`restoreLatest()`、`checkStatus()`。
+- `window.GitHubMgr` 只是 tutorial legacy compatibility shell，不允许再新增上传、分片、恢复业务逻辑。
+- v0.2.6 悬浮球必须只调用 public facade，不直接访问 `tutorial.js`、`GitHubMgr` 或设置页 DOM。
+
+## v0.2.7 quickDock closing review
+
+v0.2.7 是 v0.2.4～v0.2.6 的收口审查版，不扩大功能，只补不合理点和 gate。
+
+- 自动“新功能提醒 / 引导”默认关闭：`GuideSystem.check()` 不再弹出功能引导浮层，只记录已读并保留 `cleanup()` 兼容能力。
+- quickDock 仍只能调用 public facade：`apiSettings.publicApi`、`cloudBackup.publicApi`、`debugConsole.publicApi`。
+- `tools/feature-integration-gate.js` 必须检查 debugConsole/cloudBackup/quickDock public facade、quickDock 加载顺序，以及 quickDock 不得直接引用 `GitHubMgr` 或 API 设置页 DOM。
+- GitHub contents API 路径必须逐段编码，禁止对含 `/` 的 repo path 整体 `encodeURIComponent()`。
+- 大面板交互原则：提示词面板右上角 `×` 关闭面板；打开请求控制台时自动收起 quickDock，避免两个大面板叠加。
+
+
+## v0.2.8 request console inside quickDock
+
+v0.2.8 明确用户体验边界：请求控制台不再拥有独立悬浮入口，入口完全归 `features/quickDock`。
+
+- `features/debugConsole` 仍是请求控制台展示 owner，但只能提供嵌入式 panel 渲染和 trace 数据展示，不得在 DOMContentLoaded 自动挂载“请求”按钮。
+- `features/quickDock` 是请求功能的唯一用户入口，通过 `requests` activePanel 承载请求列表、详情、复制和清空操作。
+- `debugConsole.publicApi.openRequestConsole()` 可作为旧调用兼容，但必须优先路由到 `quickDock.publicApi.openRequestPanel()`。
+- `tools/feature-integration-gate.js` 必须检查 `debugConsole/view.js` 不含自动挂载独立入口逻辑。

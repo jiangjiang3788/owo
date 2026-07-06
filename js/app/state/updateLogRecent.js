@@ -1,5 +1,72 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
+    {
+        version: "0.2.8",
+        date: "2026-07-06",
+        notes: [
+            "**[悬浮球] 请求控制台入口完全收进悬浮窗**",
+            "右下角不再单独显示“请求”悬浮按钮，请求记录、复制全部、清空和详情展开都在悬浮球里的“请求”面板完成。",
+            "**[架构收口] debugConsole 改为嵌入式面板 owner**",
+            "debugConsole 不再自动挂载独立入口，只提供 renderEmbeddedRequestConsole() 给 quickDock 使用；feature gate 增加独立入口禁止检查。"
+        ]
+    },
+    {
+        version: "0.2.7",
+        date: "2026-07-06",
+        notes: [
+            "**[收口审查] 修正 v0.2.4～v0.2.6 的边界、gate 和体验问题**",
+            "补强 quickDock / cloudBackup / debugConsole 的 public facade gate；GuideSystem 自动新功能浮层默认关闭。",
+            "GitHub contents API 路径改为逐段编码；提示词面板右上角 × 直接关闭，打开请求控制台时自动收起悬浮球。"
+        ]
+    },
+    {
+        version: "0.2.6",
+        date: "2026-07-06",
+        notes: [
+            "**[悬浮球] 新增快捷悬浮球 MVP**",
+            "悬浮球可展开、关闭和拖动，提供快速切换模型、打开请求控制台、立即 GitHub 备份、恢复最新备份等入口。",
+            "**[提示词] 提示词入口加入悬浮球**",
+            "提示词面板可放大并关闭，正文用真实换行展示；读取历史内容时兼容反斜杠 n。",
+            "**[体验修正] 编辑消息与更新提醒优化**",
+            "编辑消息弹窗中，新增消息按钮移动到插入动作后面；启动时不再自动弹出新功能提醒，更新日志仍可在教程里查看。"
+        ]
+    },
+    {
+        version: "0.2.5",
+        date: "2026-07-06",
+        notes: [
+            "**[模型切换] 新增主 API 模型切换 facade**",
+            "新增 `apiModelSwitchService`，可从已保存主 API 和 API 预设中收集模型候选，并通过 `apiSettings.publicApi.listMainModels()`、`switchMainModel()` 供后续悬浮球调用。",
+            "**[云备份] GitHub 上传/恢复迁出教程页**",
+            "新增 `platform/storage/githubBackupAdapter` 和 `features/cloudBackup`，GitHub 备份、分片上传、恢复下载改走 public facade；`window.GitHubMgr` 只保留兼容转发。",
+            "**[悬浮球准备] 后续悬浮球不直接碰设置页或教程页旧对象**",
+            "v0.2.6 悬浮球可直接调用模型切换 facade、云备份 facade 和请求控制台 facade。"
+        ]
+    },
+    {
+        version: "0.2.4",
+        date: "2026-07-06",
+        notes: [
+            "**[聊天面板] 底部功能重排并紧凑化**",
+            "展开面板顺序调整为：重回、相册、识图、直接拍照、提醒、日记、档案、向量，然后再放语音、转账、礼物、剧情和其他工具；按钮 ID 保持不变，避免破坏旧事件绑定。",
+            "**[主屏] 设置类 app 集中到第二页并显示名称**",
+            "API、壁纸、自定义、教程、外观、日间/夜间模式、存储分析、魔法屋等入口统一放到第二页，原 dock 只保留占位，不再放无名称设置图标。",
+            "**[后续计划] 记录悬浮球提示词需求**",
+            "v0.2.6 悬浮球 MVP 将把提示词入口加入悬浮球；控制台/提示词面板支持大尺寸或近全屏、可点击关闭，提示词正文按真实换行展示，不把换行渲染成反斜杠 n 字符串。"
+        ]
+    },
+{
+        version: "0.2.3",
+        date: "2026-07-06",
+        notes: [
+            "**[表格记忆] 新增 XML 返回清洗和诊断 owner**",
+            "新增 `OwoApp.core.memory.tableUpdateXmlSemantics`，负责从模型返回中提取 `<memory_updates>`，兼容 Markdown 代码块、前后解释文字和缺根节点的常见坏格式。",
+            "**[定位问题] 表格记忆解析失败会写入请求控制台**",
+            "新增 `OwoApp.features.memoryTable.updateDiagnosticsService`，失败或警告时记录 rawContent、cleanedContent、extractedXml、parserError、缺失 templateId/tableId/fieldId 等信息，方便复制给 AI 排查。",
+            "**[回归 gate] 增加 MEM-TABLE-XML-01 样例**",
+            "`tools/memory-regression-gate.js` 现在会检查 XML 清洗语义、诊断 service、加载顺序和常见坏格式样例。"
+        ]
+    },
 {
         version: "0.2.2",
         date: "2026-07-06",
