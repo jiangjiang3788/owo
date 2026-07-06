@@ -75,6 +75,7 @@
     <link rel="stylesheet" href="css/modules/block_system.css">
     <link rel="stylesheet" href="css/modules/voice_selector.css">
     <link rel="stylesheet" href="css/modules/character_import.css">
+    <link rel="stylesheet" href="css/modules/debug_console.css">
 </head>
 
 <body>
@@ -6035,8 +6036,12 @@
     <script src="js/platform/browser/hapticAdapter.js"></script>
     <script src="js/platform/browser/batteryAdapter.js"></script>
     <script src="js/platform/ai/providerConfig.js"></script>
+    <script src="js/platform/ai/requestTraceStore.js"></script> <!-- v0.2.2 AI 请求追踪底座：记录请求/响应，供 debug console 复制 -->
     <script src="js/platform/ai/embeddingAdapter.js"></script>
     <script src="js/platform/ai/providerRequestAdapter.js"></script>
+    <script src="js/features/debugConsole/service.js"></script> <!-- v0.2.2 请求控制台 service：聚合 trace store 数据 -->
+    <script src="js/features/debugConsole/view.js"></script> <!-- v0.2.2 请求控制台 UI：复制完整请求/响应 -->
+    <script src="js/features/debugConsole/public.js"></script> <!-- v0.2.2 请求控制台 public facade -->
     <script src="js/platform/storage/dexieMigrations.js"></script>
     <script src="js/platform/storage/dexieAdapter.js"></script>
     <script src="js/platform/storage/dexieWriter.js"></script>

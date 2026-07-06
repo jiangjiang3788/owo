@@ -378,11 +378,24 @@ async function setupStickerSystem() {
             Authorization: `Bearer ${key}`
         };
 
-        const response = await fetch(endpoint, {
+        const fetchOptions = {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(requestBody)
-        });
+        };
+        const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+            ? window.OwoApp.platform.ai.requestTraceStore
+            : null;
+        const response = traceStore && typeof traceStore.trackedFetch === 'function'
+            ? await traceStore.trackedFetch({ endpoint, fetchOptions, requestBody }, {
+                source: 'sticker.generateStickerDescription',
+                label: '表情包识别请求',
+                provider,
+                model,
+                stream: false,
+                requestBody
+            })
+            : await fetch(endpoint, fetchOptions);
 
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         

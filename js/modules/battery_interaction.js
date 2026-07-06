@@ -151,31 +151,57 @@ ${recentHistory}
 
             let responseText = '';
 
+            const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+                ? window.OwoApp.platform.ai.requestTraceStore
+                : null;
+
             if (provider === 'gemini') {
                 const endpoint = `${url}/v1beta/models/${model}:generateContent?key=${getRandomValue(key)}`;
-                const response = await fetch(endpoint, {
+                const requestBody = {
+                    contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+                };
+                const fetchOptions = {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+                    body: JSON.stringify(requestBody)
+                };
+                const response = traceStore && typeof traceStore.trackedFetch === 'function'
+                    ? await traceStore.trackedFetch({ endpoint, fetchOptions, requestBody }, {
+                        source: 'battery_interaction.generateBatteryThought',
+                        label: '低电量关心请求',
+                        provider,
+                        model,
+                        stream: false,
+                        requestBody
                     })
-                });
+                    : await fetch(endpoint, fetchOptions);
                 const data = await response.json();
                 responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
             } else {
                 const endpoint = `${url}/v1/chat/completions`;
-                const response = await fetch(endpoint, {
+                const requestBody = {
+                    model: model,
+                    messages: [{ role: 'user', content: systemPrompt }],
+                    temperature: 0.7
+                };
+                const fetchOptions = {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${key}`
                     },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: [{ role: 'user', content: systemPrompt }],
-                        temperature: 0.7
+                    body: JSON.stringify(requestBody)
+                };
+                const response = traceStore && typeof traceStore.trackedFetch === 'function'
+                    ? await traceStore.trackedFetch({ endpoint, fetchOptions, requestBody }, {
+                        source: 'battery_interaction.generateBatteryThought',
+                        label: '低电量关心请求',
+                        provider,
+                        model,
+                        stream: false,
+                        requestBody
                     })
-                });
+                    : await fetch(endpoint, fetchOptions);
                 const data = await response.json();
                 responseText = data.choices[0].message.content;
             }

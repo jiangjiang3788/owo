@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * OWO architecture check for product release v0.2.1.
+ * OWO architecture check for product release v0.2.2.
  * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
@@ -60,7 +60,7 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO architecture check · product release v0.2.1 · historical gates V1-V38.1\n');
+console.log('OWO architecture check · product release v0.2.2 · historical gates V1-V38.1\n');
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -72,7 +72,7 @@ for (const file of jsFiles) {
   } else if (lines > MAX_SOFT_LINES && isNewStructure) {
     warn(`${r} ${lines} 行，超过 ${MAX_SOFT_LINES}，需要解释或拆分`);
   } else if (lines > MAX_HARD_LINES && !r.startsWith('js/modules/')) {
-    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.1 暂不阻断，但后续必须拆分`);
+    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.2 暂不阻断，但后续必须拆分`);
   }
 }
 

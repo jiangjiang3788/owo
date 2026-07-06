@@ -81,6 +81,25 @@
         };
     }
 
+
+    function trackedEmbeddingFetch(request, cfg, label) {
+        const traceStore = ai.requestTraceStore;
+        const requestBody = request.fetchOptions && request.fetchOptions.body
+            ? JSON.parse(request.fetchOptions.body)
+            : undefined;
+        if (traceStore && typeof traceStore.trackedFetch === 'function') {
+            return traceStore.trackedFetch(Object.assign({ requestBody }, request), {
+                source: 'platform.ai.embeddingAdapter',
+                label,
+                provider: cfg.provider,
+                model: cfg.model,
+                stream: false,
+                requestBody
+            });
+        }
+        return fetch(request.endpoint, request.fetchOptions);
+    }
+
     async function parseEmbeddingResponse(response, provider) {
         if (!response.ok) {
             const errorText = await response.text();
@@ -100,13 +119,13 @@
             const outputs = [];
             for (const text of list) {
                 const request = buildGeminiEmbeddingRequest(cfg, text);
-                const response = await fetch(request.endpoint, request.fetchOptions);
+                const response = await trackedEmbeddingFetch(request, cfg, 'Gemini 向量请求');
                 outputs.push(await parseEmbeddingResponse(response, cfg.provider));
             }
             return outputs;
         }
         const request = buildOpenAiEmbeddingRequest(cfg, list);
-        const response = await fetch(request.endpoint, request.fetchOptions);
+        const response = await trackedEmbeddingFetch(request, cfg, 'OpenAI 向量请求');
         return parseEmbeddingResponse(response, cfg.provider);
     }
 

@@ -112,7 +112,20 @@
             };
         }
         try {
-            var res = await fetch(endpoint, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+            var fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(body) };
+            var traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+                ? window.OwoApp.platform.ai.requestTraceStore
+                : null;
+            var res = traceStore && typeof traceStore.trackedFetch === 'function'
+                ? await traceStore.trackedFetch({ endpoint: endpoint, fetchOptions: fetchOptions, requestBody: body }, {
+                    source: 'block_system.callBlockApi',
+                    label: '拉黑关系 AI 请求',
+                    provider: provider,
+                    model: model,
+                    stream: false,
+                    requestBody: body
+                })
+                : await fetch(endpoint, fetchOptions);
             var text = await res.text();
             if (!res.ok) return { ok: false, error: text || res.statusText };
             var data = JSON.parse(text);

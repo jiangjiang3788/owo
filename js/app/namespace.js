@@ -103,11 +103,16 @@
     app.features.settings.settingsShell = app.features.settings.settingsShell || {};
     app.features.settings.settingsService = app.features.settings.settingsService || {};
     app.features.settings.publicApi = app.features.settings.publicApi || {};
+    app.features.debugConsole = app.features.debugConsole || {};
+    app.features.debugConsole.service = app.features.debugConsole.service || {};
+    app.features.debugConsole.view = app.features.debugConsole.view || {};
+    app.features.debugConsole.publicApi = app.features.debugConsole.publicApi || {};
     app.platform = app.platform || {};
     app.platform.ai = app.platform.ai || {};
     app.platform.ai.providerConfig = app.platform.ai.providerConfig || {};
     app.platform.ai.providerRequestAdapter = app.platform.ai.providerRequestAdapter || {};
     app.platform.ai.embeddingAdapter = app.platform.ai.embeddingAdapter || {};
+    app.platform.ai.requestTraceStore = app.platform.ai.requestTraceStore || {};
     app.shared = app.shared || {};
     app.compat = app.compat || {};
 

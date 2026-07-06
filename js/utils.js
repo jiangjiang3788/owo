@@ -661,11 +661,24 @@ async function fetchAiResponse(settings, requestBody, headers, endpoint, forceSt
     }
 
     // 2. 发送请求
-    const response = await fetch(endpoint, {
+    const fetchOptions = {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(requestBody)
-    });
+    };
+    const requestTraceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+        ? window.OwoApp.platform.ai.requestTraceStore
+        : null;
+    const response = requestTraceStore && typeof requestTraceStore.trackedFetch === 'function'
+        ? await requestTraceStore.trackedFetch({ endpoint, fetchOptions, requestBody }, {
+            source: 'utils.fetchAiResponse',
+            label: '通用 AI 请求',
+            provider,
+            model: settings && settings.model,
+            stream: streamEnabled,
+            requestBody
+        })
+        : await fetch(endpoint, fetchOptions);
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -1146,21 +1159,35 @@ async function generateGptImage(prompt, overrideSettings = {}, signal = null) {
 
     console.log('[GPT Image] 发送生图请求:', { endpoint, model, size, prompt: finalPrompt });
 
-    const response = await fetch(endpoint, {
+    const requestBody = {
+        model: model,
+        prompt: finalPrompt,
+        n: 1,
+        size: size,
+        response_format: 'b64_json'
+    };
+    const fetchOptions = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${key.trim()}`
         },
-        body: JSON.stringify({
-            model: model,
-            prompt: finalPrompt,
-            n: 1,
-            size: size,
-            response_format: 'b64_json'
-        }),
+        body: JSON.stringify(requestBody),
         signal: signal
-    });
+    };
+    const requestTraceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+        ? window.OwoApp.platform.ai.requestTraceStore
+        : null;
+    const response = requestTraceStore && typeof requestTraceStore.trackedFetch === 'function'
+        ? await requestTraceStore.trackedFetch({ endpoint, fetchOptions, requestBody }, {
+            source: 'utils.generateGptImage',
+            label: 'GPT 生图请求',
+            provider: 'openai-image',
+            model,
+            stream: false,
+            requestBody
+        })
+        : await fetch(endpoint, fetchOptions);
 
     if (!response.ok) {
         let errDetail = '';
@@ -1342,7 +1369,7 @@ async function generateNovelAiImage(prompt, overrideSettings = {}, signal = null
 
     console.log('[NovelAI] 发送生图请求:', { apiUrl, model, isV4, width, height, steps, scale, sampler });
 
-    const response = await fetch(apiUrl, {
+    const fetchOptions = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1350,7 +1377,20 @@ async function generateNovelAiImage(prompt, overrideSettings = {}, signal = null
         },
         body: JSON.stringify(requestBody),
         signal: signal
-    });
+    };
+    const requestTraceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+        ? window.OwoApp.platform.ai.requestTraceStore
+        : null;
+    const response = requestTraceStore && typeof requestTraceStore.trackedFetch === 'function'
+        ? await requestTraceStore.trackedFetch({ endpoint: apiUrl, fetchOptions, requestBody }, {
+            source: 'utils.generateNovelAiImage',
+            label: 'NovelAI 生图请求',
+            provider: 'novelai',
+            model,
+            stream: isV4,
+            requestBody
+        })
+        : await fetch(apiUrl, fetchOptions);
 
     console.log(`[NovelAI] 响应状态: ${response.status}, Content-Type: ${response.headers.get('content-type')}`);
 

@@ -1,6 +1,18 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
 {
+        version: "0.2.2",
+        date: "2026-07-06",
+        notes: [
+            "**[请求追踪] 新增 AI 请求 trace store**",
+            "新增 `OwoApp.platform.ai.requestTraceStore`，自动记录请求来源、provider、model、endpoint、requestBody、response、HTTP 状态、耗时和错误信息。",
+            "**[控制台] 新增请求控制台 MVP**",
+            "右下角新增“请求”入口，可以查看最近 80 条请求，展开详情并复制单条或全部请求数据。",
+            "**[覆盖范围] 接入主聊天、总结、表格记忆、论坛、日记、偷看、向量、通话、识图、生图和模型列表等 AI/API 链路**",
+            "密钥类 header 和 URL key 参数默认打码，避免复制调试数据时误泄露。"
+        ]
+    },
+{
         version: "0.2.1",
         date: "2026-07-06",
         notes: [

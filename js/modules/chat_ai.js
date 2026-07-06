@@ -5,6 +5,7 @@
 // V15: prompt pieces/context 归 OwoApp.core.chat.promptSemantics；本文件仍保留主 prompt builder 编排。
 const chatAiProviderConfig = window.OwoApp.platform.ai.providerConfig;
 const chatAiProviderRequestAdapter = window.OwoApp.platform.ai.providerRequestAdapter;
+const chatAiRequestTraceStore = window.OwoApp.platform.ai.requestTraceStore;
 const chatAiMessageSemantics = window.OwoApp.core.chat.messageSemantics;
 const chatAiPromptSemantics = window.OwoApp.core.chat.promptSemantics;
 
@@ -126,7 +127,14 @@ async function generateImageDescription(msg, chat, apiConfig) {
         requestBody = providerRequest.requestBody;
 
         console.log('[Auto-Description] Image Request:', JSON.stringify(requestBody).substring(0, 500) + '...');
-        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
+        const response = await chatAiRequestTraceStore.trackedFetch(providerRequest, {
+            source: 'chat_ai.generateImageDescription',
+            label: '图片自动描述',
+            provider,
+            model,
+            stream: false,
+            requestBody
+        });
 
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         
@@ -744,7 +752,14 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
         requestBody = providerRequest.requestBody;
         }
         console.log('[DEBUG] AutoReply Request Body:', JSON.stringify(requestBody));
-        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
+        const response = await chatAiRequestTraceStore.trackedFetch(providerRequest, {
+            source: 'chat_ai.getAiReply',
+            label: isSummary ? '自动总结请求' : (isBackground ? '后台自动回复请求' : '聊天回复请求'),
+            provider,
+            model,
+            stream: streamEnabled,
+            requestBody
+        });
         if (!response.ok) {
             const error = new Error(`API Error: ${response.status} ${await response.text()}`);
             error.response = response;
@@ -3260,7 +3275,14 @@ async function getCallReply(chat, callType, callContext, onStreamUpdate) {
     console.log('[VideoCall] Request Body:', JSON.stringify(requestBody, null, 2));
 
     try {
-        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
+        const response = await chatAiRequestTraceStore.trackedFetch(providerRequest, {
+            source: 'chat_ai.generateVideoCallAiReply',
+            label: '通话 AI 回复请求',
+            provider,
+            model,
+            stream: streamEnabled,
+            requestBody
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -3454,7 +3476,14 @@ async function generateCallSummary(chat, callContext) {
     const requestBody = providerRequest.requestBody;
 
     try {
-        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
+        const response = await chatAiRequestTraceStore.trackedFetch(providerRequest, {
+            source: 'chat_ai.generateCallSummary',
+            label: '通话总结请求',
+            provider,
+            model,
+            stream: false,
+            requestBody
+        });
         const data = await response.json();
         let text = "";
         if (provider === 'gemini') {

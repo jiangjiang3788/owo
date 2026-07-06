@@ -292,6 +292,13 @@
       "role": "feature-module",
       "status": "legacy-owned",
       "maxLines": 360
+    },
+    {
+      "path": "css/modules/debug_console.css",
+      "owner": "features/debugConsole",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 220
     }
   ]
 }

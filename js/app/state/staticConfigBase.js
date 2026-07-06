@@ -99,4 +99,4 @@ const peekScreenApps = {
 };
 
 const appName = "章鱼喷墨机";
-const appVersion = "0.2.1";
+const appVersion = "0.2.2";

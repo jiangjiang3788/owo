@@ -37,18 +37,33 @@
             }
         ];
 
-        const res = await fetch(`${url}/chat/completions`, {
+        const endpoint = `${url}/chat/completions`;
+        const requestBody = {
+            model: model,
+            messages: messages,
+            temperature: 0.3
+        };
+        const fetchOptions = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${key}`
             },
-            body: JSON.stringify({
-                model: model,
-                messages: messages,
-                temperature: 0.3
+            body: JSON.stringify(requestBody)
+        };
+        const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+            ? window.OwoApp.platform.ai.requestTraceStore
+            : null;
+        const res = traceStore && typeof traceStore.trackedFetch === 'function'
+            ? await traceStore.trackedFetch({ endpoint, fetchOptions, requestBody }, {
+                source: 'avatar_recognition.callVisionAPI',
+                label: '头像识别请求',
+                provider: 'openai-compatible',
+                model,
+                stream: false,
+                requestBody
             })
-        });
+            : await fetch(endpoint, fetchOptions);
 
         if (!res.ok) {
             const errText = await res.text();

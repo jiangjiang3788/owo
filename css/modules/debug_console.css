@@ -1,0 +1,199 @@
+/* Debug console feature styles (v0.2.2 owner: features/debugConsole) */
+.request-console-root {
+    position: fixed;
+    right: 14px;
+    bottom: 88px;
+    z-index: 9998;
+    font-family: var(--font-family);
+}
+
+.request-console-entry {
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(25, 25, 25, 0.82);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+}
+
+.request-console-panel {
+    position: absolute;
+    right: 0;
+    bottom: 58px;
+    width: min(92vw, 430px);
+    max-height: min(70vh, 620px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 22px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+    color: #252525;
+    backdrop-filter: blur(18px);
+}
+
+.request-console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.request-console-header strong {
+    display: block;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.request-console-header span {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    color: #777;
+}
+
+.request-console-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.request-console-header-actions button,
+.request-console-mini-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: rgba(0, 0, 0, 0.07);
+    color: #333;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.request-console-count {
+    min-width: 34px;
+    text-align: right;
+    color: #666;
+    font-size: 11px;
+}
+
+.request-console-note {
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #777;
+    background: rgba(0, 0, 0, 0.025);
+}
+
+.request-console-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.request-console-empty {
+    padding: 22px 16px;
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+}
+
+.request-trace-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.045);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.request-trace-card--success {
+    background: rgba(36, 143, 81, 0.08);
+}
+
+.request-trace-card--http_error,
+.request-trace-card--error {
+    background: rgba(205, 64, 64, 0.08);
+}
+
+.request-trace-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.request-trace-meta,
+.request-trace-endpoint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 3px;
+    font-size: 11px;
+    color: #707070;
+}
+
+.request-trace-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.request-trace-status {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    font-size: 11px;
+    color: #555;
+}
+
+.request-trace-detail {
+    grid-column: 1 / -1;
+    max-height: 260px;
+    overflow: auto;
+    margin: 2px 0 0;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.82);
+    color: #f4f4f4;
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+@media (max-width: 520px) {
+    .request-console-root {
+        right: 10px;
+        bottom: 78px;
+    }
+
+    .request-console-panel {
+        width: calc(100vw - 20px);
+        max-height: 72vh;
+    }
+
+    .request-trace-card {
+        grid-template-columns: 1fr;
+    }
+
+    .request-trace-actions {
+        justify-content: flex-start;
+    }
+}

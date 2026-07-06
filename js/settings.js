@@ -1715,7 +1715,19 @@ function loadSettingsToSidebar() {
                     const origText = fetchModelsBtn.textContent;
                     fetchModelsBtn.textContent = '拉取中…';
                     try {
-                        const resp = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+                        const fetchOptions = { headers: { 'Authorization': `Bearer ${apiKey}` } };
+                        const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+                            ? window.OwoApp.platform.ai.requestTraceStore
+                            : null;
+                        const resp = traceStore && typeof traceStore.trackedFetch === 'function'
+                            ? await traceStore.trackedFetch({ endpoint, fetchOptions }, {
+                                source: 'settings.fetchCharacterTheaterModels',
+                                label: '角色小剧场拉取模型列表',
+                                provider: 'openai-compatible',
+                                model: '',
+                                stream: false
+                            })
+                            : await fetch(endpoint, fetchOptions);
                         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                         const json = await resp.json();
                         const models = (json.data || []).map(m => m.id).filter(Boolean).sort();
@@ -2994,7 +3006,19 @@ window.fetchAndPopulateGptModels = async (showToastFlag = true) => {
     }
 
     try {
-        const resp = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+        const fetchOptions = { headers: { 'Authorization': `Bearer ${apiKey}` } };
+        const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.ai
+            ? window.OwoApp.platform.ai.requestTraceStore
+            : null;
+        const resp = traceStore && typeof traceStore.trackedFetch === 'function'
+            ? await traceStore.trackedFetch({ endpoint, fetchOptions }, {
+                source: 'settings.fetchGptImageModels',
+                label: 'GPT 生图拉取模型列表',
+                provider: 'openai-compatible',
+                model: '',
+                stream: false
+            })
+            : await fetch(endpoint, fetchOptions);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const json = await resp.json();
         const models = (json.data || []).map(m => m.id).filter(Boolean).sort();

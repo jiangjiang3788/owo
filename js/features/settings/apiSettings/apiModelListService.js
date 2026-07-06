@@ -18,7 +18,19 @@
         const request = model.buildModelListRequest(normalized, {
             getRandomValue: helpers.getRandomValue || OwoApp.shared.utils.getRandomValue
         });
-        const response = await fetch(request.endpoint, request.fetchOptions);
+        const traceStore = OwoApp.platform && OwoApp.platform.ai
+            ? OwoApp.platform.ai.requestTraceStore
+            : null;
+        const response = traceStore && typeof traceStore.trackedFetch === 'function'
+            ? await traceStore.trackedFetch(request, {
+                source: 'settings.apiSettings.fetchModelList',
+                label: '拉取模型列表',
+                provider: normalized.provider,
+                model: normalized.model || '',
+                stream: false,
+                requestBody: request.requestBody
+            })
+            : await fetch(request.endpoint, request.fetchOptions);
         if (!response.ok) {
             const err = new Error(`网络响应错误: ${response.status}`);
             err.response = response;
