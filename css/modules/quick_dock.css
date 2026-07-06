@@ -1,4 +1,4 @@
-/* Quick dock feature styles (v0.2.6 owner: features/quickDock) */
+/* Quick dock feature styles (v0.2.17 owner: features/quickDock) */
 .quick-dock-root {
     position: fixed;
     right: 16px;
@@ -83,7 +83,7 @@
 .quick-dock-section,
 .quick-dock-prompt-toolbar,
 .quick-dock-panel-footer {
-    padding: 12px 16px;
+    padding: 10px 14px;
 }
 
 .quick-dock-label {
@@ -109,7 +109,9 @@
 
 .quick-dock-model-row select {
     min-width: 0;
-    padding: 10px 12px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.25;
 }
 
 .quick-dock-model-row button,
@@ -117,7 +119,8 @@
 .quick-dock-panel-footer button {
     border: 0;
     border-radius: 14px;
-    padding: 10px 12px;
+    padding: 8px 10px;
+    font-size: 12px;
     background: rgba(165, 193, 214, 0.24);
     color: #2f4d63;
     font-weight: 700;
@@ -189,26 +192,44 @@
     }
 }
 
-/* v0.2.8: 请求控制台完全嵌入悬浮球，面板可放大接近全屏 */
-.quick-dock-panel--request {
-    width: min(96vw, 760px);
-    max-height: min(90vh, 820px);
+/* v0.2.17: 控制台在悬浮球内展示；内容仍复用 debugConsole 唯一 renderer。 */
+.quick-dock-panel--console {
+    position: fixed;
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    top: max(10px, env(safe-area-inset-top));
+    bottom: 82px;
+    width: auto;
+    height: auto;
+    max-height: none;
+    min-height: 0;
 }
-
-.quick-dock-panel--request .request-console-list {
-    max-height: min(62vh, 560px);
+.quick-dock-console-mount {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #f7f7f7;
 }
-
+.quick-dock-console-mount .request-console-list,
+.quick-dock-console-mount .request-console-full-detail {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+}
+.quick-dock-console-empty {
+    padding: 24px;
+    color: #777;
+    font-size: 13px;
+}
 @media (max-width: 520px) {
-    .quick-dock-panel--request {
-        left: 8px;
-        right: 8px;
-        bottom: 78px;
-        width: auto;
-        max-height: calc(100vh - 96px);
-    }
-
-    .quick-dock-panel--request .request-console-list {
-        max-height: calc(100vh - 260px);
+    .quick-dock-panel--console {
+        left: 0;
+        right: 0;
+        top: max(0px, env(safe-area-inset-top));
+        bottom: 72px;
+        border-radius: 22px 22px 0 0;
     }
 }

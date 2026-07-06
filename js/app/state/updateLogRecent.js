@@ -1,96 +1,78 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
-    {
-        version: "0.2.8",
-        date: "2026-07-06",
-        notes: [
-            "**[悬浮球] 请求控制台入口完全收进悬浮窗**",
-            "右下角不再单独显示“请求”悬浮按钮，请求记录、复制全部、清空和详情展开都在悬浮球里的“请求”面板完成。",
-            "**[架构收口] debugConsole 改为嵌入式面板 owner**",
-            "debugConsole 不再自动挂载独立入口，只提供 renderEmbeddedRequestConsole() 给 quickDock 使用；feature gate 增加独立入口禁止检查。"
-        ]
-    },
-    {
-        version: "0.2.7",
-        date: "2026-07-06",
-        notes: [
-            "**[收口审查] 修正 v0.2.4～v0.2.6 的边界、gate 和体验问题**",
-            "补强 quickDock / cloudBackup / debugConsole 的 public facade gate；GuideSystem 自动新功能浮层默认关闭。",
-            "GitHub contents API 路径改为逐段编码；提示词面板右上角 × 直接关闭，打开请求控制台时自动收起悬浮球。"
-        ]
-    },
-    {
-        version: "0.2.6",
-        date: "2026-07-06",
-        notes: [
-            "**[悬浮球] 新增快捷悬浮球 MVP**",
-            "悬浮球可展开、关闭和拖动，提供快速切换模型、打开请求控制台、立即 GitHub 备份、恢复最新备份等入口。",
-            "**[提示词] 提示词入口加入悬浮球**",
-            "提示词面板可放大并关闭，正文用真实换行展示；读取历史内容时兼容反斜杠 n。",
-            "**[体验修正] 编辑消息与更新提醒优化**",
-            "编辑消息弹窗中，新增消息按钮移动到插入动作后面；启动时不再自动弹出新功能提醒，更新日志仍可在教程里查看。"
-        ]
-    },
-    {
-        version: "0.2.5",
-        date: "2026-07-06",
-        notes: [
-            "**[模型切换] 新增主 API 模型切换 facade**",
-            "新增 `apiModelSwitchService`，可从已保存主 API 和 API 预设中收集模型候选，并通过 `apiSettings.publicApi.listMainModels()`、`switchMainModel()` 供后续悬浮球调用。",
-            "**[云备份] GitHub 上传/恢复迁出教程页**",
-            "新增 `platform/storage/githubBackupAdapter` 和 `features/cloudBackup`，GitHub 备份、分片上传、恢复下载改走 public facade；`window.GitHubMgr` 只保留兼容转发。",
-            "**[悬浮球准备] 后续悬浮球不直接碰设置页或教程页旧对象**",
-            "v0.2.6 悬浮球可直接调用模型切换 facade、云备份 facade 和请求控制台 facade。"
-        ]
-    },
-    {
-        version: "0.2.4",
-        date: "2026-07-06",
-        notes: [
-            "**[聊天面板] 底部功能重排并紧凑化**",
-            "展开面板顺序调整为：重回、相册、识图、直接拍照、提醒、日记、档案、向量，然后再放语音、转账、礼物、剧情和其他工具；按钮 ID 保持不变，避免破坏旧事件绑定。",
-            "**[主屏] 设置类 app 集中到第二页并显示名称**",
-            "API、壁纸、自定义、教程、外观、日间/夜间模式、存储分析、魔法屋等入口统一放到第二页，原 dock 只保留占位，不再放无名称设置图标。",
-            "**[后续计划] 记录悬浮球提示词需求**",
-            "v0.2.6 悬浮球 MVP 将把提示词入口加入悬浮球；控制台/提示词面板支持大尺寸或近全屏、可点击关闭，提示词正文按真实换行展示，不把换行渲染成反斜杠 n 字符串。"
-        ]
-    },
-{
-        version: "0.2.3",
-        date: "2026-07-06",
-        notes: [
-            "**[表格记忆] 新增 XML 返回清洗和诊断 owner**",
-            "新增 `OwoApp.core.memory.tableUpdateXmlSemantics`，负责从模型返回中提取 `<memory_updates>`，兼容 Markdown 代码块、前后解释文字和缺根节点的常见坏格式。",
-            "**[定位问题] 表格记忆解析失败会写入请求控制台**",
-            "新增 `OwoApp.features.memoryTable.updateDiagnosticsService`，失败或警告时记录 rawContent、cleanedContent、extractedXml、parserError、缺失 templateId/tableId/fieldId 等信息，方便复制给 AI 排查。",
-            "**[回归 gate] 增加 MEM-TABLE-XML-01 样例**",
-            "`tools/memory-regression-gate.js` 现在会检查 XML 清洗语义、诊断 service、加载顺序和常见坏格式样例。"
-        ]
-    },
-{
-        version: "0.2.2",
-        date: "2026-07-06",
-        notes: [
-            "**[请求追踪] 新增 AI 请求 trace store**",
-            "新增 `OwoApp.platform.ai.requestTraceStore`，自动记录请求来源、provider、model、endpoint、requestBody、response、HTTP 状态、耗时和错误信息。",
-            "**[控制台] 新增请求控制台 MVP**",
-            "右下角新增“请求”入口，可以查看最近 80 条请求，展开详情并复制单条或全部请求数据。",
-            "**[覆盖范围] 接入主聊天、总结、表格记忆、论坛、日记、偷看、向量、通话、识图、生图和模型列表等 AI/API 链路**",
-            "密钥类 header 和 URL key 参数默认打码，避免复制调试数据时误泄露。"
-        ]
-    },
-{
-        version: "0.2.1",
-        date: "2026-07-06",
-        notes: [
-            "**[版本命名] 新功能开发第一版改为 v0.2.1**",
-            "后续功能迭代不再继续追加 V39/V40 作为产品版本号，旧 V27/V37/V38 只作为历史架构 gate 编号保留。",
-            "**[基线修复] 补齐根路径 gate 文档**",
-            "补齐 memory smoke、CSS ownership、legacy globals deprecation 等 gate 所需文档入口，方便后续定位新功能引入的问题。",
-            "**[范围控制] 本版不改业务逻辑**",
-            "悬浮球、请求控制台、表格记忆诊断、聊天框重排和设置第二页会从后续小版本逐步推进。"
-        ]
-    },
+    { version: "0.2.17", date: "2026-07-06", notes: [
+        "控制台改为真正的单宿主：数据管理只提供入口，悬浮球内查看唯一控制台。",
+        "主要操作补齐 recordOperation：切模型、GitHub 备份恢复、API 预设、存储分析、图片压缩等都会进控制台。",
+        "操作记录走 platform/observability/operationTraceService，敏感 token/key 会打码，详情继续按真实换行展示。"
+    ] },
+    { version: "0.2.16", date: "2026-07-06", notes: [
+        "控制台同源双宿主：悬浮球里直接查看控制台，不再跳转到数据管理页。",
+        "数据管理里的控制台去掉打开/收起二次按钮，直接复用同一个控制台 renderer。",
+        "继续保留发送、回复、AI/API 请求、响应、错误和诊断记录，普通详情中的 \n 会显示为真实换行。"
+    ] },
+    { version: "0.2.15", date: "2026-07-06", notes: [
+        "统一控制台收口：数据管理 App 成为唯一可见控制台，悬浮球只做入口。",
+        "控制台新增用户发送和 AI 回复记录，继续保留请求体、响应、错误和记忆诊断。",
+        "首页移除数据管理、提示词、外观设置；这三个入口只保留在 Dock 栏，API 仍为 Dock 第一个。"
+    ] },
+    { version: "0.2.14", date: "2026-07-06", notes: [
+        "Dock 栏第一个入口改为 API，Dock 取消白色背景并恢复普通 App 图标尺寸。",
+        "外观设置直接承载壁纸、主屏自定义、白昼/夜间模式，不再二次跳转旧页面。",
+        "数据管理直接承载教程/备份配置、请求控制台和存储分析，旧主页入口收口为兼容壳。"
+    ] },
+    { version: "0.2.13", date: "2026-07-06", notes: [
+        "App 结构重排：数据管理、提示词、外观设置进入首页和 Dock 栏。",
+        "外观设置合并壁纸、自定义、白昼模式、夜间模式入口，并以折叠面板展示。",
+        "新增数据管理 App，集中备份恢复、请求控制台、存储分析和教程入口；魔法屋改名为提示词。"
+    ] },
+    { version: "0.2.12", date: "2026-07-06", notes: [
+        "**[文档收口] docs 根路径只保留 0.1 / 0.2 / 固定入口**",
+        "移除 docs/caifen、docs/other 和根路径 release-v0.2.x 兼容副本；未来开启 0.3 时再新增 docs/0.3。"
+    ] },
+    { version: "0.2.11", date: "2026-07-06", notes: [
+        "**[文档与控制台] 0.1 文档扁平化，请求详情整页展示**",
+        "docs/0.1 里不再套 caifen 子文件夹；请求控制台详情接近整页，\\n 会显示成真实换行。"
+    ] },
+    { version: "0.2.10", date: "2026-07-06", notes: [
+        "**[文档与悬浮球] docs 版本线修正，快速切模型紧凑化**",
+        "历史架构文档归入 docs/0.1；补 docs/other；悬浮球快速切换模型只显示模型名，不再显示 provider/当前表单说明。"
+    ] },
+    { version: "0.2.9", date: "2026-07-06", notes: [
+        "**[文档收口] docs 按 0.1 / 0.2 分卷**",
+        "历史架构 gate 从 docs/0.1 导航，当前 v0.2.x 功能 release 归 docs/0.2；根路径 gate 文档继续作为 compatibility facade。"
+    ] },
+    { version: "0.2.8", date: "2026-07-06", notes: [
+        "**[悬浮球] 请求控制台完全收进悬浮窗**",
+        "取消独立右下角“请求”按钮，请求记录、详情、复制和清空都在悬浮球“请求”面板完成。"
+    ] },
+    { version: "0.2.7", date: "2026-07-06", notes: [
+        "**[收口审查] 修正 v0.2.4～v0.2.6 的边界、gate 和体验问题**",
+        "补强 quickDock / cloudBackup / debugConsole facade gate，关闭自动新功能引导，并修正 GitHub path 编码与大面板关闭细节。"
+    ] },
+    { version: "0.2.6", date: "2026-07-06", notes: [
+        "**[悬浮球] 新增快捷悬浮球 MVP**",
+        "提供快速切模型、请求控制台、提示词、GitHub 备份/恢复；编辑消息里新增消息移动到插入动作后面，并关闭启动更新提醒。"
+    ] },
+    { version: "0.2.5", date: "2026-07-06", notes: [
+        "**[模型与云备份] 新增 facade**",
+        "主 API 模型切换、GitHub 上传/恢复迁出旧教程页，悬浮球后续只调用 public facade。"
+    ] },
+    { version: "0.2.4", date: "2026-07-06", notes: [
+        "**[聊天与主屏] 功能重排**",
+        "聊天工具面板按重回、图片、提醒、记忆、其他功能重排并紧凑化；设置类 app 移到第二页并显示名称。"
+    ] },
+    { version: "0.2.3", date: "2026-07-06", notes: [
+        "**[表格记忆] XML 返回诊断**",
+        "模型返回清洗、parser error、缺失 template/table/field 等诊断会写入请求控制台，方便复制排查。"
+    ] },
+    { version: "0.2.2", date: "2026-07-06", notes: [
+        "**[请求追踪] 新增 AI/API trace store 和请求控制台 MVP**",
+        "覆盖主聊天、总结、表格记忆、论坛、日记、向量、通话、识图、生图和模型列表等链路，复制时会打码密钥类字段。"
+    ] },
+    { version: "0.2.1", date: "2026-07-06", notes: [
+        "**[版本命名] 新功能开发第一版改为 v0.2.1**",
+        "旧 V27/V37/V38 只作为历史 gate 编号保留，本版只做基线和版本标识。"
+    ] },
     {
         version: "6.8.1",
         date: "2026-06-18",

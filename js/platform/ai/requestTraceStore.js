@@ -1,34 +1,25 @@
-// --- AI request trace store (v0.2.2 canonical owner) ---
-// 平台层只记录 AI/API 请求观测数据和 trackedFetch；不渲染 UI、不处理业务语义。
+// --- Unified console trace store (v0.2.17 canonical backing store) ---
+// 平台层只记录请求 / 发送 / 回复 / 操作 / 诊断 / 错误；不渲染 UI、不处理业务语义。
 (function registerAiRequestTraceStore(global) {
     const OwoApp = global.OwoApp;
     const ai = OwoApp.platform.ai;
-    const MAX_TRACE_COUNT = 80;
+    const MAX_TRACE_COUNT = 160;
     const MAX_CAPTURE_CHARS = 2000000;
     let sequence = 0;
     const traces = [];
     const listeners = [];
 
-    function nowIso() {
-        return new Date().toISOString();
-    }
-
-    function nextTraceId() {
+    function nowIso() { return new Date().toISOString(); }
+    function nextTraceId(prefix) {
         sequence += 1;
-        return 'ai-trace-' + Date.now().toString(36) + '-' + sequence.toString(36);
+        return (prefix || 'console') + '-' + Date.now().toString(36) + '-' + sequence.toString(36);
     }
-
     function safeJsonClone(value) {
         if (value === undefined) return undefined;
         if (value === null) return null;
         if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-        try {
-            return JSON.parse(JSON.stringify(value));
-        } catch (error) {
-            return String(value);
-        }
+        try { return JSON.parse(JSON.stringify(value)); } catch (error) { return String(value); }
     }
-
     function redactSecret(value) {
         const text = String(value || '');
         if (!text) return text;
@@ -36,127 +27,92 @@
         if (text.length <= 8) return '***redacted***';
         return text.slice(0, 4) + '***redacted***' + text.slice(-4);
     }
-
     function sanitizeEndpoint(endpoint) {
-        const text = String(endpoint || '');
-        if (!text) return '';
-        return text.replace(/([?&](?:key|api_key|apikey|token|access_token)=)([^&#]+)/gi, '$1***redacted***');
+        return String(endpoint || '').replace(/([?&](?:key|api_key|apikey|token|access_token)=)([^&#]+)/gi, '$1***redacted***');
     }
-
     function sanitizeHeaders(headers) {
         if (!headers) return {};
         const output = {};
         const assign = (key, value) => {
             const name = String(key || '');
             if (!name) return;
-            if (/authorization|api-key|apikey|token|secret/i.test(name)) {
-                output[name] = redactSecret(value);
-            } else {
-                output[name] = String(value);
-            }
+            output[name] = /authorization|api-key|apikey|token|secret/i.test(name) ? redactSecret(value) : String(value);
         };
         if (typeof Headers !== 'undefined' && headers instanceof Headers) {
             headers.forEach((value, key) => assign(key, value));
-            return output;
-        }
-        if (Array.isArray(headers)) {
+        } else if (Array.isArray(headers)) {
             headers.forEach(item => Array.isArray(item) && assign(item[0], item[1]));
-            return output;
-        }
-        if (typeof headers === 'object') {
+        } else if (typeof headers === 'object') {
             Object.keys(headers).forEach(key => assign(key, headers[key]));
         }
         return output;
     }
-
     function extractRequestBody(fetchOptions, explicitBody) {
         if (explicitBody !== undefined) return safeJsonClone(explicitBody);
         const body = fetchOptions && fetchOptions.body;
         if (body === undefined || body === null) return undefined;
         if (typeof body !== 'string') return '[non-string body]';
-        try {
-            return JSON.parse(body);
-        } catch (error) {
-            return body;
-        }
+        try { return JSON.parse(body); } catch (error) { return body; }
     }
-
     function createFetchOptionsSnapshot(fetchOptions) {
         const options = fetchOptions && typeof fetchOptions === 'object' ? fetchOptions : {};
-        return {
-            method: options.method || 'GET',
-            headers: sanitizeHeaders(options.headers),
-            hasSignal: Boolean(options.signal),
-            credentials: options.credentials,
-            mode: options.mode
-        };
+        return { method: options.method || 'GET', headers: sanitizeHeaders(options.headers), hasSignal: Boolean(options.signal), credentials: options.credentials, mode: options.mode };
     }
-
     function limitText(text) {
         const value = String(text || '');
-        if (value.length <= MAX_CAPTURE_CHARS) {
-            return { text: value, truncated: false, originalLength: value.length };
-        }
-        return {
-            text: value.slice(0, MAX_CAPTURE_CHARS),
-            truncated: true,
-            originalLength: value.length
-        };
+        if (value.length <= MAX_CAPTURE_CHARS) return { text: value, truncated: false, originalLength: value.length };
+        return { text: value.slice(0, MAX_CAPTURE_CHARS), truncated: true, originalLength: value.length };
     }
-
     function parseJsonMaybe(text) {
         if (!text || typeof text !== 'string') return undefined;
         const trimmed = text.trim();
         if (!trimmed || !/^[\[{]/.test(trimmed)) return undefined;
-        try {
-            return JSON.parse(trimmed);
-        } catch (error) {
-            return undefined;
-        }
+        try { return JSON.parse(trimmed); } catch (error) { return undefined; }
     }
-
     function notify() {
         const snapshot = getRecentTraces();
         listeners.slice().forEach(listener => {
-            try {
-                listener(snapshot);
-            } catch (error) {
-                console.warn('[requestTraceStore] listener failed:', error);
-            }
+            try { listener(snapshot); } catch (error) { console.warn('[requestTraceStore] listener failed:', error); }
         });
     }
-
     function upsertTrace(trace) {
         traces.unshift(trace);
         while (traces.length > MAX_TRACE_COUNT) traces.pop();
         notify();
         return trace;
     }
-
-    function findTrace(traceId) {
-        return traces.find(trace => trace.id === traceId) || null;
+    function findTrace(traceId) { return traces.find(trace => trace.id === traceId) || null; }
+    function baseTrace(meta, kind, category, prefix) {
+        const createdAt = Number(meta.startedAt || meta.timestamp) || Date.now();
+        return {
+            id: nextTraceId(prefix || category || kind),
+            kind: kind || category || 'event',
+            category: category || kind || 'event',
+            status: meta.status || category || kind || 'event',
+            label: meta.label || '控制台记录',
+            source: meta.source || 'unknown',
+            provider: meta.provider || '',
+            model: meta.model || '',
+            endpoint: sanitizeEndpoint(meta.endpoint || ''),
+            startedAt: createdAt,
+            startedAtIso: meta.startedAtIso || new Date(createdAt).toISOString(),
+            completedAt: Number(meta.completedAt) || createdAt,
+            completedAtIso: meta.completedAtIso || new Date(Number(meta.completedAt) || createdAt).toISOString(),
+            durationMs: Number.isFinite(meta.durationMs) ? meta.durationMs : 0
+        };
     }
 
     function recordRequestStart(meta = {}) {
         const fetchOptions = meta.fetchOptions || {};
         const startedAt = Date.now();
-        const trace = {
-            id: nextTraceId(),
-            status: 'pending',
-            label: meta.label || meta.source || 'AI 请求',
-            source: meta.source || 'unknown',
-            provider: meta.provider || '',
-            model: meta.model || '',
-            stream: Boolean(meta.stream),
-            endpoint: sanitizeEndpoint(meta.endpoint),
-            fetchOptions: createFetchOptionsSnapshot(fetchOptions),
-            requestBody: extractRequestBody(fetchOptions, meta.requestBody),
-            startedAt,
-            startedAtIso: nowIso()
-        };
-        return upsertTrace(trace);
+        return upsertTrace({
+            id: nextTraceId('request'), kind: 'request', category: 'request', status: 'pending',
+            label: meta.label || meta.source || 'AI/API 请求', source: meta.source || 'unknown',
+            provider: meta.provider || '', model: meta.model || '', stream: Boolean(meta.stream), endpoint: sanitizeEndpoint(meta.endpoint),
+            fetchOptions: createFetchOptionsSnapshot(fetchOptions), requestBody: extractRequestBody(fetchOptions, meta.requestBody),
+            startedAt, startedAtIso: nowIso()
+        });
     }
-
     function recordRequestSuccess(traceId, payload = {}) {
         const trace = findTrace(traceId);
         if (!trace) return null;
@@ -179,11 +135,12 @@
         notify();
         return safeJsonClone(trace);
     }
-
     function recordRequestFailure(traceId, error) {
         const trace = findTrace(traceId);
         if (!trace) return null;
         const completedAt = Date.now();
+        trace.kind = 'request';
+        trace.category = 'error';
         trace.status = 'error';
         trace.completedAt = completedAt;
         trace.completedAtIso = nowIso();
@@ -193,62 +150,66 @@
         notify();
         return safeJsonClone(trace);
     }
-
     function recordDiagnostic(meta = {}) {
-        const createdAt = Date.now();
-        const trace = {
-            id: nextTraceId(), status: meta.status || 'diagnostic', label: meta.label || '诊断记录',
-            source: meta.source || 'diagnostic', provider: meta.provider || '', model: meta.model || '',
-            endpoint: sanitizeEndpoint(meta.endpoint || ''), fetchOptions: { method: 'DIAGNOSTIC', headers: {} },
-            requestBody: safeJsonClone(meta.requestBody), startedAt: createdAt, startedAtIso: nowIso(),
-            completedAt: createdAt, completedAtIso: nowIso(), durationMs: 0, diagnostic: safeJsonClone(meta.diagnostic),
-            responseJson: safeJsonClone(meta.responseJson), errorMessage: meta.errorMessage || ''
-        };
+        const trace = baseTrace(meta, meta.kind || 'diagnostic', meta.category || 'diagnostic', 'diagnostic');
+        Object.assign(trace, {
+            label: meta.label || '诊断记录',
+            fetchOptions: { method: 'DIAGNOSTIC', headers: {} },
+            requestBody: safeJsonClone(meta.requestBody), diagnostic: safeJsonClone(meta.diagnostic), responseJson: safeJsonClone(meta.responseJson),
+            responseBodyText: meta.responseBody !== undefined ? limitText(meta.responseBody).text : meta.responseBodyText,
+            errorMessage: meta.errorMessage || ''
+        });
         return safeJsonClone(upsertTrace(trace));
+    }
+    function recordConsoleEvent(meta = {}) {
+        const category = meta.category || meta.eventType || meta.kind || 'event';
+        const trace = baseTrace(meta, meta.kind || category, category, category);
+        Object.assign(trace, {
+            fetchOptions: meta.fetchOptions ? createFetchOptionsSnapshot(meta.fetchOptions) : { method: meta.method || 'EVENT', headers: sanitizeHeaders(meta.headers) },
+            requestBody: safeJsonClone(meta.requestBody), responseJson: safeJsonClone(meta.responseJson),
+            responseBodyText: meta.responseBodyText !== undefined ? String(meta.responseBodyText) : (meta.responseBody !== undefined ? limitText(meta.responseBody).text : undefined),
+            diagnostic: safeJsonClone(meta.diagnostic), event: safeJsonClone(meta.event), message: safeJsonClone(meta.message), content: meta.content !== undefined ? String(meta.content) : undefined,
+            parts: safeJsonClone(meta.parts), extra: safeJsonClone(meta.extra), errorMessage: meta.errorMessage || '', errorStack: meta.errorStack || '',
+            role: meta.role || '', chatId: meta.chatId || '', chatType: meta.chatType || '', messageId: meta.messageId || '', senderId: meta.senderId || ''
+        });
+        return safeJsonClone(upsertTrace(trace));
+    }
+    function recordConversationEvent(meta = {}) {
+        const role = String(meta.role || (meta.message && meta.message.role) || '').toLowerCase();
+        const category = role === 'assistant' || role === 'char' || role === 'ai' ? 'reply' : role === 'user' ? 'message' : 'event';
+        return recordConsoleEvent(Object.assign({}, meta, {
+            kind: category,
+            category,
+            status: category,
+            label: meta.label || (category === 'reply' ? 'AI 回复消息' : category === 'message' ? '用户发送消息' : '聊天事件'),
+            source: meta.source || 'conversation',
+            content: meta.content !== undefined ? meta.content : (meta.message && meta.message.content),
+            message: meta.message || { id: meta.messageId || '', role, senderId: meta.senderId || '', chatId: meta.chatId || '', chatType: meta.chatType || '', timestamp: meta.timestamp || Date.now() }
+        }));
+    }
+    function recordOperation(meta = {}) { return recordConsoleEvent(Object.assign({ kind: 'operation', category: 'operation', status: 'operation', label: '操作记录' }, meta)); }
+    function recordErrorEvent(meta = {}) {
+        const error = meta.error || {};
+        return recordConsoleEvent(Object.assign({ kind: 'error', category: 'error', status: 'error', label: '运行错误', source: 'window.error' }, meta, {
+            errorMessage: meta.errorMessage || error.message || String(error || 'Unknown error'), errorStack: meta.errorStack || error.stack || ''
+        }));
     }
 
     async function captureResponse(traceId, response, basePayload) {
-        if (!response) {
-            recordRequestSuccess(traceId, basePayload);
-            return;
-        }
-        try {
-            const text = await response.text();
-            recordRequestSuccess(traceId, Object.assign({}, basePayload, { responseText: text }));
-        } catch (error) {
-            recordRequestSuccess(traceId, Object.assign({}, basePayload, { captureError: error }));
-        }
+        if (!response) { recordRequestSuccess(traceId, basePayload); return; }
+        try { recordRequestSuccess(traceId, Object.assign({}, basePayload, { responseText: await response.text() })); }
+        catch (error) { recordRequestSuccess(traceId, Object.assign({}, basePayload, { captureError: error })); }
     }
-
     async function trackedFetch(request, meta = {}) {
         const req = request || {};
         const endpoint = req.endpoint || meta.endpoint;
         const fetchOptions = req.fetchOptions || meta.fetchOptions || {};
-        const trace = recordRequestStart({
-            label: meta.label,
-            source: meta.source,
-            provider: meta.provider,
-            model: meta.model,
-            stream: meta.stream,
-            endpoint,
-            fetchOptions,
-            requestBody: meta.requestBody !== undefined ? meta.requestBody : req.requestBody
-        });
+        const trace = recordRequestStart({ label: meta.label, source: meta.source, provider: meta.provider, model: meta.model, stream: meta.stream, endpoint, fetchOptions, requestBody: meta.requestBody !== undefined ? meta.requestBody : req.requestBody });
         try {
             const response = await global.fetch(endpoint, fetchOptions);
-            const basePayload = {
-                responseStatus: response.status,
-                responseOk: response.ok,
-                responseHeaders: response.headers
-            };
-            let clonedResponse = null;
-            try {
-                clonedResponse = response.clone();
-            } catch (cloneError) {
-                recordRequestSuccess(trace.id, Object.assign({}, basePayload, { captureError: cloneError }));
-                return response;
-            }
-            captureResponse(trace.id, clonedResponse, basePayload);
+            const basePayload = { responseStatus: response.status, responseOk: response.ok, responseHeaders: response.headers };
+            try { captureResponse(trace.id, response.clone(), basePayload); }
+            catch (cloneError) { recordRequestSuccess(trace.id, Object.assign({}, basePayload, { captureError: cloneError })); }
             return response;
         } catch (error) {
             recordRequestFailure(trace.id, error);
@@ -256,38 +217,20 @@
         }
     }
 
-    function getRecentTraces() {
-        return traces.map(trace => safeJsonClone(trace));
-    }
-
-    function clearTraces() {
-        traces.length = 0;
-        notify();
-    }
-
+    function getRecentTraces() { return traces.map(trace => safeJsonClone(trace)); }
+    function clearTraces() { traces.length = 0; notify(); }
     function subscribe(listener) {
         if (typeof listener !== 'function') return function noop() {};
         listeners.push(listener);
-        return function unsubscribe() {
-            const index = listeners.indexOf(listener);
-            if (index >= 0) listeners.splice(index, 1);
-        };
+        return function unsubscribe() { const index = listeners.indexOf(listener); if (index >= 0) listeners.splice(index, 1); };
     }
+    function formatTraceForCopy(trace) { return JSON.stringify(safeJsonClone(trace), null, 2); }
 
-    function formatTraceForCopy(trace) {
-        return JSON.stringify(safeJsonClone(trace), null, 2);
+    ai.requestTraceStore = { trackedFetch, recordRequestStart, recordRequestSuccess, recordRequestFailure, recordDiagnostic, recordConsoleEvent, recordConversationEvent, recordOperation, recordErrorEvent, getRecentTraces, clearTraces, subscribe, formatTraceForCopy, getMaxTraceCount: () => MAX_TRACE_COUNT };
+
+    if (!global.__owoUnifiedConsoleErrorHookInstalled && global.addEventListener) {
+        global.__owoUnifiedConsoleErrorHookInstalled = true;
+        global.addEventListener('error', event => recordErrorEvent({ source: 'window.error', errorMessage: event && event.message, error: event && event.error, extra: { filename: event && event.filename, lineno: event && event.lineno, colno: event && event.colno } }));
+        global.addEventListener('unhandledrejection', event => { const reason = event && event.reason; recordErrorEvent({ source: 'window.unhandledrejection', errorMessage: reason && reason.message ? reason.message : String(reason || 'Unhandled rejection'), error: reason, extra: { type: 'unhandledrejection' } }); });
     }
-
-    ai.requestTraceStore = {
-        trackedFetch,
-        recordRequestStart,
-        recordRequestSuccess,
-        recordRequestFailure,
-        recordDiagnostic,
-        getRecentTraces,
-        clearTraces,
-        subscribe,
-        formatTraceForCopy,
-        getMaxTraceCount: () => MAX_TRACE_COUNT
-    };
 })(window);

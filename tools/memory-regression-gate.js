@@ -57,7 +57,7 @@ function assertNoForbidden(text, rules, label) {
 console.log('OWO V27 memory regression gate\n');
 
 const smokePath = path.join(root, 'docs/smoke-memory.md');
-const planPath = path.join(root, 'docs/v27-memory-regression-gate-plan.md');
+const planPath = path.join(root, 'docs/0.1/v27-memory-regression-gate-plan.md');
 const smokeText = requireFile(smokePath, 'V27 memory smoke 文档');
 requireFile(planPath, 'V27 memory regression plan');
 

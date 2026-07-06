@@ -21,10 +21,15 @@
     console.error = function () { pushLog('error', arguments); origError.apply(console, arguments); };
 })();
 
-function setupStorageAnalysisScreen() {
-    const screen = document.getElementById('storage-analysis-screen');
-    const chartContainer = document.getElementById('storage-chart-container');
-    const detailsList = document.getElementById('storage-details-list');
+function setupStorageAnalysisScreen(options) {
+    options = options || {};
+    const screen = options.screen || document.getElementById('storage-analysis-screen');
+    const root = options.root && options.root.querySelector ? options.root : (screen && screen.querySelector ? screen : document);
+    const byId = (id) => (root.querySelector ? root.querySelector('#' + id) : null) || document.getElementById(id);
+    const all = (selector) => Array.from(root.querySelectorAll ? root.querySelectorAll(selector) : document.querySelectorAll(selector));
+    const chartContainer = byId('storage-chart-container');
+    const detailsList = byId('storage-details-list');
+    if (!screen || !chartContainer || !detailsList) return null;
     let myChart = null;
 
     const colorPalette = ['#ff80ab', '#90caf9', '#a5d6a7', '#fff59d', '#b39ddb', '#ffcc80'];
@@ -99,7 +104,7 @@ function setupStorageAnalysisScreen() {
         detailsList.innerHTML = '';
         const totalSize = info.totalSize;
 
-        const totalSizeEl = document.getElementById('storage-total-size');
+        const totalSizeEl = byId('storage-total-size');
         if (totalSizeEl) {
             totalSizeEl.textContent = formatBytes(totalSize);
         }
@@ -131,23 +136,28 @@ function setupStorageAnalysisScreen() {
         });
     }
 
-    const observer = new MutationObserver(async (mutations) => {
-        if (screen.classList.contains('active')) {
-            showToast('正在分析存储空间...');
-            const storageInfo = await dataStorage.getStorageInfo();
-            if (storageInfo) {
-                renderStorageChart(storageInfo, colorPalette);
-                renderStorageDetails(storageInfo, colorPalette);
-                updatePersistenceStatus();
-            } else {
-                showToast('分析失败');
-            }
+    async function renderCurrentStorageInfo() {
+        if (!chartContainer || !detailsList || typeof dataStorage === 'undefined') return;
+        showToast('正在分析存储空间...');
+        const storageInfo = await dataStorage.getStorageInfo();
+        if (storageInfo) {
+            renderStorageChart(storageInfo, colorPalette);
+            renderStorageDetails(storageInfo, colorPalette);
+            updatePersistenceStatus();
+        } else {
+            showToast('分析失败');
         }
-    });
+    }
 
-    observer.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    if (options.observe !== false && screen) {
+        const observer = new MutationObserver(async () => {
+            if (screen.classList.contains('active') || screen.closest('.screen.active')) await renderCurrentStorageInfo();
+        });
+        observer.observe(screen, { attributes: true, attributeFilter: ['class'] });
+    }
+    if (options.renderNow || options.immediate) renderCurrentStorageInfo();
 
-    const compressAllBtn = document.getElementById('compress-all-images-btn');
+    const compressAllBtn = byId('compress-all-images-btn');
     if (compressAllBtn) {
         compressAllBtn.addEventListener('click', async () => {
             const confirmed = await showAppConfirmDialog({
@@ -284,20 +294,20 @@ function setupStorageAnalysisScreen() {
 
     // 底部控制台：全部/日志/警告/报错 四类筛选（移动端友好）
     (function setupStorageConsoleWidget() {
-        var widget = document.getElementById('storage-console-widget');
-        var bar = document.getElementById('storage-console-bar');
-        var panel = document.getElementById('storage-console-panel');
-        var listEl = document.getElementById('storage-console-list');
-        var clearBtn = document.getElementById('storage-console-clear-btn');
-        var exportBtn = document.getElementById('storage-console-export-btn');
-        var countLog = document.getElementById('storage-console-count-log');
-        var countWarn = document.getElementById('storage-console-count-warn');
-        var countError = document.getElementById('storage-console-count-error');
-        var filterLabel = document.querySelector('.storage-console-filter-label');
+        var widget = byId('storage-console-widget');
+        var bar = byId('storage-console-bar');
+        var panel = byId('storage-console-panel');
+        var listEl = byId('storage-console-list');
+        var clearBtn = byId('storage-console-clear-btn');
+        var exportBtn = byId('storage-console-export-btn');
+        var countLog = byId('storage-console-count-log');
+        var countWarn = byId('storage-console-count-warn');
+        var countError = byId('storage-console-count-error');
+        var filterLabel = (root.querySelector('.storage-console-filter-label'));
         
-        var zoomInBtn = document.getElementById('storage-console-zoom-in');
-        var zoomOutBtn = document.getElementById('storage-console-zoom-out');
-        var zoomResetBtn = document.getElementById('storage-console-zoom-reset');
+        var zoomInBtn = byId('storage-console-zoom-in');
+        var zoomOutBtn = byId('storage-console-zoom-out');
+        var zoomResetBtn = byId('storage-console-zoom-reset');
         
         var currentFilter = 'all'; // 'all' | 'log' | 'warn' | 'error'
         var currentFontSize = 12; // default font size
@@ -381,11 +391,11 @@ function setupStorageAnalysisScreen() {
             }
         });
 
-        document.querySelectorAll('.storage-console-tab').forEach(function (tab) {
+        all('.storage-console-tab').forEach(function (tab) {
             tab.addEventListener('click', function () {
                 var filter = tab.getAttribute('data-filter') || 'all';
                 currentFilter = filter;
-                document.querySelectorAll('.storage-console-tab').forEach(function (t) { t.classList.remove('active'); });
+                all('.storage-console-tab').forEach(function (t) { t.classList.remove('active'); });
                 tab.classList.add('active');
                 renderConsole();
             });
@@ -423,7 +433,7 @@ function setupStorageAnalysisScreen() {
         }
 
         window.__storageConsoleOnLog = function () {
-            if (!screen.classList.contains('active')) return;
+            if (screen && !screen.classList.contains('active') && !screen.closest('.screen.active')) return;
             renderConsole();
         };
 
@@ -433,7 +443,7 @@ function setupStorageAnalysisScreen() {
     async function updatePersistenceStatus() {
         if (navigator.storage && navigator.storage.persisted) {
             const isPersisted = await navigator.storage.persisted();
-            let statusContainer = document.getElementById('storage-persistence-status');
+            let statusContainer = byId('storage-persistence-status');
             
             if (!statusContainer) {
                 statusContainer = document.createElement('div');
@@ -454,7 +464,7 @@ function setupStorageAnalysisScreen() {
                 ${!isPersisted ? '<button id="manual-persist-btn" class="btn btn-small btn-primary" style="padding: 6px 12px; font-size: 13px;">立即开启</button>' : ''}
             `;
 
-            const btn = document.getElementById('manual-persist-btn');
+            const btn = byId('manual-persist-btn');
             if (btn) {
                 btn.onclick = async () => {
                     const persisted = await navigator.storage.persist();
@@ -478,7 +488,7 @@ function setupStorageAnalysisScreen() {
                 const color = pct > 90 ? '#f44336' : pct > 70 ? '#ff9800' : '#4caf50';
 
                 // 移除旧的进度条节点，避免重复渲染
-                const oldQuotaDiv = document.getElementById('storage-quota-status');
+                const oldQuotaDiv = byId('storage-quota-status');
                 if (oldQuotaDiv) oldQuotaDiv.remove();
 
                 const quotaDiv = document.createElement('div');
@@ -493,7 +503,7 @@ function setupStorageAnalysisScreen() {
                     ${pct > 90 ? '<div style="font-size:12px;color:#f44336;margin-top:4px;">⚠️ 空间即将耗尽，请导出备份并清理数据！</div>' : ''}
                 `;
                 
-                const statusContainer = document.getElementById('storage-persistence-status');
+                const statusContainer = byId('storage-persistence-status');
                 if (statusContainer && statusContainer.parentNode) {
                     statusContainer.parentNode.insertBefore(quotaDiv, statusContainer.nextSibling);
                 } else if (chartContainer && chartContainer.parentNode) {
@@ -504,6 +514,12 @@ function setupStorageAnalysisScreen() {
             }
         }
     }
+
+    return {
+        refresh: renderCurrentStorageInfo,
+        root: root,
+        embedded: !!options.embedded
+    };
 }
 
 // --- 持久化存储逻辑 ---

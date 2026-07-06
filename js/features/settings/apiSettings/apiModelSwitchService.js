@@ -1,4 +1,4 @@
-// --- Main API model switch service (v0.2.5) ---
+// --- Main API model switch service (v0.2.17) ---
 // 只负责主 API 模型候选收集和切换；不处理聊天请求、不操作悬浮球 UI。
 (function registerApiModelSwitchService(global) {
     const OwoApp = global.OwoApp;
@@ -6,13 +6,8 @@
     const settingsModel = apiSettings.model;
     const storageRepository = OwoApp.platform.storage.repository;
 
-    function normalizeModelName(value) {
-        return String(value || '').trim();
-    }
-
-    function normalizeProvider(value) {
-        return String(value || 'newapi').trim() || 'newapi';
-    }
+    function normalizeModelName(value) { return String(value || '').trim(); }
+    function normalizeProvider(value) { return String(value || 'newapi').trim() || 'newapi'; }
 
     function getMainApiSettings() {
         const db = global.db || {};
@@ -20,17 +15,40 @@
         return db.apiSettings;
     }
 
+    function getOperationTraceService() {
+        return OwoApp.platform && OwoApp.platform.observability
+            ? OwoApp.platform.observability.operationTraceService
+            : null;
+    }
+
+    function recordApiOperation(label, status, event, error) {
+        const ops = getOperationTraceService();
+        if (!ops || typeof ops.recordOperation !== 'function') return null;
+        return ops.recordOperation({
+            source: 'features/settings/apiSettings',
+            sourceModule: 'apiModelSwitchService',
+            action: label,
+            label,
+            status: status || 'operation',
+            data: event || {},
+            errorMessage: error && error.message ? error.message : '',
+            errorStack: error && error.stack ? String(error.stack) : ''
+        });
+    }
+
     function createCandidate(source, data, extra) {
         const normalized = settingsModel.normalizeApiFormData(data || {});
         const modelName = normalizeModelName(normalized.model);
         if (!modelName) return null;
         const provider = normalizeProvider(normalized.provider);
-        const suffix = extra && extra.name ? ` · ${extra.name}` : '';
+        const sourceName = extra && extra.name ? String(extra.name) : '';
+        const suffix = sourceName ? ` · ${sourceName}` : '';
         return {
             id: `${source}:${provider}:${modelName}${suffix}`,
             source,
-            name: extra && extra.name ? String(extra.name) : '',
-            label: `${modelName} (${provider}${suffix})`,
+            name: sourceName,
+            label: modelName,
+            displayLabel: modelName,
             provider,
             url: normalized.url,
             key: normalized.key,
@@ -108,40 +126,60 @@
     }
 
     async function switchMainModel(candidateOrModel, options = {}) {
+        const startedAt = Date.now();
         const modelName = normalizeModelName(candidateOrModel);
-        if (!modelName) throw new Error('请选择要切换的模型');
-        const candidate = findCandidate(modelName);
-        const current = getMainApiSettings();
-        const next = candidate
-            ? Object.assign({}, current, {
-                provider: candidate.provider || current.provider || 'newapi',
-                url: candidate.url || current.url || '',
-                key: candidate.key || current.key || '',
-                model: candidate.model
-            })
-            : Object.assign({}, current, { model: modelName });
-        if (settingsModel.isBlockedBaseUrl(next.url, global.BLOCKED_API_DOMAINS || [])) {
-            throw new Error('该 API 站点已被屏蔽，无法切换');
+        const currentBefore = settingsModel.normalizeApiFormData(getMainApiSettings());
+        try {
+            if (!modelName) throw new Error('请选择要切换的模型');
+            const candidate = findCandidate(modelName);
+            const current = getMainApiSettings();
+            const next = candidate
+                ? Object.assign({}, current, {
+                    provider: candidate.provider || current.provider || 'newapi',
+                    url: candidate.url || current.url || '',
+                    key: candidate.key || current.key || '',
+                    model: candidate.model
+                })
+                : Object.assign({}, current, { model: modelName });
+            if (settingsModel.isBlockedBaseUrl(next.url, global.BLOCKED_API_DOMAINS || [])) {
+                throw new Error('该 API 站点已被屏蔽，无法切换');
+            }
+            global.db.apiSettings = next;
+            if (options.syncForm !== false) syncVisibleMainApiForm(next);
+            if (options.save !== false) await storageRepository.saveData();
+            const result = {
+                success: true,
+                model: next.model,
+                provider: next.provider || 'newapi',
+                source: candidate ? candidate.source : 'manual'
+            };
+            recordApiOperation('切换主模型', 'success', {
+                sourceTrigger: options.sourceTrigger || 'apiSettings',
+                fromModel: currentBefore.model || '',
+                toModel: next.model || '',
+                provider: next.provider || 'newapi',
+                candidateSource: result.source,
+                hasKey: !!next.key,
+                saved: options.save !== false,
+                syncedForm: options.syncForm !== false,
+                durationMs: Date.now() - startedAt
+            });
+            return result;
+        } catch (error) {
+            recordApiOperation('切换主模型失败', 'error', {
+                sourceTrigger: options.sourceTrigger || 'apiSettings',
+                requestedModel: modelName,
+                previousModel: currentBefore.model || '',
+                previousProvider: currentBefore.provider || '',
+                durationMs: Date.now() - startedAt
+            }, error);
+            throw error;
         }
-        global.db.apiSettings = next;
-        if (options.syncForm !== false) syncVisibleMainApiForm(next);
-        if (options.save !== false) await storageRepository.saveData();
-        return {
-            success: true,
-            model: next.model,
-            provider: next.provider || 'newapi',
-            source: candidate ? candidate.source : 'manual'
-        };
     }
 
     function getCurrentMainModel() {
         const settings = settingsModel.normalizeApiFormData(getMainApiSettings());
-        return {
-            model: settings.model,
-            provider: settings.provider,
-            url: settings.url,
-            hasKey: !!settings.key
-        };
+        return { model: settings.model, provider: settings.provider, url: settings.url, hasKey: !!settings.key };
     }
 
     apiSettings.apiModelSwitchService = {

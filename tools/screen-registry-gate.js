@@ -53,7 +53,7 @@ const htmlScreenIds = Array.from(indexText.matchAll(/<[^>]*\bclass=["'][^"']*\bs
 const uniqueHtmlScreenIds = [...new Set(htmlScreenIds)];
 const manifestIds = [...new Set(Array.from(manifestText.matchAll(/id:\s*'([^']+-screen)'/g)).map(m => m[1]))];
 
-if (uniqueHtmlScreenIds.length !== 69) error(`index.html screen 数量应为 69，当前为 ${uniqueHtmlScreenIds.length}`);
+if (uniqueHtmlScreenIds.length !== 70) error(`index.html screen 数量应为 70，当前为 ${uniqueHtmlScreenIds.length}`);
 if (manifestIds.length !== uniqueHtmlScreenIds.length) error(`screenManifest 登记数量 ${manifestIds.length} 与 DOM screen 数量 ${uniqueHtmlScreenIds.length} 不一致`);
 
 for (const id of uniqueHtmlScreenIds) {

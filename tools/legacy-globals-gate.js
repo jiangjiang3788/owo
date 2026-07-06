@@ -28,7 +28,7 @@ function escapeRegExp(value) {
 const ownershipPath = path.join(root, 'tools/ownership-map.json');
 const namespacePath = path.join(root, 'js/app/namespace.js');
 const deprecationPath = path.join(root, 'js/app/legacyDeprecation.js');
-const docPath = path.join(root, 'docs/v38-legacy-globals-deprecation-plan.md');
+const docPath = path.join(root, 'docs/0.1/v38-legacy-globals-deprecation-plan.md');
 const indexPath = path.join(root, 'index.html');
 
 for (const [file, label] of [

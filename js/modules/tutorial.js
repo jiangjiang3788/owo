@@ -40,13 +40,38 @@ var importBackupData = window.OwoApp.compat.expose('importBackupData', tutorialL
     note: 'V8: 完整备份恢复编排归 backupAdapter'
 });
 
-function setupTutorialApp() {
-    const tutorialContentArea = document.getElementById('tutorial-content-area');
+
+function recordDataManagementOperation(label, status, event, error) {
+    const ops = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+        ? window.OwoApp.platform.observability.operationTraceService
+        : null;
+    if (!ops || typeof ops.recordOperation !== 'function') return null;
+    return ops.recordOperation({
+        source: 'features/dataManagement',
+        sourceModule: 'modules/tutorial.js compatibility',
+        action: label,
+        label,
+        status: status || 'operation',
+        data: event || {},
+        errorMessage: error && error.message ? error.message : ''
+    });
+}
+
+function resolveTutorialContentArea(container) {
+    if (container && container.nodeType === 1) return container;
+    const activeDataManagementArea = document.querySelector('#data-management-screen.active #data-management-tutorial-content-area');
+    return activeDataManagementArea || document.getElementById('tutorial-content-area');
+}
+
+function setupTutorialApp(container) {
+    const tutorialContentArea = resolveTutorialContentArea(container);
+    if (!tutorialContentArea || tutorialContentArea.dataset.tutorialBindings === 'true') return;
+    tutorialContentArea.dataset.tutorialBindings = 'true';
     tutorialContentArea.addEventListener('click', (e) => {
         const header = e.target.closest('.tutorial-header') || 
                        e.target.closest('.tutorial-modern-header') || 
                        e.target.closest('.tutorial-rabbit-card-title');
-        if (header) {
+        if (header && tutorialContentArea.contains(header)) {
             header.parentElement.classList.toggle('open');
         }
     });
@@ -529,8 +554,10 @@ function customAlert(message, title = '提示') {
     });
 }
 
-function renderTutorialContent() {
-    const tutorialContentArea = document.getElementById('tutorial-content-area');
+function renderTutorialContent(container) {
+    const tutorialContentArea = resolveTutorialContentArea(container);
+    if (!tutorialContentArea) return;
+    setupTutorialApp(tutorialContentArea);
     const mode = typeof getAppearanceMode === 'function' ? getAppearanceMode() : 'classic';
     const isModern = mode === 'modern';
     const isRabbit = mode === 'rabbit';
@@ -640,9 +667,11 @@ function renderTutorialContent() {
 
             const filename = tutorialBackupAdapter.createBackupFilename('章鱼喷墨_备份数据');
             await tutorialFileAdapter.downloadCompressedJson(fullBackupData, filename);
+            recordDataManagementOperation('导出完整备份', 'success', { filename, exportVersion: fullBackupData && fullBackupData._exportVersion, timestamp: fullBackupData && fullBackupData._exportTimestamp });
             loadingBtn = false
             showToast('聊天记录导出成功');
         }catch (e){
+            recordDataManagementOperation('导出完整备份失败', 'error', {}, e);
             loadingBtn = false
             showToast(`导出失败, 发生错误: ${e.message}`);
             console.error('导出错误详情:', e);
@@ -728,9 +757,11 @@ function renderTutorialContent() {
             const partialData = await createPartialBackupData(selected);
             const filename = tutorialBackupAdapter.createBackupFilename('章鱼喷墨_分类导出');
             await tutorialFileAdapter.downloadCompressedJson(partialData, filename);
+            recordDataManagementOperation('分类导出数据', 'success', { filename, selectedKeys: selected, exportTables: partialData && partialData._exportTables });
             loadingBtn = false;
             showToast('分类导出成功');
         } catch (e) {
+            recordDataManagementOperation('分类导出数据失败', 'error', { selectedKeys: selected }, e);
             loadingBtn = false;
             showToast(`分类导出失败: ${e.message}`);
             console.error('分类导出错误:', e);
@@ -1384,14 +1415,17 @@ function renderTutorialContent() {
                 const importResult = await importBackupData(data);
 
                 if (importResult.success) {
+                    recordDataManagementOperation('导入完整备份', 'success', { fileName: file.name, fileSize: file.size, result: importResult });
                     showToast(`数据导入成功！${importResult.message} 应用即将刷新。`);
                     setTimeout(() => {
                         window.location.reload();
                     }, 1500);
                 } else {
+                    recordDataManagementOperation('导入完整备份失败', 'error', { fileName: file.name, fileSize: file.size, result: importResult }, new Error(importResult.error || '导入失败'));
                     showToast(`导入失败: ${importResult.error}`);
                 }
             } catch (error) {
+                recordDataManagementOperation('导入完整备份失败', 'error', { fileName: file.name, fileSize: file.size }, error);
                 console.error("导入失败:", error);
                 showToast(`解压或解析文件时发生错误: ${error.message}`);
             } finally {
@@ -1550,16 +1584,20 @@ function renderTutorialContent() {
             const dbName = '章鱼喷墨机DB_ee';
             const req = indexedDB.deleteDatabase(dbName);
             req.onsuccess = () => {
+                recordDataManagementOperation('清除所有本地数据', 'success', { localStorageKeys: keysToRemove, indexedDb: dbName });
                 showToast('已清除本项目数据，即将刷新…');
                 setTimeout(() => window.location.reload(), 800);
             };
             req.onerror = () => {
+                recordDataManagementOperation('清除所有本地数据失败', 'error', { indexedDb: dbName }, new Error('indexedDB.deleteDatabase error'));
                 showToast('清除数据库时出错，请重试或手动清除');
             };
             req.onblocked = () => {
+                recordDataManagementOperation('清除所有本地数据阻塞', 'error', { indexedDb: dbName }, new Error('indexedDB.deleteDatabase blocked'));
                 showToast('请关闭其他标签页中打开的同一页面后重试');
             };
         } catch (e) {
+            recordDataManagementOperation('清除所有本地数据失败', 'error', {}, e);
             console.error(e);
             showToast('清除失败: ' + e.message);
         }
@@ -1593,12 +1631,15 @@ function renderTutorialContent() {
                 showToast('正在分类导入...');
                 const result = await importPartialBackupData(data);
                 if (result.success) {
+                    recordDataManagementOperation('分类导入数据', 'success', { fileName: file.name, fileSize: file.size, exportTables: data._exportTables, result });
                     showToast(result.message + ' 应用即将刷新。');
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
+                    recordDataManagementOperation('分类导入数据失败', 'error', { fileName: file.name, fileSize: file.size, exportTables: data._exportTables, result }, new Error(result.error || '分类导入失败'));
                     showToast('分类导入失败: ' + result.error);
                 }
             } catch (error) {
+                recordDataManagementOperation('分类导入数据失败', 'error', { fileName: file.name, fileSize: file.size }, error);
                 console.error('分类导入失败:', error);
                 showToast('解压或解析失败: ' + (error.message || String(error)));
             }

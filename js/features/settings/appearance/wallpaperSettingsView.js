@@ -129,6 +129,9 @@
         const db = runtime.state();
         const upload = document.getElementById('wallpaper-upload');
         const preview = document.getElementById('wallpaper-preview');
+        const bindingRoot = preview ? (preview.closest('#appearance-settings-screen') || preview.closest('#wallpaper-screen') || preview.parentElement) : null;
+        if (bindingRoot && bindingRoot.dataset.wallpaperAppBound === 'true') return;
+        if (bindingRoot) bindingRoot.dataset.wallpaperAppBound = 'true';
         setPreviewImage(preview, db.wallpaper);
 
         const resetBtn = document.getElementById('wallpaper-reset-btn');

@@ -79,7 +79,8 @@ const defaultIcons = {
     'piggy-bank-screen': {name: '存钱罐', url: 'https://i.postimg.cc/3RmWRRtS/chan-18.png'},
     'pomodoro-screen': {name: '番茄钟', url: 'https://i.postimg.cc/PrYGRDPF/chan-76.png'},
     'storage-analysis-screen': {name: '存储分析', url: 'https://i.postimg.cc/J0F3Lt0T/chan-107.png'},
-    'magic-room-screen': {name: '魔法屋', url: 'https://i.postimg.cc/hPCcZG3v/png-(143).png'},
+    'data-management-screen': {name: '数据管理', url: 'https://i.postimg.cc/J0F3Lt0T/chan-107.png'},
+    'magic-room-screen': {name: '提示词', url: 'https://i.postimg.cc/hPCcZG3v/png-(143).png'},
     'appearance-settings-screen': {name: '外观设置', url: 'https://i.postimg.cc/KcgT1wzQ/DF424409FC54EDFF74D78ECB1311E1D7.png'},
     'theater-screen': {name: '小剧场', url: 'https://i.postimg.cc/t4gXjG8P/7632D362A35EC703E7A81F6FF0F8AE34.png'}
 };
@@ -99,4 +100,4 @@ const peekScreenApps = {
 };
 
 const appName = "章鱼喷墨机";
-const appVersion = "0.2.8";
+const appVersion = "0.2.17";

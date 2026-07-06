@@ -77,6 +77,7 @@
     <link rel="stylesheet" href="css/modules/character_import.css">
     <link rel="stylesheet" href="css/modules/debug_console.css">
     <link rel="stylesheet" href="css/modules/quick_dock.css">
+    <link rel="stylesheet" href="css/modules/data_management.css">
 </head>
 
 <body>
@@ -920,63 +921,8 @@
         <div id="api-settings-screen" class="screen" data-screen-template="api-settings-screen" data-template-hydrated="pending">
             <!-- V36: api-settings-screen high-risk static template moved to js/features/settings/settingsScreenTemplates.js; hydrated by screenTemplateRegistry. -->
         </div>
-        <div id="wallpaper-screen" class="screen">
-            <header class="app-header"><button class="back-btn" data-target="home-screen">‹</button>
-                <div class="title-container">
-                    <h1 class="title">更换壁纸</h1>
-                </div>
-                <div class="placeholder"></div>
-            </header>
-            <main class="content" style="padding-bottom:32px;">
-                <!-- 主屏幕壁纸 -->
-                <div class="wallpaper-section-label">主屏幕壁纸</div>
-                <div class="wallpaper-preview" id="wallpaper-preview"><span>当前壁纸预览</span></div>
-                <button type="button" id="wallpaper-reset-btn" class="btn btn-secondary" style="margin-bottom: 12px;">重置为默认壁纸</button>
-                <input type="file"
-                    id="wallpaper-upload" accept="image/*" style="display: none;"><label for="wallpaper-upload"
-                    class="btn btn-primary">从相册选择新壁纸</label>
-
-                <!-- 全局聊天壁纸 -->
-                <div class="wallpaper-section-label" style="margin-top:28px;">全局聊天壁纸</div>
-                <div class="wallpaper-preview" id="global-chat-wallpaper-preview"><span id="global-chat-wallpaper-preview-text">当前聊天壁纸预览</span></div>
-                <div class="wallpaper-music-actions">
-                    <button type="button" id="global-chat-wallpaper-local-btn" class="btn btn-primary">本地上传</button>
-                    <button type="button" id="global-chat-wallpaper-url-btn" class="btn btn-secondary">输入 URL</button>
-                    <button type="button" id="global-chat-wallpaper-reset-btn" class="btn btn-secondary">恢复默认</button>
-                </div>
-                <div class="music-wallpaper-url-row" id="global-chat-wallpaper-url-row" style="display:none;">
-                    <input type="text" id="global-chat-wallpaper-url-input" class="form-group" placeholder="输入背景图片链接 (http/https)" style="flex:1;margin:0;">
-                    <button type="button" id="global-chat-wallpaper-url-apply" class="btn btn-primary btn-small">使用</button>
-                </div>
-                <input type="file" id="global-chat-wallpaper-file-input" accept="image/*" hidden>
-
-                <!-- 全局通话壁纸 -->
-                <div class="wallpaper-section-label" style="margin-top:28px;">全局通话壁纸</div>
-                <div class="wallpaper-preview" id="global-call-wallpaper-preview"><span id="global-call-wallpaper-preview-text">当前通话壁纸预览</span></div>
-                <div class="wallpaper-music-actions">
-                    <button type="button" id="global-call-wallpaper-local-btn" class="btn btn-primary">本地上传</button>
-                    <button type="button" id="global-call-wallpaper-url-btn" class="btn btn-secondary">输入 URL</button>
-                    <button type="button" id="global-call-wallpaper-reset-btn" class="btn btn-secondary">恢复默认</button>
-                </div>
-                <div class="music-wallpaper-url-row" id="global-call-wallpaper-url-row" style="display:none;">
-                    <input type="text" id="global-call-wallpaper-url-input" class="form-group" placeholder="输入背景图片链接 (http/https)" style="flex:1;margin:0;">
-                    <button type="button" id="global-call-wallpaper-url-apply" class="btn btn-primary btn-small">使用</button>
-                </div>
-                <input type="file" id="global-call-wallpaper-file-input" accept="image/*" hidden>
-
-            </main>
-        </div>
-        <div id="customize-screen" class="screen">
-            <header class="app-header"><button class="back-btn" data-target="home-screen">‹</button>
-                <div class="title-container">
-                    <h1 class="title">主屏幕自定义</h1>
-                </div>
-                <div class="placeholder"></div>
-            </header>
-            <main class="content">
-                <form id="customize-form"></form>
-            </main>
-        </div>
+        <div id="wallpaper-screen" class="screen" data-merged-into="appearance-settings-screen"></div>
+        <div id="customize-screen" class="screen" data-merged-into="appearance-settings-screen"></div>
 
         <div id="search-history-screen" class="screen">
             <header class="search-header">
@@ -1502,15 +1448,7 @@
             <!-- 头像上传 Input -->
             <input type="file" id="mp-carousel-avatar-upload" accept="image/*" style="display:none;">
         </div>
-        <div id="tutorial-screen" class="screen">
-            <header class="app-header"><button class="back-btn" data-target="home-screen">‹</button>
-                <div class="title-container">
-                    <h1 class="title">教程</h1>
-                </div>
-                <div class="placeholder"></div>
-            </header>
-            <main class="content" id="tutorial-content-area"></main>
-        </div>
+        <div id="tutorial-screen" class="screen" data-merged-into="data-management-screen"></div>
         <div id="toast-notification" class="toast">
             <img class="toast-avatar" src="" alt="avatar">
             <div class="toast-content">
@@ -3506,7 +3444,7 @@
             <header class="app-header">
                 <button class="back-btn" data-target="home-screen">‹</button>
                 <div class="title-container">
-                    <h1 class="title">魔法屋</h1>
+                    <h1 class="title">提示词</h1>
                 </div>
                 <div class="placeholder"></div>
             </header>
@@ -3716,11 +3654,13 @@
                     </div>
 
                     <button type="button" class="btn btn-primary" id="magic-room-save-btn" style="margin-top: 20px; width: 100%;">
-                        <span class="btn-text">保存魔法屋设置</span>
+                        <span class="btn-text">保存提示词设置</span>
                     </button>
                 </div>
             </main>
         </div>
+
+        <div id="data-management-screen" class="screen"></div>
 
         <div id="storage-analysis-screen" class="screen" data-screen-template="storage-analysis-screen" data-template-hydrated="pending">
             <!-- V35: storage-analysis-screen static template moved to js/platform/storage/storageAnalysisScreenTemplate.js; hydrated by screenTemplateRegistry. -->
@@ -6037,13 +5977,15 @@
     <script src="js/platform/browser/hapticAdapter.js"></script>
     <script src="js/platform/browser/batteryAdapter.js"></script>
     <script src="js/platform/ai/providerConfig.js"></script>
-    <script src="js/platform/ai/requestTraceStore.js"></script> <!-- v0.2.8 AI 请求追踪底座：记录请求/响应，供 debug console 复制 -->
+    <script src="js/platform/ai/requestTraceStore.js"></script> <!-- v0.2.17 控制台记录底座：记录请求/响应/诊断，供统一控制台读取 -->
+    <script src="js/platform/observability/traceStore.js"></script> <!-- v0.2.17 统一控制台观测出口：发送/回复/操作事件写入同一 trace store -->
+    <script src="js/platform/observability/operationTraceService.js"></script> <!-- v0.2.17 主要操作统一记录 service：切模型/备份/存储/提示词写入同一控制台 -->
     <script src="js/platform/ai/embeddingAdapter.js"></script>
     <script src="js/platform/ai/providerRequestAdapter.js"></script>
-    <script src="js/features/debugConsole/service.js"></script> <!-- v0.2.8 请求控制台 service：聚合 trace store 数据 -->
-    <script src="js/features/debugConsole/view.js"></script> <!-- v0.2.8 请求控制台 UI：复制完整请求/响应 -->
-    <script src="js/features/debugConsole/public.js"></script> <!-- v0.2.8 请求控制台 public facade -->
-    <script src="js/features/home/homeAppCatalog.js"></script> <!-- v0.2.4 主屏 app catalog：设置类入口集中到第二页 -->
+    <script src="js/features/debugConsole/service.js"></script> <!-- v0.2.17 控制台 service：聚合发送/回复/请求/诊断数据 -->
+    <script src="js/features/debugConsole/view.js"></script> <!-- v0.2.17 控制台嵌入 UI：复制完整发送/回复/请求/响应 -->
+    <script src="js/features/debugConsole/public.js"></script> <!-- v0.2.17 控制台 public facade：只导出统一 renderer -->
+    <script src="js/features/home/homeAppCatalog.js"></script> <!-- v0.2.17 主屏 app catalog：Dock 承载 API/数据管理/提示词/外观设置 -->
     <script src="js/platform/storage/dexieMigrations.js"></script>
     <script src="js/platform/storage/dexieAdapter.js"></script>
     <script src="js/platform/storage/dexieWriter.js"></script>
@@ -6084,7 +6026,7 @@
     <script src="js/features/settings/apiSettings/apiSettingsModel.js"></script> <!-- V18 API 设置模型：provider URL / model list request 归一化 -->
     <script src="js/features/settings/apiSettings/apiPresetService.js"></script> <!-- V18 API 预设 service：主/副 API preset CRUD -->
     <script src="js/features/settings/apiSettings/apiModelListService.js"></script> <!-- V18 API 模型列表 service：仅用于设置页拉取模型 -->
-    <script src="js/features/settings/apiSettings/apiModelSwitchService.js"></script> <!-- v0.2.5 主 API 模型快速切换 service：供后续悬浮球调用 -->
+    <script src="js/features/settings/apiSettings/apiModelSwitchService.js"></script> <!-- v0.2.17 主 API 模型快速切换 service：供后续悬浮球调用 -->
     <script src="js/features/settings/apiSettings/mainApiSettingsView.js"></script> <!-- V18 主 API 设置 UI 绑定 -->
     <script src="js/features/settings/apiSettings/subApiSettingsView.js"></script> <!-- V18 副 API 设置 UI 绑定 -->
     <script src="js/features/settings/apiSettings/weatherApiSettingsView.js"></script> <!-- V18 天气 API 设置 UI 绑定 -->
@@ -6142,12 +6084,17 @@
     <script src="js/modules/vector_memory.js"></script> <!-- 向量记忆 -->
     <script src="js/modules/reminder.js"></script> <!-- 提醒事项 -->
     <script src="js/modules/storage.js"></script> <!-- 存储空间分析图表 -->
-    <script src="js/features/cloudBackup/service.js"></script> <!-- v0.2.5 GitHub 云备份 service：教程页/悬浮球共享用例入口 -->
+    <script src="js/features/dataManagement/storagePanel.js"></script> <!-- v0.2.17 数据管理存储分析面板：直接嵌入新入口 -->
+    <script src="js/features/dataManagement/service.js"></script> <!-- v0.2.17 数据管理 App service：聚合控制台/教程/存储，无二次跳转 -->
+    <script src="js/features/dataManagement/view.js"></script> <!-- v0.2.17 数据管理 App view：旧教程/存储内容直接承载 -->
+    <script src="js/features/dataManagement/public.js"></script> <!-- v0.2.17 数据管理 public facade -->
+    <script src="js/features/promptCenter/public.js"></script> <!-- v0.2.13 提示词中心 facade：兼容 magic-room-screen -->
+    <script src="js/features/cloudBackup/service.js"></script> <!-- v0.2.17 GitHub 云备份 service：备份/恢复/状态检查写入统一控制台 -->
     <script src="js/features/cloudBackup/public.js"></script> <!-- v0.2.5 GitHub 云备份 public facade -->
-    <script src="js/features/quickDock/model.js"></script> <!-- v0.2.8 悬浮球状态模型：只负责面板状态 -->
-    <script src="js/features/quickDock/service.js"></script> <!-- v0.2.8 悬浮球用例编排：模型切换/云备份/提示词/控制台 -->
-    <script src="js/features/quickDock/view.js"></script> <!-- v0.2.8 悬浮球 UI：可关闭大面板、提示词真实换行 -->
-    <script src="js/features/quickDock/public.js"></script> <!-- v0.2.8 悬浮球 public facade -->
+    <script src="js/features/quickDock/model.js"></script> <!-- v0.2.17 悬浮球状态模型：只负责面板状态 -->
+    <script src="js/features/quickDock/service.js"></script> <!-- v0.2.17 悬浮球用例编排：模型切换/云备份/提示词/控制台宿主 -->
+    <script src="js/features/quickDock/view.js"></script> <!-- v0.2.17 悬浮球 UI：承载统一控制台宿主 -->
+    <script src="js/features/quickDock/public.js"></script> <!-- v0.2.17 悬浮球 public facade -->
     <script src="js/modules/widgets.js"></script> <!-- 桌面小组件设置 -->
     <script src="js/modules/tutorial.js"></script> <!-- 教程、更新日志、GitHub备份 -->
     <script src="js/modules/more_menu.js"></script> <!-- 更多菜单与状态栏管理 -->

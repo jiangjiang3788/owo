@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * OWO architecture check for product release v0.2.8.
+ * OWO architecture check for product release v0.2.17.
  * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
@@ -60,7 +60,7 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO architecture check · product release v0.2.8 · historical gates V1-V38.1\n');
+console.log('OWO architecture check · product release v0.2.17 · historical gates V1-V38.1\n');
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -72,7 +72,7 @@ for (const file of jsFiles) {
   } else if (lines > MAX_SOFT_LINES && isNewStructure) {
     warn(`${r} ${lines} 行，超过 ${MAX_SOFT_LINES}，需要解释或拆分`);
   } else if (lines > MAX_HARD_LINES && !r.startsWith('js/modules/')) {
-    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.8 暂不阻断，但后续必须拆分`);
+    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.17 暂不阻断，但后续必须拆分`);
   }
 }
 
@@ -1562,10 +1562,10 @@ if (fs.existsSync(promptContextPath)) {
 
 // 27. V27 memory regression gate：只补 memory smoke 文档和静态 gate，不拆新业务
 const memorySmokeDocPath = path.join(root, 'docs/smoke-memory.md');
-const memoryV27PlanPath = path.join(root, 'docs/v27-memory-regression-gate-plan.md');
+const memoryV27PlanPath = path.join(root, 'docs/0.1/v27-memory-regression-gate-plan.md');
 const memoryGatePath = path.join(root, 'tools/memory-regression-gate.js');
 if (!fs.existsSync(memorySmokeDocPath)) error('缺少 V27 memory smoke 文档：docs/smoke-memory.md');
-if (!fs.existsSync(memoryV27PlanPath)) error('缺少 V27 计划文档：docs/v27-memory-regression-gate-plan.md');
+if (!fs.existsSync(memoryV27PlanPath)) error('缺少 V27 计划文档：docs/0.1/v27-memory-regression-gate-plan.md');
 if (!fs.existsSync(memoryGatePath)) error('缺少 V27 memory regression gate：tools/memory-regression-gate.js');
 if (fs.existsSync(memorySmokeDocPath)) {
   const smokeText = read(memorySmokeDocPath);
@@ -2073,7 +2073,7 @@ if (fs.existsSync(screenManifestPath)) {
     ...indexText.matchAll(/<[^>]*\bclass=["'][^"']*\bscreen\b[^"']*["'][^>]*\bid=["']([^"']+)["']/g),
     ...indexText.matchAll(/<[^>]*\bid=["']([^"']+)["'][^>]*\bclass=["'][^"']*\bscreen\b[^"']*["']/g)
   ].map(m => m[1]))];
-  if (htmlIds.length !== 69) error(`index.html 当前 screen 数量应为 69，实际为 ${htmlIds.length}`);
+  if (htmlIds.length !== 70) error(`index.html 当前 screen 数量应为 70，实际为 ${htmlIds.length}`);
   if (manifestIds.length !== htmlIds.length) error(`screenManifest 登记数量 ${manifestIds.length} 与 DOM screen 数量 ${htmlIds.length} 不一致`);
   for (const id of htmlIds) {
     if (!manifestIds.includes(id)) error(`screenManifest 缺少 DOM screen：${id}`);
@@ -2183,7 +2183,7 @@ if (fs.existsSync(mainPath)) {
 const cssOwnershipMapPath = path.join(root, 'tools/css-ownership-map.json');
 const cssOwnershipGatePath = path.join(root, 'tools/css-ownership-gate.js');
 const cssOwnershipDocPath = path.join(root, 'docs/css-ownership.md');
-const cssV37PlanPath = path.join(root, 'docs/v37-css-ownership-plan.md');
+const cssV37PlanPath = path.join(root, 'docs/0.1/v37-css-ownership-plan.md');
 const themeTokensPath = path.join(root, 'css/shared/theme-tokens.css');
 for (const [file, label] of [
   [cssOwnershipMapPath, 'V37 CSS ownership map'],
@@ -2238,7 +2238,7 @@ if (fs.existsSync(cssOwnershipGatePath)) {
 // 38. V38 legacy globals deprecation gate：旧 window.* 兼容入口保留但 deprecated，新代码禁止继续调用旧全局
 const legacyGlobalsGatePath = path.join(root, 'tools/legacy-globals-gate.js');
 const legacyDeprecationPath = path.join(root, 'js/app/legacyDeprecation.js');
-const legacyV38DocPath = path.join(root, 'docs/v38-legacy-globals-deprecation-plan.md');
+const legacyV38DocPath = path.join(root, 'docs/0.1/v38-legacy-globals-deprecation-plan.md');
 for (const [file, label] of [
   [legacyGlobalsGatePath, 'V38 legacy globals gate'],
   [legacyDeprecationPath, 'V38 legacy deprecation registry'],
@@ -2272,7 +2272,7 @@ if (fs.existsSync(legacyGlobalsGatePath)) {
 
 // 39. V38.1 placeholder feature gate：移除用户可见的占位功能入口，防止再出现“开发中”按钮
 const placeholderFeatureGatePath = path.join(root, 'tools/placeholder-feature-gate.js');
-const placeholderFeatureDocPath = path.join(root, 'docs/v38-1-remove-placeholder-features.md');
+const placeholderFeatureDocPath = path.join(root, 'docs/0.1/v38-1-remove-placeholder-features.md');
 for (const [file, label] of [
   [placeholderFeatureGatePath, 'V38.1 placeholder feature gate'],
   [placeholderFeatureDocPath, 'V38.1 placeholder feature cleanup plan']
@@ -2291,6 +2291,65 @@ if (fs.existsSync(placeholderFeatureGatePath)) {
 if (indexText) {
   for (const marker of ['data-action="calendar"', 'data-action="small-account"', 'data-action="moments"', 'data-action="online"', 'data-action="biekan-app"', 'data-action="xiaowu-app"', 'data-target="music-screen"']) {
     if (indexText.includes(marker)) error(`index.html 不应再包含占位功能入口：${marker}`);
+  }
+}
+
+
+// 40. v0.2.12 docs routing gate：根路径只保留 0.1 / 0.2 / 固定入口
+const docsRootPath = path.join(root, 'docs');
+const docsRootReadmePath = path.join(root, 'docs', 'README.md');
+const docsVersioningPath = path.join(root, 'docs', 'VERSIONING.md');
+const docsRootReleasePlanPath = path.join(root, 'docs', 'release-plan.md');
+const docsRootCssOwnershipPath = path.join(root, 'docs', 'css-ownership.md');
+const docsRootSmokeMemoryPath = path.join(root, 'docs', 'smoke-memory.md');
+const docsV01ReadmePath = path.join(root, 'docs', '0.1', 'README.md');
+const docsV02ReadmePath = path.join(root, 'docs', '0.2', 'README.md');
+const docsV02ReleasePlanPath = path.join(root, 'docs', '0.2', 'release-plan.md');
+const docsV0211PlanPath = path.join(root, 'docs', '0.2', 'release-v0.2.11-plan.md');
+const docsV0212PlanPath = path.join(root, 'docs', '0.2', 'release-v0.2.12-plan.md');
+const docsV01LedgerPath = path.join(root, 'docs', '0.1', 'refactor-ledger.md');
+for (const [file, label] of [
+  [docsRootReadmePath, 'docs root router'],
+  [docsVersioningPath, 'docs versioning rules'],
+  [docsRootReleasePlanPath, 'docs root release plan'],
+  [docsRootCssOwnershipPath, 'docs root css ownership gate'],
+  [docsRootSmokeMemoryPath, 'docs root memory smoke gate'],
+  [docsV01ReadmePath, 'docs v0.1 index'],
+  [docsV02ReadmePath, 'docs v0.2 index'],
+  [docsV02ReleasePlanPath, 'docs v0.2 release plan'],
+  [docsV0211PlanPath, 'v0.2.11 docs routing plan'],
+  [docsV0212PlanPath, 'v0.2.12 docs root allowlist plan'],
+  [docsV01LedgerPath, 'docs v0.1 ledger']
+]) {
+  if (!fs.existsSync(file)) error(`缺少 ${label}：${rel(file)}`);
+}
+
+if (fs.existsSync(docsRootPath)) {
+  const allowedRootEntries = new Set(['0.1', '0.2', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
+  const extraRootEntries = fs.readdirSync(docsRootPath).filter(name => !allowedRootEntries.has(name));
+  if (extraRootEntries.length) error(`docs 根路径存在多余文件或目录：${extraRootEntries.join(', ')}`);
+}
+
+if (fs.existsSync(docsRootReadmePath)) {
+  const docsRootText = read(docsRootReadmePath);
+  for (const token of ['docs/0.1', 'docs/0.2', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '不要提前创建空的 `0.3` 目录']) {
+    if (!docsRootText.includes(token)) error(`docs/README.md 缺少文档根路径说明：${token}`);
+  }
+}
+
+const docsV01NestedCaifenDir = path.join(root, 'docs', '0.1', 'caifen');
+if (fs.existsSync(docsV01NestedCaifenDir)) error('docs/0.1 里不要再套 caifen 子文件夹，历史文档应直接放在 docs/0.1/');
+const docsLegacyCaifenDir = path.join(root, 'docs', 'caifen');
+if (fs.existsSync(docsLegacyCaifenDir)) error('docs/caifen 已移除，不再保留 compatibility 子目录');
+const docsOtherDir = path.join(root, 'docs', 'other');
+if (fs.existsSync(docsOtherDir)) error('docs/other 已移除；确实需要新版本线时先更新 VERSIONING.md');
+const docsV03Dir = path.join(root, 'docs', '0.3');
+if (fs.existsSync(docsV03Dir)) error('尚未开启 v0.3.x，不要提前创建 docs/0.3');
+
+if (fs.existsSync(docsV02ReleasePlanPath)) {
+  const docsV02Text = read(docsV02ReleasePlanPath);
+  for (const token of ['v0.2.1', 'v0.2.8', 'v0.2.10', 'v0.2.11', 'v0.2.12', 'docs/0.1', 'docs/0.2']) {
+    if (!docsV02Text.includes(token)) error(`docs/0.2/release-plan.md 缺少 v0.2 文档路由 token：${token}`);
   }
 }
 

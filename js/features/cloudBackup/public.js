@@ -1,4 +1,4 @@
-// --- Cloud backup public facade (v0.2.5) ---
+// --- Cloud backup public facade (v0.2.17) ---
 // 稳定出口：教程页、后续悬浮球只允许通过这里触发 GitHub 备份/恢复。
 (function registerCloudBackupPublic(global) {
     const OwoApp = global.OwoApp;
@@ -18,7 +18,7 @@
         getPublicContract() {
             return {
                 owner: 'OwoApp.features.cloudBackup.publicApi',
-                version: 'v0.2.8',
+                version: 'v0.2.17',
                 methods: ['getConfig', 'saveConfig', 'backupNow', 'restoreLatest', 'checkStatus', 'checkAndBackup']
             };
         },

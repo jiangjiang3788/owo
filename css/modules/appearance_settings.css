@@ -335,3 +335,21 @@
     display: flex;
     gap: 4px;
 }
+
+/* v0.2.14：旧壁纸/自定义内容直接合并进外观设置 */
+.appearance-inline-mount {
+    width: 100%;
+}
+.appearance-inline-mount .kkt-settings-container {
+    margin: 0;
+}
+.appearance-inline-note {
+    margin: 0;
+    color: #888;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.appearance-hub-body > .wallpaper-section-label,
+.appearance-inline-mount .wallpaper-section-label {
+    margin-top: 10px;
+}

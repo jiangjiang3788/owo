@@ -1,4 +1,4 @@
-// --- Quick dock model (v0.2.8) ---
+// --- Quick dock model (v0.2.17) ---
 // 只负责悬浮球面板的展示状态和轻量数据归一化；不访问 DOM、不发请求。
 (function registerQuickDockModel(global) {
     const OwoApp = global.OwoApp;

@@ -51,6 +51,7 @@
         { id: 'forum-dm-list-screen', owner: 'features/forum', group: 'feature', template: 'js/features/forum/forumScreenTemplates.js' },
         { id: 'forum-dm-conversation-screen', owner: 'features/forum', group: 'feature', template: 'js/features/forum/forumScreenTemplates.js' },
         { id: 'magic-room-screen', owner: 'features/settings', group: 'settings', init: 'OwoApp.features.settings.publicApi.setupMagicRoomApp' },
+        { id: 'data-management-screen', owner: 'features/dataManagement', group: 'app', init: 'OwoApp.features.dataManagement.publicApi.render' },
         { id: 'storage-analysis-screen', owner: 'platform/storage', group: 'app', init: 'setupStorageAnalysisScreen', template: 'js/platform/storage/storageAnalysisScreenTemplate.js' },
         { id: 'appearance-settings-screen', owner: 'features/settings/appearance', group: 'settings', mount: 'renderAppearanceSettingsScreen' },
         { id: 'peek-messages-screen', owner: 'features/peek', group: 'feature' },

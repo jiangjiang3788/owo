@@ -3,6 +3,29 @@
 let currentLongPressCategory = null;
 let categoryLongPressTimer = null;
 
+
+function recordStickerOperation(label, data, status, error) {
+    var ops = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+        ? window.OwoApp.platform.observability.operationTraceService
+        : null;
+    var payload = {
+        source: 'modules/sticker',
+        sourceModule: 'modules/sticker',
+        action: 'stickerRecognition',
+        label: label || '表情包识别',
+        status: status || 'operation',
+        data: data || {},
+        errorMessage: error && error.message ? error.message : '',
+        errorStack: error && error.stack ? String(error.stack) : ''
+    };
+    if (ops && typeof ops.recordOperation === 'function') return ops.recordOperation(payload);
+    var traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+        ? window.OwoApp.platform.observability.traceStore
+        : null;
+    if (!traceStore || typeof traceStore.recordOperation !== 'function') return null;
+    return traceStore.recordOperation(Object.assign({}, payload, { kind: 'operation', event: data || {} }));
+}
+
 /**
  * 宽泛格式解析单行：支持 名称:URL、名称：URL、名称 URL、名称URL 等
  * 通过识别 http(s):// 提取 URL，其前为名称（自动去除末尾分隔符）
@@ -397,7 +420,11 @@ async function setupStickerSystem() {
             })
             : await fetch(endpoint, fetchOptions);
 
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        if (!response.ok) {
+            const error = new Error(`API Error: ${response.status}`);
+            recordStickerOperation('表情包识别失败', { provider: provider, model: model, endpoint: endpoint, httpStatus: response.status }, 'error', error);
+            throw error;
+        }
         
         const result = await response.json();
         let description = "";
@@ -410,11 +437,16 @@ async function setupStickerSystem() {
         if (description) {
             const match = description.match(/<image_description>([\s\S]*?)<\/image_description>/);
             if (match) {
-                return match[1].trim();
+                var matchedDescription = match[1].trim();
+                recordStickerOperation('表情包识别结果', { provider: provider, model: model, description: matchedDescription, descriptionLength: matchedDescription.length }, 'success');
+                return matchedDescription;
             } else {
-                return description.trim();
+                var plainDescription = description.trim();
+                recordStickerOperation('表情包识别结果', { provider: provider, model: model, description: plainDescription, descriptionLength: plainDescription.length }, 'success');
+                return plainDescription;
             }
         }
+        recordStickerOperation('表情包识别结果为空', { provider: provider, model: model }, 'warning');
         return null;
     }
 

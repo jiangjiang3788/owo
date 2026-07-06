@@ -7,6 +7,7 @@ const walletPaymentSemantics = walletPublicApi.paymentSemantics;
 const walletPaymentCardViewModel = walletPublicApi.paymentCardViewModel;
 const theaterPublicApi = window.OwoApp.features.theater.publicApi;
 
+
 // NovelAI 自动生图队列（避免同时发出大量请求）
 const _naiAutoGenQueue = [];
 let _naiAutoGenRunning = false;
@@ -1431,7 +1432,60 @@ chatRenderMessageBubble.setLegacyRenderer((message, renderContext) => legacyCrea
 });
 
 
+
+const chatConsoleTraceRecordedMessageIds = new Set();
+
+function recordChatMessageConsoleTrace(message, targetChatId, targetChatType) {
+    if (!message || !message.id) return;
+    const key = [targetChatType || '', targetChatId || '', message.id].join(':');
+    if (chatConsoleTraceRecordedMessageIds.has(key)) return;
+    chatConsoleTraceRecordedMessageIds.add(key);
+    if (chatConsoleTraceRecordedMessageIds.size > 1000) {
+        const first = chatConsoleTraceRecordedMessageIds.values().next().value;
+        chatConsoleTraceRecordedMessageIds.delete(first);
+    }
+    try {
+        const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+            ? window.OwoApp.platform.observability.traceStore
+            : null;
+        if (!traceStore || typeof traceStore.recordConversationEvent !== 'function') return;
+        const role = message.role || '';
+        const content = typeof message.content === 'string'
+            ? message.content
+            : (Array.isArray(message.parts) ? message.parts.map(part => part && part.text ? part.text : '').filter(Boolean).join('\n') : '');
+        traceStore.recordConversationEvent({
+            source: 'chat.addMessageBubble',
+            label: role === 'assistant' || role === 'char' ? 'AI 回复消息' : role === 'user' ? '用户发送消息' : '聊天事件',
+            chatId: targetChatId,
+            chatType: targetChatType,
+            role,
+            senderId: message.senderId || '',
+            messageId: message.id || '',
+            timestamp: message.timestamp || Date.now(),
+            content,
+            parts: message.parts || [],
+            message: {
+                id: message.id || '',
+                role,
+                senderId: message.senderId || '',
+                chatId: targetChatId,
+                chatType: targetChatType,
+                timestamp: message.timestamp || Date.now()
+            },
+            extra: {
+                isStatusUpdate: !!message.isStatusUpdate,
+                hasQuote: !!message.quote,
+                hasParts: Array.isArray(message.parts),
+                partCount: Array.isArray(message.parts) ? message.parts.length : 0
+            }
+        });
+    } catch (traceError) {
+        console.warn('[consoleTrace] record conversation failed:', traceError);
+    }
+}
+
 function addMessageBubble(message, targetChatId, targetChatType) {
+    recordChatMessageConsoleTrace(message, targetChatId, targetChatType);
     const isChatRoomActive = document.getElementById('chat-room-screen') && document.getElementById('chat-room-screen').classList.contains('active');
     const senderChat = (targetChatType === 'private')
         ? db.characters.find(c => c.id === targetChatId)

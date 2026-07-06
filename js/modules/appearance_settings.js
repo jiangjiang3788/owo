@@ -70,7 +70,7 @@ function applyCustomTutorialCss() {
 function renderAppearanceSettingsScreen() {
     const screen = document.getElementById('appearance-settings-screen');
     if (!screen) return;
-    
+
     screen.innerHTML = '';
 
     const inner = document.createElement('div');
@@ -87,16 +87,41 @@ function renderAppearanceSettingsScreen() {
             <div class="placeholder"></div>
         </header>
         <main class="content appearance-content">
+            <section class="appearance-hub-section">
+                <details class="appearance-hub-details" open>
+                    <summary>壁纸与背景</summary>
+                    <div class="appearance-hub-body">
+                        <p>主屏、聊天和通话壁纸直接在这里修改，不再跳转到旧壁纸页。</p>
+                        <div id="appearance-wallpaper-mount" class="appearance-inline-mount"></div>
+                    </div>
+                </details>
+                <details class="appearance-hub-details">
+                    <summary>主屏自定义</summary>
+                    <div class="appearance-hub-body">
+                        <p>主屏小组件、图标和布局自定义直接在这里修改。</p>
+                        <div id="appearance-customize-mount" class="appearance-inline-mount"></div>
+                    </div>
+                </details>
+                <details class="appearance-hub-details">
+                    <summary>白昼 / 夜间模式</summary>
+                    <div class="appearance-hub-body">
+                        <p>快速切换主屏白昼或夜间显示。更细的状态栏和夜间样式设置保留在下方。</p>
+                        <div class="appearance-hub-actions">
+                            <button type="button" class="btn btn-secondary" data-appearance-hub="day">白昼模式</button>
+                            <button type="button" class="btn btn-secondary" data-appearance-hub="night">夜间模式</button>
+                        </div>
+                    </div>
+                </details>
+            </section>
             
             <!-- 教程排版设置区 -->
             <div class="appearance-section">
                 <div class="appearance-section-header">
                     <h2 class="appearance-section-title">教程排版</h2>
-                    <span class="appearance-section-desc">选择教程界面的显示风格</span>
+                    <span class="appearance-section-desc">选择数据管理中教程内容的显示风格</span>
                 </div>
                 
                 <div class="appearance-thumbnail-container">
-                    <!-- 方案一：经典 -->
                     <div class="appearance-thumbnail-item ${currentMode === 'classic' ? 'selected' : ''}" data-mode="classic">
                         <div class="appearance-thumbnail-box">
                             <div class="thumb-screen thumb-classic">
@@ -109,8 +134,6 @@ function renderAppearanceSettingsScreen() {
                         </div>
                         <div class="appearance-thumbnail-label">经典</div>
                     </div>
-
-                    <!-- 方案二：简约 -->
                     <div class="appearance-thumbnail-item ${currentMode === 'modern' ? 'selected' : ''}" data-mode="modern">
                         <div class="appearance-thumbnail-box">
                             <div class="thumb-screen thumb-modern">
@@ -127,8 +150,6 @@ function renderAppearanceSettingsScreen() {
                         </div>
                         <div class="appearance-thumbnail-label">简约</div>
                     </div>
-
-                    <!-- 方案三：白兔岛 -->
                     <div class="appearance-thumbnail-item ${currentMode === 'rabbit' ? 'selected' : ''}" data-mode="rabbit">
                         <div class="appearance-thumbnail-box">
                             <div class="thumb-screen thumb-rabbit">
@@ -148,7 +169,7 @@ function renderAppearanceSettingsScreen() {
             <div class="appearance-section">
                 <div class="appearance-section-header">
                     <h2 class="appearance-section-title">自定义美化</h2>
-                    <span class="appearance-section-desc">输入 CSS 代码自定义教程页面样式</span>
+                    <span class="appearance-section-desc">输入 CSS 代码自定义数据管理内教程内容样式</span>
                 </div>
                 <div class="custom-css-area">
                     <div class="custom-css-toggle-row">
@@ -158,42 +179,115 @@ function renderAppearanceSettingsScreen() {
                             <span class="custom-css-switch-slider"></span>
                         </label>
                     </div>
-                    <textarea id="custom-tutorial-css-input" class="custom-css-textarea" placeholder="/* 在此输入自定义 CSS */&#10;&#10;/* 例如修改教程页背景色: */&#10;#tutorial-content-area {&#10;  background: #1a1a2e;&#10;  color: #eee;&#10;}" spellcheck="false">${getCustomTutorialCss()}</textarea>
+                    <textarea id="custom-tutorial-css-input" class="custom-css-textarea" placeholder="/* 在此输入自定义 CSS */&#10;&#10;/* 例如修改教程内容背景色: */&#10;#data-management-tutorial-content-area {&#10;  background: #1a1a2e;&#10;  color: #eee;&#10;}" spellcheck="false">${getCustomTutorialCss()}</textarea>
                     <div class="custom-css-btn-row">
                         <button type="button" id="custom-tutorial-css-save" class="custom-css-btn primary">保存并应用</button>
                         <button type="button" id="custom-tutorial-css-reset" class="custom-css-btn neutral">清空</button>
                     </div>
                     <div class="custom-css-hint">
-                        <span>💡</span> 自定义 CSS 会叠加在当前选中的排版方案之上。可用浏览器开发者工具查看元素类名。
+                        <span>💡</span> 自定义 CSS 会叠加在数据管理里的教程内容之上。可用浏览器开发者工具查看元素类名。
                     </div>
                 </div>
             </div>
-
         </main>
     `;
 
     screen.appendChild(inner);
+    embedWallpaperContent(inner.querySelector('#appearance-wallpaper-mount'));
+    embedCustomizeContent(inner.querySelector('#appearance-customize-mount'));
+    bindAppearanceEvents(inner);
+}
 
-    const items = inner.querySelectorAll('.appearance-thumbnail-item');
-    items.forEach(item => {
-        item.addEventListener('click', () => {
-            if (!item.dataset.mode) return; // 忽略没有 mode 的占位项
-            
-            // 移除同组内的 selected
-            const container = item.closest('.appearance-thumbnail-container');
-            container.querySelectorAll('.appearance-thumbnail-item').forEach(c => c.classList.remove('selected'));
-            
-            item.classList.add('selected');
-            const mode = item.dataset.mode;
-            setAppearanceMode(mode);
-            
-            if (typeof renderTutorialContent === 'function') {
-                renderTutorialContent();
+function refreshAppearanceModeSelection(root) {
+    const currentMode = getAppearanceMode();
+    root.querySelectorAll('.appearance-thumbnail-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.mode === currentMode);
+    });
+}
+
+function embedWallpaperContent(mount) {
+    if (!mount) return;
+    const legacyWallpaperMain = document.querySelector('#wallpaper-screen main.content');
+    if (legacyWallpaperMain && !mount.contains(legacyWallpaperMain)) {
+        legacyWallpaperMain.innerHTML = '<div class="dm-empty-note">壁纸设置已合并到外观设置。</div>';
+    }
+    mount.innerHTML = `
+        <div class="wallpaper-section-label">主屏幕壁纸</div>
+        <div class="wallpaper-preview" id="wallpaper-preview"><span>当前壁纸预览</span></div>
+        <button type="button" id="wallpaper-reset-btn" class="btn btn-secondary" style="margin-bottom: 12px;">重置为默认壁纸</button>
+        <input type="file" id="wallpaper-upload" accept="image/*" style="display: none;">
+        <label for="wallpaper-upload" class="btn btn-primary">从相册选择新壁纸</label>
+
+        <div class="wallpaper-section-label" style="margin-top:28px;">全局聊天壁纸</div>
+        <div class="wallpaper-preview" id="global-chat-wallpaper-preview"><span id="global-chat-wallpaper-preview-text">当前聊天壁纸预览</span></div>
+        <div class="wallpaper-music-actions">
+            <button type="button" id="global-chat-wallpaper-local-btn" class="btn btn-primary">本地上传</button>
+            <button type="button" id="global-chat-wallpaper-url-btn" class="btn btn-secondary">输入 URL</button>
+            <button type="button" id="global-chat-wallpaper-reset-btn" class="btn btn-secondary">恢复默认</button>
+        </div>
+        <div class="music-wallpaper-url-row" id="global-chat-wallpaper-url-row" style="display:none;">
+            <input type="text" id="global-chat-wallpaper-url-input" class="form-group" placeholder="输入背景图片链接 (http/https)" style="flex:1;margin:0;">
+            <button type="button" id="global-chat-wallpaper-url-apply" class="btn btn-primary btn-small">使用</button>
+        </div>
+        <input type="file" id="global-chat-wallpaper-file-input" accept="image/*" hidden>
+
+        <div class="wallpaper-section-label" style="margin-top:28px;">全局通话壁纸</div>
+        <div class="wallpaper-preview" id="global-call-wallpaper-preview"><span id="global-call-wallpaper-preview-text">当前通话壁纸预览</span></div>
+        <div class="wallpaper-music-actions">
+            <button type="button" id="global-call-wallpaper-local-btn" class="btn btn-primary">本地上传</button>
+            <button type="button" id="global-call-wallpaper-url-btn" class="btn btn-secondary">输入 URL</button>
+            <button type="button" id="global-call-wallpaper-reset-btn" class="btn btn-secondary">恢复默认</button>
+        </div>
+        <div class="music-wallpaper-url-row" id="global-call-wallpaper-url-row" style="display:none;">
+            <input type="text" id="global-call-wallpaper-url-input" class="form-group" placeholder="输入背景图片链接 (http/https)" style="flex:1;margin:0;">
+            <button type="button" id="global-call-wallpaper-url-apply" class="btn btn-primary btn-small">使用</button>
+        </div>
+        <input type="file" id="global-call-wallpaper-file-input" accept="image/*" hidden>
+    `;
+    const appearanceApi = window.OwoApp && window.OwoApp.features && window.OwoApp.features.settings && window.OwoApp.features.settings.appearance && window.OwoApp.features.settings.appearance.publicApi;
+    if (appearanceApi && typeof appearanceApi.setupWallpaperApp === 'function') appearanceApi.setupWallpaperApp();
+}
+
+function embedCustomizeContent(mount) {
+    if (!mount) return;
+    const existing = document.getElementById('customize-form');
+    if (existing && !mount.contains(existing)) existing.removeAttribute('id');
+    mount.innerHTML = '<form id="customize-form"></form>';
+    if (typeof setupCustomizeApp === 'function') setupCustomizeApp();
+    if (typeof renderCustomizeForm === 'function') renderCustomizeForm();
+}
+
+function bindAppearanceEvents(inner) {
+    inner.querySelectorAll('[data-appearance-hub]').forEach(button => {
+        button.addEventListener('click', async () => {
+            const action = button.dataset.appearanceHub;
+            if (action === 'day' && typeof applyHomeScreenMode === 'function') {
+                await applyHomeScreenMode('day');
+                if (typeof showToast === 'function') showToast('已切换白昼模式');
+            }
+            if (action === 'night' && typeof applyHomeScreenMode === 'function') {
+                await applyHomeScreenMode('night');
+                if (typeof showToast === 'function') showToast('已切换夜间模式');
             }
         });
     });
 
-    // 自定义 CSS 事件绑定
+    const items = inner.querySelectorAll('.appearance-thumbnail-item');
+    items.forEach(item => {
+        item.addEventListener('click', () => {
+            if (!item.dataset.mode) return;
+            const container = item.closest('.appearance-thumbnail-container');
+            container.querySelectorAll('.appearance-thumbnail-item').forEach(c => c.classList.remove('selected'));
+            item.classList.add('selected');
+            setAppearanceMode(item.dataset.mode);
+            const dataManagementApi = window.OwoApp && window.OwoApp.features && window.OwoApp.features.dataManagement && window.OwoApp.features.dataManagement.publicApi;
+            const tutorialMount = document.getElementById('data-management-tutorial-content-area');
+            if (dataManagementApi && tutorialMount && typeof dataManagementApi.renderTutorialPanel === 'function') {
+                dataManagementApi.renderTutorialPanel(tutorialMount);
+            }
+        });
+    });
+
     const cssToggle = inner.querySelector('#custom-tutorial-css-toggle');
     const cssTextarea = inner.querySelector('#custom-tutorial-css-input');
     const cssSaveBtn = inner.querySelector('#custom-tutorial-css-save');
@@ -201,22 +295,18 @@ function renderAppearanceSettingsScreen() {
 
     if (cssToggle) {
         cssTextarea.disabled = !cssToggle.checked;
-
         cssToggle.addEventListener('change', () => {
             const enabled = cssToggle.checked;
             setCustomTutorialCssEnabled(enabled);
             cssTextarea.disabled = !enabled;
             applyCustomTutorialCss();
-            if (typeof renderTutorialContent === 'function') renderTutorialContent();
         });
     }
 
     if (cssSaveBtn) {
         cssSaveBtn.addEventListener('click', () => {
-            const css = cssTextarea.value;
-            setCustomTutorialCss(css);
+            setCustomTutorialCss(cssTextarea.value);
             applyCustomTutorialCss();
-            if (typeof renderTutorialContent === 'function') renderTutorialContent();
             if (typeof showToast === 'function') showToast('自定义 CSS 已保存并应用');
         });
     }
@@ -227,22 +317,19 @@ function renderAppearanceSettingsScreen() {
             cssTextarea.value = '';
             setCustomTutorialCss('');
             applyCustomTutorialCss();
-            if (typeof renderTutorialContent === 'function') renderTutorialContent();
             if (typeof showToast === 'function') showToast('自定义 CSS 已清空');
         });
     }
 }
 
 (function initAppearanceSettings() {
-    function injectWhenReady() {
-        const screen = document.getElementById('appearance-settings-screen');
-        if (!screen || screen.querySelector('.appearance-settings-inner')) return;
-        renderAppearanceSettingsScreen();
+    function applyWhenReady() {
+        // v0.2.14: 外观页内容在进入页面时再渲染，避免旧壁纸/自定义表单在 db 加载前重复绑定。
         applyCustomTutorialCss();
     }
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', injectWhenReady);
+        document.addEventListener('DOMContentLoaded', applyWhenReady);
     } else {
-        injectWhenReady();
+        applyWhenReady();
     }
 })();

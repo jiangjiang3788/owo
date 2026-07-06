@@ -306,6 +306,13 @@
       "role": "feature-module",
       "status": "canonical",
       "maxLines": 280
+    },
+    {
+      "path": "css/modules/data_management.css",
+      "owner": "features/dataManagement",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 280
     }
   ]
 }

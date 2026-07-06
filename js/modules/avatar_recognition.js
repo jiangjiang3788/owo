@@ -4,6 +4,32 @@
 (function () {
     'use strict';
 
+
+    function recordAvatarRecognitionOperation(label, status, event, error) {
+        const ops = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+            ? window.OwoApp.platform.observability.operationTraceService
+            : null;
+        const payload = {
+            source: 'modules/avatar_recognition',
+            sourceModule: 'modules/avatar_recognition',
+            action: 'avatarRecognition',
+            label: label || '头像识别',
+            status: status || 'operation',
+            data: event || {},
+            errorMessage: error && error.message ? error.message : '',
+            errorStack: error && error.stack ? String(error.stack) : ''
+        };
+        if (ops && typeof ops.recordOperation === 'function') return ops.recordOperation(payload);
+        const traceStore = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+            ? window.OwoApp.platform.observability.traceStore
+            : null;
+        return traceStore && typeof traceStore.recordOperation === 'function'
+            ? traceStore.recordOperation(Object.assign({}, payload, { event: event || {} }))
+            : null;
+    }
+
+    const recordAvatarOperation = recordAvatarRecognitionOperation; // compatibility marker for operation gate
+
     function getAvatarRecognitionPrompt() {
         const level = (db && db.avatarRecognitionDetailLevel) !== undefined && db.avatarRecognitionDetailLevel !== null
             ? db.avatarRecognitionDetailLevel : 'detailed';
@@ -67,11 +93,15 @@
 
         if (!res.ok) {
             const errText = await res.text();
-            throw new Error('识别失败: ' + (errText || res.status));
+            const error = new Error('识别失败: ' + (errText || res.status));
+            recordAvatarRecognitionOperation('头像识别失败', 'error', { provider: 'openai-compatible', model: model, httpStatus: res.status, errorText: String(errText || '').slice(0, 500) }, error);
+            throw error;
         }
         const data = await res.json();
         const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-        return (text && text.trim()) ? text.trim() : '未命名头像';
+        const output = (text && text.trim()) ? text.trim() : '未命名头像';
+        recordAvatarRecognitionOperation('头像识别结果', 'success', { provider: 'openai-compatible', model: model, description: output, descriptionLength: output.length });
+        return output;
     }
 
     function getChar(charOrCharId) {

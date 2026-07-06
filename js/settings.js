@@ -4932,6 +4932,9 @@ function openNamePresetManageModal() {
 
 function setupCustomizeApp() {
     const customizeForm = document.getElementById('customize-form');
+    if (!customizeForm) return;
+    if (customizeForm.dataset.customizeSetupBound === 'true') return;
+    customizeForm.dataset.customizeSetupBound = 'true';
     
     customizeForm.addEventListener('click', async (e) => {
         const target = e.target;
@@ -5581,15 +5584,15 @@ function setupCustomizeApp() {
 
 function renderCustomizeForm() {
     const customizeForm = document.getElementById('customize-form');
+    if (!customizeForm) return;
     customizeForm.innerHTML = ''; 
     
     const container = document.createElement('div');
     container.className = 'kkt-settings-container';
     
     const iconOrder = [
-        'chat-list-screen', 'api-settings-screen', 'wallpaper-screen',
-        'world-book-screen', 'customize-screen', 'tutorial-screen',
-        'day-mode-btn', 'night-mode-btn', 'forum-screen', 'piggy-bank-screen', 'pomodoro-screen', 'storage-analysis-screen', 'appearance-settings-screen', 'theater-screen', 'magic-room-screen'
+        'api-settings-screen', 'chat-list-screen', 'data-management-screen', 'magic-room-screen', 'appearance-settings-screen',
+        'world-book-screen', 'forum-screen', 'pomodoro-screen', 'piggy-bank-screen', 'theater-screen'
     ];
 
     let iconsContentHTML = '';

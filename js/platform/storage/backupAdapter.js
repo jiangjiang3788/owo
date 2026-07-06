@@ -1,5 +1,5 @@
 // --- platform/storage/backupAdapter.js ---
-// V8 备份/导入导出适配层：拥有 .ee 备份数据格式、分类导入导出和恢复写入编排。
+// V8/v0.2.17 备份/导入导出适配层：拥有 .ee 备份数据格式、分类导入导出和恢复写入编排。
 // 注意：这里不复制 saveData writer，所有最终保存仍通过注入的 repository saveData 入口完成。
 (function registerBackupAdapter(global) {
     const app = global.OwoApp;
@@ -25,6 +25,22 @@
         return `${prefix}_${date}_${time}.${ext || 'ee'}`;
     }
 
+    function recordStorageOperation(label, status, data, error) {
+        const ops = app.platform && app.platform.observability ? app.platform.observability.operationTraceService : null;
+        if (!ops || typeof ops.recordOperation !== 'function') return;
+        ops.recordOperation({
+            source: 'platform/storage/backupAdapter',
+            sourceModule: 'platform/storage',
+            action: label,
+            label,
+            operationName: label,
+            status: status || 'success',
+            data: data || {},
+            errorMessage: error && error.message ? error.message : '',
+            errorStack: error && error.stack ? String(error.stack) : ''
+        });
+    }
+
     function getRequiredContext(context) {
         if (!context || typeof context.getDb !== 'function') {
             throw new Error('[backupAdapter] 缺少 getDb 上下文');
@@ -44,6 +60,7 @@
         });
         backupData._exportVersion = '3.0';
         backupData._exportTimestamp = Date.now();
+        recordStorageOperation('创建完整备份数据', 'success', { keys: Object.keys(backupData).length, exportVersion: backupData._exportVersion });
         return backupData;
     }
 
@@ -72,6 +89,7 @@
                 result[key] = clone(db[key]);
             }
         }
+        recordStorageOperation('创建分类导出数据', 'success', { selectedKeys: result._exportTables, exportVersion: result._exportVersion });
         return result;
     }
 
@@ -81,7 +99,9 @@
         const startTime = Date.now();
         const tables = data && data._exportTables ? data._exportTables : [];
         if (!Array.isArray(tables) || tables.length === 0) {
-            return { success: false, error: '文件中没有可导入的分类' };
+            const result = { success: false, error: '文件中没有可导入的分类' };
+            recordStorageOperation('分类导入失败', 'error', { reason: 'empty_tables' });
+            return result;
         }
 
         try {
@@ -96,9 +116,12 @@
             }
             if (typeof ctx.showToast === 'function') ctx.showToast('正在写入...');
             await ctx.saveData(db);
-            return { success: true, message: `分类导入完成 (耗时${Date.now() - startTime}ms)` };
+            const result = { success: true, message: `分类导入完成 (耗时${Date.now() - startTime}ms)` };
+            recordStorageOperation('分类导入数据', 'success', { tables, durationMs: Date.now() - startTime });
+            return result;
         } catch (error) {
             console.error('分类导入失败:', error);
+            recordStorageOperation('分类导入失败', 'error', { tables, durationMs: Date.now() - startTime }, error);
             return { success: false, error: error.message };
         }
     }
@@ -195,9 +218,12 @@
             if (typeof ctx.showToast === 'function') ctx.showToast('正在写入新数据...');
             await ctx.saveData(db);
 
-            return { success: true, message: `导入完成 (耗时${Date.now() - startTime}ms)` };
+            const result = { success: true, message: `导入完成 (耗时${Date.now() - startTime}ms)` };
+            recordStorageOperation('完整导入数据', 'success', { keys: Object.keys(convertedData || {}).length, durationMs: Date.now() - startTime });
+            return result;
         } catch (error) {
             console.error('导入数据失败:', error);
+            recordStorageOperation('完整导入失败', 'error', { durationMs: Date.now() - startTime }, error);
             return { success: false, error: error.message, duration: Date.now() - startTime };
         }
     }

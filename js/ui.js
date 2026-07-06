@@ -50,7 +50,7 @@ const switchScreen = (targetId) => {
         customStyles.forEach(style => style.remove());
         
         // 防止串线：仅在返回大厅类主页面时清空当前聊天目标ID，防止影响聊天设置页等二级页面
-        const mainScreens = ['chat-list-screen', 'contacts-screen', 'more-screen', 'phone-screen', 'home-screen', 'forum-screen', 'piggy-bank-screen'];
+        const mainScreens = ['chat-list-screen', 'contacts-screen', 'more-screen', 'phone-screen', 'home-screen', 'forum-screen', 'piggy-bank-screen', 'data-management-screen', 'magic-room-screen', 'appearance-settings-screen'];
         if (mainScreens.includes(targetId)) {
             if (typeof currentChatId !== 'undefined') currentChatId = null;
             if (typeof currentChatType !== 'undefined') currentChatType = null;
@@ -116,6 +116,9 @@ const switchScreen = (targetId) => {
         }
         if (targetId === 'appearance-settings-screen' && typeof renderAppearanceSettingsScreen === 'function') {
             renderAppearanceSettingsScreen();
+        }
+        if (targetId === 'data-management-screen' && window.OwoApp && window.OwoApp.features && window.OwoApp.features.dataManagement && window.OwoApp.features.dataManagement.publicApi) {
+            window.OwoApp.features.dataManagement.publicApi.render();
         }
     }
 };
@@ -379,28 +382,26 @@ function setupHomeScreen() {
     const getIcon = (id) => db.customIcons[id] || (defaultIcons[id] && defaultIcons[id].url) || '';
     const getName = (id) => (db.customAppNames && db.customAppNames[id]) || (defaultIcons[id] && defaultIcons[id].name) || 'App';
     const homeCatalog = window.OwoApp && window.OwoApp.features && window.OwoApp.features.home && window.OwoApp.features.home.homeAppCatalog;
-    const homeAppPages = homeCatalog && typeof homeCatalog.getHomeAppPages === 'function'
+    const homeAppPagesRaw = homeCatalog && typeof homeCatalog.getHomeAppPages === 'function'
         ? homeCatalog.getHomeAppPages()
+        : [[
+            { target: 'chat-list-screen', iconId: 'chat-list-screen', nameId: 'chat-list-screen' },
+            { target: 'world-book-screen', iconId: 'world-book-screen', nameId: 'world-book-screen' },
+            { target: 'pomodoro-screen', iconId: 'pomodoro-screen', nameId: 'pomodoro-screen' },
+            { target: 'forum-screen', iconId: 'forum-screen', nameId: 'forum-screen' },
+            { target: 'piggy-bank-screen', iconId: 'piggy-bank-screen', nameId: 'piggy-bank-screen' },
+            { target: 'theater-screen', iconId: 'theater-screen', nameId: 'theater-screen' }
+        ]];
+    const homeAppPages = homeAppPagesRaw.filter(page => Array.isArray(page) && page.length > 0);
+    const totalHomePages = Math.max(1, homeAppPages.length);
+    if (currentPageIndex >= totalHomePages) currentPageIndex = totalHomePages - 1;
+    const homeDockApps = homeCatalog && typeof homeCatalog.getHomeDockApps === 'function'
+        ? homeCatalog.getHomeDockApps()
         : [
-            [
-                { target: 'chat-list-screen', iconId: 'chat-list-screen', nameId: 'chat-list-screen' },
-                { target: 'world-book-screen', iconId: 'world-book-screen', nameId: 'world-book-screen' },
-                { target: 'pomodoro-screen', iconId: 'pomodoro-screen', nameId: 'pomodoro-screen' },
-                { target: 'forum-screen', iconId: 'forum-screen', nameId: 'forum-screen' },
-                { target: 'piggy-bank-screen', iconId: 'piggy-bank-screen', nameId: 'piggy-bank-screen' },
-                { target: 'theater-screen', iconId: 'theater-screen', nameId: 'theater-screen' }
-            ],
-            [
-                { target: 'api-settings-screen', iconId: 'api-settings-screen', nameId: 'api-settings-screen' },
-                { target: 'wallpaper-screen', iconId: 'wallpaper-screen', nameId: 'wallpaper-screen' },
-                { target: 'customize-screen', iconId: 'customize-screen', nameId: 'customize-screen' },
-                { target: 'tutorial-screen', iconId: 'tutorial-screen', nameId: 'tutorial-screen' },
-                { target: 'appearance-settings-screen', iconId: 'appearance-settings-screen', nameId: 'appearance-settings-screen' },
-                { id: 'day-mode-btn', iconId: 'day-mode-btn', nameId: 'day-mode-btn' },
-                { id: 'night-mode-btn', iconId: 'night-mode-btn', nameId: 'night-mode-btn' },
-                { target: 'storage-analysis-screen', iconId: 'storage-analysis-screen', nameId: 'storage-analysis-screen' },
-                { action: 'magic-room-app', iconId: 'magic-room-screen', nameId: 'magic-room-screen' }
-            ]
+            { target: 'api-settings-screen', iconId: 'api-settings-screen', nameId: 'api-settings-screen' },
+            { target: 'data-management-screen', iconId: 'data-management-screen', nameId: 'data-management-screen' },
+            { target: 'magic-room-screen', iconId: 'magic-room-screen', nameId: 'magic-room-screen' },
+            { target: 'appearance-settings-screen', iconId: 'appearance-settings-screen', nameId: 'appearance-settings-screen' }
         ];
     const renderHomeAppIcon = (app) => {
         const attr = app.target ? `data-target="${app.target}"` : app.action ? `data-action="${app.action}"` : '';
@@ -420,6 +421,16 @@ function setupHomeScreen() {
         };
     }
     const insWidget = db.insWidgetSettings;
+
+    const secondaryPageHtml = homeAppPages.slice(1).map(page => `
+        <div class="home-screen-page home-settings-page">
+             <div class="app-grid">
+                ${renderHomeAppGrid(page)}
+             </div>
+        </div>`).join('');
+    const pageIndicatorHtml = totalHomePages > 1
+        ? `<div class="page-indicator">${homeAppPages.map((_, index) => `<span class="dot ${index === currentPageIndex ? 'active' : ''}" data-page="${index}"></span>`).join('')}</div>`
+        : '';
 
     const homeScreenHTML = `
     <div class="home-screen-swiper">
@@ -477,19 +488,17 @@ function setupHomeScreen() {
             </div>
         </div>
 
-        <div class="home-screen-page home-settings-page">
-             <div class="app-grid">
-                ${renderHomeAppGrid(homeAppPages[1] || [])}
-             </div>
-        </div>
+        ${secondaryPageHtml}
 
     </div>
-    <div class="page-indicator">
-        <span class="dot active" data-page="0"></span>
-        <span class="dot" data-page="1"></span>
-    </div>
-    <div class="dock home-dock-spacer" aria-hidden="true"></div>`;
+    ${pageIndicatorHtml}
+    <div class="dock home-action-dock">${renderHomeAppGrid(homeDockApps)}</div>`;
     homeScreen.innerHTML = homeScreenHTML;
+    homeScreen.querySelectorAll('.home-screen-page').forEach(page => {
+        page.style.width = `${100 / totalHomePages}%`;
+    });
+    const homeSwiperEl = homeScreen.querySelector('.home-screen-swiper');
+    if (homeSwiperEl) homeSwiperEl.style.width = `${totalHomePages * 100}%`;
 
     const polaroidImage = db.homeWidgetSettings?.polaroidImage;
     if (polaroidImage) {
@@ -512,23 +521,6 @@ function setupHomeScreen() {
     });
     /* 外观设置：点击进入页面，由 showScreen 时调用 renderAppearanceSettingsScreen */
     document.querySelector('[data-target="world-book-screen"]')?.addEventListener('click', renderWorldBookList);
-    document.querySelector('[data-target="customize-screen"]')?.addEventListener('click', renderCustomizeForm);
-    document.querySelector('[data-target="tutorial-screen"]')?.addEventListener('click', () => {
-        renderTutorialContent();
-        
-        // 绑定全局消息弹窗开关事件
-        const bgToastEl = document.getElementById('setting-bg-toast-enabled');
-        if (bgToastEl) {
-            bgToastEl.checked = db.globalToastEnabled !== false;
-            bgToastEl.onchange = async (e) => {
-                db.globalToastEnabled = e.target.checked;
-                await saveData();
-                if (typeof showToast === 'function') {
-                    showToast(e.target.checked ? '已开启全局消息弹窗' : '已关闭全局消息弹窗');
-                }
-            };
-        }
-    });
     document.querySelector('[data-action="magic-room-app"]')?.addEventListener('click', (e) => { 
         e.preventDefault(); 
         if (typeof setupMagicRoomApp === 'function') setupMagicRoomApp();
@@ -607,7 +599,8 @@ function setupHomeScreen() {
     const swiper = homeScreen.querySelector('.home-screen-swiper');
     let touchStartX = 0;
     let touchEndX = 0;
-    const totalPages = 2;
+    const totalPages = totalHomePages;
+    if (currentPageIndex >= totalPages) currentPageIndex = totalPages - 1;
     const swipeThreshold = 50; 
     let isDragging = false;
 

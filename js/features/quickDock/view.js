@@ -1,5 +1,5 @@
-// --- Quick dock view (v0.2.8) ---
-// 只负责悬浮球、快捷面板和提示词面板展示；业务动作通过 quickDock.service。
+// --- Quick dock view (v0.2.17) ---
+// 悬浮球承载控制台宿主；控制台列表/详情仍由 debugConsole renderer 统一输出。
 (function registerQuickDockView(global) {
     const OwoApp = global.OwoApp;
     const quickDock = OwoApp.features.quickDock;
@@ -9,16 +9,8 @@
     let rootEl = null;
     let panelEl = null;
     let ballEl = null;
+    let consoleMountEl = null;
     let dragState = null;
-
-    function getDebugConsolePublic() {
-        return OwoApp.features && OwoApp.features.debugConsole ? OwoApp.features.debugConsole.publicApi : null;
-    }
-
-    function destroyRequestPanel() {
-        const debug = getDebugConsolePublic();
-        if (debug && debug.destroyEmbeddedRequestConsole && panelEl) debug.destroyEmbeddedRequestConsole(panelEl);
-    }
 
     function escapeHtml(value) {
         return String(value == null ? '' : value).replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
@@ -29,18 +21,23 @@
         rootEl.classList.toggle('quick-dock--busy', !!isBusy);
     }
 
+    function destroyConsoleMount() {
+        if (consoleMountEl) service.destroyConsole(consoleMountEl);
+        consoleMountEl = null;
+    }
+
     function currentModelLabel() {
         const current = service.getCurrentModel() || {};
-        return [current.model || '未选择模型', current.provider || ''].filter(Boolean).join(' · ');
+        return current.model || '未选择模型';
     }
 
     function renderMainPanel() {
+        destroyConsoleMount();
         const candidates = service.listModels();
         const options = candidates.length
-            ? candidates.map(item => `<option value="${escapeHtml(item.id)}" ${item.isCurrent ? 'selected' : ''}>${escapeHtml(item.label || item.model)}</option>`).join('')
+            ? candidates.map(item => `<option value="${escapeHtml(item.id)}" ${item.isCurrent ? 'selected' : ''}>${escapeHtml(item.displayLabel || item.model || item.label)}</option>`).join('')
             : '<option value="">未发现候选模型</option>';
         const status = model.getState().statusText;
-        destroyRequestPanel();
         panelEl.innerHTML = `
             <header class="quick-dock-panel-header">
                 <div><strong>快捷悬浮球</strong><span>${escapeHtml(currentModelLabel())}</span></div>
@@ -54,17 +51,17 @@
                 </div>
             </div>
             <div class="quick-dock-grid">
-                <button type="button" data-qd-action="open-console">请求</button>
+                <button type="button" data-qd-action="open-console">控制台</button>
                 <button type="button" data-qd-action="open-prompt">提示词</button>
                 <button type="button" data-qd-action="backup-now">立即备份</button>
                 <button type="button" data-qd-action="restore-latest">恢复备份</button>
             </div>
-            <p class="quick-dock-status">${escapeHtml(status || '提示：控制台和提示词面板都可以关闭，提示词会按真实换行显示。')}</p>`;
+            <p class="quick-dock-status">${escapeHtml(status || '提示：控制台在悬浮球内直接查看；数据管理只保留入口，不再重复嵌套面板。')}</p>`;
     }
 
     function renderPromptPanel() {
+        destroyConsoleMount();
         const prompt = service.getPromptState();
-        destroyRequestPanel();
         panelEl.innerHTML = `
             <header class="quick-dock-panel-header">
                 <div><strong>提示词</strong><span>真实换行展示，不使用反斜杠 n</span></div>
@@ -82,15 +79,14 @@
             </div>`;
     }
 
-    function renderRequestPanel() {
-        const debug = getDebugConsolePublic();
-        if (!debug || !debug.renderEmbeddedRequestConsole) {
-            panelEl.innerHTML = '<header class="quick-dock-panel-header"><div><strong>请求控制台</strong><span>请求控制台接口未加载</span></div><button type="button" class="quick-dock-icon-btn" data-qd-action="close">×</button></header>';
-            return;
-        }
-        debug.renderEmbeddedRequestConsole(panelEl, {
+    function renderConsolePanel() {
+        destroyConsoleMount();
+        panelEl.innerHTML = '<div id="quick-dock-console-mount" class="quick-dock-console-mount"></div>';
+        consoleMountEl = panelEl.querySelector('#quick-dock-console-mount');
+        service.renderConsole(consoleMountEl, {
             onBack: () => { model.setActivePanel('main'); render(); },
-            onClose: () => { model.setOpen(false); render(); }
+            onClose: () => { model.setOpen(false); render(); },
+            showClose: true
         });
     }
 
@@ -98,15 +94,15 @@
         if (!panelEl || !rootEl) return;
         const state = model.getState();
         rootEl.classList.toggle('quick-dock--open', state.isOpen);
-        panelEl.classList.toggle('quick-dock-panel--request', state.activePanel === 'requests');
         panelEl.classList.toggle('quick-dock-panel--prompt', state.activePanel === 'prompt');
+        panelEl.classList.toggle('quick-dock-panel--console', state.activePanel === 'console');
         panelEl.hidden = !state.isOpen;
         if (!state.isOpen) {
-            destroyRequestPanel();
+            destroyConsoleMount();
             return;
         }
         if (state.activePanel === 'prompt') renderPromptPanel();
-        else if (state.activePanel === 'requests') renderRequestPanel();
+        else if (state.activePanel === 'console') renderConsolePanel();
         else renderMainPanel();
     }
 
@@ -127,7 +123,7 @@
             return;
         }
         if (action === 'open-console') {
-            model.setActivePanel('requests');
+            service.openConsolePanel();
             render();
             return;
         }

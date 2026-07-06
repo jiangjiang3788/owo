@@ -1123,6 +1123,28 @@
         }).join('\n');
     }
 
+    function recordMemoryTableOperation(label, status, data, error) {
+        try {
+            const ops = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
+                ? window.OwoApp.platform.observability.operationTraceService
+                : null;
+            if (!ops || typeof ops.recordOperation !== 'function') return;
+            ops.recordOperation({
+                source: 'features/memoryTable',
+                sourceModule: 'js/modules/memory_table.js compatibility',
+                action: label,
+                label,
+                operationName: label,
+                status: status || 'success',
+                data: data || {},
+                errorMessage: error && error.message ? error.message : '',
+                errorStack: error && error.stack ? String(error.stack) : ''
+            });
+        } catch (traceError) {
+            console.warn('[MemoryTable] operation trace failed:', traceError);
+        }
+    }
+
     async function updateMemoryTablesFromApi(options = {}) {
         const chat = options.chat || getCurrentMemoryTableChat();
         if (!chat) {
@@ -1152,6 +1174,7 @@
 
         const templateText = buildTemplateDefinitionForPrompt(chat, templates);
         const historyText = buildHistoryTextForPrompt(chat, history);
+        const startedAt = Date.now();
         const prompt = `你现在要帮一个聊天角色更新“结构化记忆表”。请根据给定的模板、字段规则和最近聊天记录，只提取明确发生过的信息，并且只输出发生变化的字段。
 
 严格要求：
@@ -1209,9 +1232,25 @@ ${historyText}`;
                     ? `表格已更新，变更 ${changedFields.length} 项`
                     : '没有检测到可更新的字段');
             }
+            recordMemoryTableOperation('表格记忆整理', 'success', {
+                source: options.source || 'api',
+                isAutoUpdate: !!options.isAutoUpdate,
+                templateCount: templates.length,
+                historyCount: history.length,
+                changedCount: changedFields.length,
+                changedFields,
+                durationMs: Date.now() - startedAt
+            });
             return { status: 'success', changedFields };
         } catch (error) {
             console.error('[MemoryTable] update failed:', error);
+            recordMemoryTableOperation('表格记忆整理失败', 'error', {
+                source: options.source || 'api',
+                isAutoUpdate: !!options.isAutoUpdate,
+                templateCount: templates.length,
+                historyCount: history.length,
+                durationMs: Date.now() - startedAt
+            }, error);
             if (options.propagateError) throw error;
             if (typeof showApiError === 'function') showApiError(error);
             else showToast(error.message || '更新表格失败');
@@ -1537,6 +1576,7 @@ ${tableContext}`;
         const updates = parseResult.updates;
         if (updates.length === 0) {
             chat.memoryTables.lastChangedFieldPaths = [];
+            recordMemoryTableOperation('表格记忆整理无变更', 'success', { chatId: chat && chat.id, source: options.source || 'api', updateCount: 0 });
             return [];
         }
 
@@ -1654,6 +1694,13 @@ ${tableContext}`;
 
         pushMemoryHistory(chat, changedFields, {
             source: options.source || 'api'
+        });
+        recordMemoryTableOperation('表格记忆 XML 应用', 'success', {
+            chatId: chat && chat.id,
+            source: options.source || 'api',
+            updateCount: updates.length,
+            changedFieldCount: changedFields.length,
+            targetTemplateIds: options.targetTemplateIds || []
         });
         return changedFields;
     }

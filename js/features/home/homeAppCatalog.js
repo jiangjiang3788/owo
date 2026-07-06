@@ -1,5 +1,5 @@
-// --- Home app catalog (v0.2.4) ---
-// 只定义主屏 app 的分组和入口元数据；不绑定 DOM，不访问持久化。
+// --- Home app catalog (v0.2.17) ---
+// 只定义主屏 app 的分组和入口元数据；Dock 承载 API / 数据管理 / 提示词 / 外观设置。
 (function registerHomeAppCatalog(global) {
     const app = global.OwoApp || (global.OwoApp = {});
     app.features = app.features || {};
@@ -14,16 +14,21 @@
         Object.freeze({ target: 'theater-screen', iconId: 'theater-screen', nameId: 'theater-screen', group: 'creative' })
     ]);
 
-    const settingsApps = Object.freeze([
-        Object.freeze({ target: 'api-settings-screen', iconId: 'api-settings-screen', nameId: 'api-settings-screen', group: 'settings' }),
-        Object.freeze({ target: 'wallpaper-screen', iconId: 'wallpaper-screen', nameId: 'wallpaper-screen', group: 'settings' }),
-        Object.freeze({ target: 'customize-screen', iconId: 'customize-screen', nameId: 'customize-screen', group: 'settings' }),
-        Object.freeze({ target: 'tutorial-screen', iconId: 'tutorial-screen', nameId: 'tutorial-screen', group: 'settings' }),
-        Object.freeze({ target: 'appearance-settings-screen', iconId: 'appearance-settings-screen', nameId: 'appearance-settings-screen', group: 'settings' }),
-        Object.freeze({ id: 'day-mode-btn', iconId: 'day-mode-btn', nameId: 'day-mode-btn', group: 'settings' }),
-        Object.freeze({ id: 'night-mode-btn', iconId: 'night-mode-btn', nameId: 'night-mode-btn', group: 'settings' }),
-        Object.freeze({ target: 'storage-analysis-screen', iconId: 'storage-analysis-screen', nameId: 'storage-analysis-screen', group: 'settings' }),
-        Object.freeze({ action: 'magic-room-app', iconId: 'magic-room-screen', nameId: 'magic-room-screen', group: 'settings' })
+    const secondaryApps = Object.freeze([]);
+
+    const dockApps = Object.freeze([
+        Object.freeze({ target: 'api-settings-screen', iconId: 'api-settings-screen', nameId: 'api-settings-screen', group: 'dock' }),
+        Object.freeze({ target: 'data-management-screen', iconId: 'data-management-screen', nameId: 'data-management-screen', group: 'dock' }),
+        Object.freeze({ target: 'magic-room-screen', iconId: 'magic-room-screen', nameId: 'magic-room-screen', group: 'dock' }),
+        Object.freeze({ target: 'appearance-settings-screen', iconId: 'appearance-settings-screen', nameId: 'appearance-settings-screen', group: 'dock' })
+    ]);
+
+    const mergedLegacyScreens = Object.freeze([
+        'wallpaper-screen -> appearance-settings-screen',
+        'customize-screen -> appearance-settings-screen',
+        'day-mode-btn/night-mode-btn -> appearance-settings-screen',
+        'storage-analysis-screen -> data-management-screen',
+        'tutorial-screen -> data-management-screen'
     ]);
 
     function cloneApp(appDef) {
@@ -31,23 +36,31 @@
     }
 
     function getHomeAppPages() {
-        return [
-            primaryApps.map(cloneApp),
-            settingsApps.map(cloneApp)
-        ];
+        const pages = [primaryApps.map(cloneApp)];
+        if (secondaryApps.length) pages.push(secondaryApps.map(cloneApp));
+        return pages;
+    }
+
+    function getHomeDockApps() {
+        return dockApps.map(cloneApp);
     }
 
     function getRoutingReport() {
         return {
             owner: 'features/home/homeAppCatalog',
+            release: 'v0.2.17',
             primaryCount: primaryApps.length,
-            settingsCount: settingsApps.length,
-            settingsPageOnly: settingsApps.map(item => item.target || item.id || item.action)
+            secondaryCount: secondaryApps.length,
+            dockTargets: dockApps.map(item => item.target),
+            primaryTargets: primaryApps.map(item => item.target),
+            mergedLegacyScreens: Array.from(mergedLegacyScreens),
+            note: 'v0.2.17: Data Management / Prompt / Appearance are Dock-only, API is first Dock item.'
         };
     }
 
     app.features.home.homeAppCatalog = Object.freeze({
         getHomeAppPages,
+        getHomeDockApps,
         getRoutingReport
     });
 })(window);
