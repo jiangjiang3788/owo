@@ -5592,7 +5592,7 @@ function renderCustomizeForm() {
     
     const iconOrder = [
         'api-settings-screen', 'chat-list-screen', 'data-management-screen', 'magic-room-screen', 'appearance-settings-screen',
-        'world-book-screen', 'forum-screen', 'pomodoro-screen', 'piggy-bank-screen', 'theater-screen'
+        'memory-brain-screen', 'world-book-screen', 'forum-screen', 'pomodoro-screen', 'piggy-bank-screen', 'theater-screen'
     ];
 
     let iconsContentHTML = '';

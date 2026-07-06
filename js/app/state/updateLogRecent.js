@@ -1,5 +1,10 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
+    { version: "0.3.0", date: "2026-07-06", notes: [
+        "开启长期记忆脑 v0.3 主线：新增 memoryBrain 架构骨架、App 入口、docs/0.3 和旧记忆来源扫描。",
+        "新记忆脑默认影子模式，只读扫描旧聊天、回忆日记、记忆表格和向量记忆，不参与正式聊天注入。",
+        "明确替换路线：先时间线、事实、家族、graph、长期模型和注入影子对照稳定后，再让记忆脑成为唯一注入 owner。"
+    ] },
     { version: "0.2.17", date: "2026-07-06", notes: [
         "控制台改为真正的单宿主：数据管理只提供入口，悬浮球内查看唯一控制台。",
         "主要操作补齐 recordOperation：切模型、GitHub 备份恢复、API 预设、存储分析、图片压缩等都会进控制台。",

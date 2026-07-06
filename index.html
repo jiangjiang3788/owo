@@ -78,6 +78,7 @@
     <link rel="stylesheet" href="css/modules/debug_console.css">
     <link rel="stylesheet" href="css/modules/quick_dock.css">
     <link rel="stylesheet" href="css/modules/data_management.css">
+    <link rel="stylesheet" href="css/modules/memory_brain.css">
 </head>
 
 <body>
@@ -3662,6 +3663,8 @@
 
         <div id="data-management-screen" class="screen"></div>
 
+        <div id="memory-brain-screen" class="screen"></div>
+
         <div id="storage-analysis-screen" class="screen" data-screen-template="storage-analysis-screen" data-template-hydrated="pending">
             <!-- V35: storage-analysis-screen static template moved to js/platform/storage/storageAnalysisScreenTemplate.js; hydrated by screenTemplateRegistry. -->
         </div>
@@ -6080,6 +6083,14 @@
     <script src="js/features/vectorMemory/model.js"></script> <!-- V24 向量记忆 model：模板、状态、历史、自动总结游标 -->
     <script src="js/features/vectorMemory/contextService.js"></script> <!-- V24 向量记忆 context service：检索上下文和 embedding 补齐 -->
     <script src="js/features/vectorMemory/public.js"></script> <!-- V24 向量记忆 public facade -->
+    <script src="js/core/memoryBrain/types.js"></script> <!-- v0.3.0 记忆脑纯类型：事件/事实/家族/graph/长期模型/注入层 -->
+    <script src="js/core/memoryBrain/public.js"></script> <!-- v0.3.0 记忆脑 core public facade -->
+    <script src="js/platform/memoryBrain/memoryBrainStore.js"></script> <!-- v0.3.0 记忆脑 store：旧来源扫描和 memoryBrain 根状态 -->
+    <script src="js/platform/memoryBrain/public.js"></script> <!-- v0.3.0 记忆脑 platform public facade -->
+    <script src="js/features/memoryBrain/model.js"></script> <!-- v0.3.0 记忆脑 model：展示模型 -->
+    <script src="js/features/memoryBrain/service.js"></script> <!-- v0.3.0 记忆脑 service：扫描/替换计划/控制台记录 -->
+    <script src="js/features/memoryBrain/view.js"></script> <!-- v0.3.0 记忆脑 view：手机端好看 UI 骨架 -->
+    <script src="js/features/memoryBrain/public.js"></script> <!-- v0.3.0 记忆脑 public facade -->
     <script src="js/modules/memory_table.js"></script> <!-- 结构化记忆 -->
     <script src="js/modules/vector_memory.js"></script> <!-- 向量记忆 -->
     <script src="js/modules/reminder.js"></script> <!-- 提醒事项 -->

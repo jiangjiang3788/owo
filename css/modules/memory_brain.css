@@ -1,0 +1,300 @@
+/* Memory Brain feature module owner: features/memoryBrain (v0.3.0) */
+#memory-brain-screen {
+    background: linear-gradient(180deg, #fff8fb 0%, #fff 45%, #f7fbff 100%);
+    color: #2d2a32;
+}
+
+.memory-brain-header .action-btn {
+    min-width: 58px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(190, 137, 161, 0.24);
+    background: rgba(255, 255, 255, 0.74);
+    color: #7f4f68;
+    font-size: 12px;
+}
+
+.memory-brain-subtitle {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: rgba(92, 79, 91, 0.62);
+}
+
+.memory-brain-page {
+    height: calc(100% - 60px);
+    padding: 12px 14px 28px;
+    overflow-y: auto;
+}
+
+.memory-brain-hero {
+    display: grid;
+    grid-template-columns: 1fr 96px;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid rgba(232, 177, 202, 0.35);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 20% 0%, rgba(255, 221, 234, 0.95), transparent 42%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 250, 255, 0.9));
+    box-shadow: 0 16px 36px rgba(171, 117, 151, 0.13);
+}
+
+.memory-brain-kicker {
+    display: inline-flex;
+    margin-bottom: 8px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: #ac5e83;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.memory-brain-hero h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    line-height: 1.28;
+}
+
+.memory-brain-hero p {
+    margin: 0;
+    color: rgba(45, 42, 50, 0.68);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.memory-brain-hero-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: center;
+    gap: 2px;
+    padding: 10px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.66);
+    text-align: center;
+}
+
+.memory-brain-hero-stats strong {
+    font-size: 18px;
+    color: #73435c;
+}
+
+.memory-brain-hero-stats span {
+    margin-bottom: 7px;
+    color: rgba(75, 63, 74, 0.55);
+    font-size: 10px;
+}
+
+.memory-brain-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 12px 0 14px;
+}
+
+.memory-brain-actions button {
+    padding: 10px 8px;
+    border: none;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 8px 20px rgba(133, 107, 124, 0.1);
+    color: #704b62;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.memory-brain-section {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(214, 186, 201, 0.26);
+    box-shadow: 0 10px 26px rgba(122, 103, 116, 0.08);
+}
+
+.memory-brain-section-title h2,
+.memory-brain-note h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+}
+
+.memory-brain-section-title p,
+.memory-brain-note p {
+    margin: 0;
+    color: rgba(54, 47, 55, 0.62);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.memory-brain-layer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.memory-brain-layer-card {
+    padding: 11px;
+    border-radius: 17px;
+    background: linear-gradient(180deg, rgba(255, 247, 251, 0.95), rgba(249, 252, 255, 0.95));
+    border: 1px solid rgba(220, 184, 203, 0.27);
+}
+
+.memory-brain-layer-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.memory-brain-layer-top strong {
+    color: #b36288;
+    font-size: 15px;
+}
+
+.memory-brain-layer-card p {
+    min-height: 42px;
+    margin: 0 0 8px;
+    color: rgba(51, 45, 53, 0.66);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.memory-brain-layer-card small {
+    color: rgba(133, 95, 119, 0.68);
+    font-size: 10px;
+}
+
+.memory-brain-stage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.memory-brain-stage-card {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    padding: 11px;
+    border-radius: 17px;
+    background: rgba(249, 250, 255, 0.88);
+    border: 1px solid rgba(179, 196, 224, 0.28);
+}
+
+.memory-brain-stage-index {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 226, 237, 0.9);
+    color: #9f5178;
+    font-weight: 800;
+}
+
+.memory-brain-stage-card h3 {
+    margin: 0 0 5px;
+    font-size: 14px;
+}
+
+.memory-brain-stage-card h3 span {
+    margin-left: 6px;
+    color: #9a84a4;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.memory-brain-stage-card p {
+    margin: 0 0 8px;
+    color: rgba(43, 40, 48, 0.65);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.memory-brain-stage-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.memory-brain-stage-modes em,
+.memory-brain-source-pill small {
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    color: rgba(101, 77, 97, 0.76);
+    font-size: 10px;
+    font-style: normal;
+}
+
+.memory-brain-scan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.memory-brain-source-pill {
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(255, 248, 252, 0.94);
+    border: 1px solid rgba(230, 190, 207, 0.28);
+}
+
+.memory-brain-source-pill span,
+.memory-brain-source-pill strong {
+    display: block;
+}
+
+.memory-brain-source-pill span {
+    font-size: 12px;
+    color: rgba(51, 42, 52, 0.72);
+}
+
+.memory-brain-source-pill strong {
+    margin: 3px 0 6px;
+    color: #8d4d6b;
+    font-size: 19px;
+}
+
+.memory-brain-chat-list {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.memory-brain-chat-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 2px;
+    border-bottom: 1px solid rgba(120, 100, 115, 0.08);
+    font-size: 12px;
+}
+
+.memory-brain-chat-list em {
+    color: rgba(66, 58, 68, 0.5);
+    font-style: normal;
+    text-align: right;
+}
+
+.memory-brain-empty {
+    margin-top: 12px;
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(249, 250, 255, 0.82);
+    color: rgba(45, 42, 50, 0.62);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+@media (max-width: 390px) {
+    .memory-brain-hero { grid-template-columns: 1fr; }
+    .memory-brain-actions { grid-template-columns: 1fr; }
+    .memory-brain-layer-grid { grid-template-columns: 1fr; }
+}

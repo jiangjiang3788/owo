@@ -73,7 +73,7 @@ const globalSettingKeys = [
     'theaterApiSettings', 'theaterFontSize', 'theaterFontPreset',
     'novelAiSettings', 'gptImageSettings', 'gptImagePresets', 'avatarRecognitionDetailLevel',
     'phoneControlRecycleBin', 'nodeTemplates', 'nodeSummaryText', 'memoryTableTemplates', 'vectorMemoryTemplates',
-    'nightModeSettings', 'homeStatusBarSettings', 'stickerCategories', 'magicRoom',
+    'nightModeSettings', 'homeStatusBarSettings', 'stickerCategories', 'magicRoom', 'memoryBrain',
     'keepAliveCodeEnabled', 'keepAliveAudioEnabled', 'keepAliveAudioSrc', 'keepAliveAudioName', 'keepAliveAudioLibrary'
 ];
 if (typeof window !== 'undefined') window.globalSettingKeysForBackup = globalSettingKeys;

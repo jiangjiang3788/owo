@@ -112,7 +112,8 @@
             favorites: [],  // 消息收藏：{ id, messageId, chatId, chatType, chatName, content, timestamp, favoriteTime, note, sender }
             phoneControlRecycleBin: [],  // 角色掌控模式：被角色“删除”的角色移入回收站，可恢复
             memoryTableTemplates: [],
-            vectorMemoryTemplates: []
+            vectorMemoryTemplates: [],
+            memoryBrain: null
         };
     }
 

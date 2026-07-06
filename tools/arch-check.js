@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * OWO architecture check for product release v0.2.17.
+ * OWO architecture check for product release v0.3.0.
  * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
@@ -60,7 +60,7 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO architecture check · product release v0.2.17 · historical gates V1-V38.1\n');
+console.log('OWO architecture check · product release v0.3.0 · historical gates V1-V38.1\n');
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -72,7 +72,7 @@ for (const file of jsFiles) {
   } else if (lines > MAX_SOFT_LINES && isNewStructure) {
     warn(`${r} ${lines} 行，超过 ${MAX_SOFT_LINES}，需要解释或拆分`);
   } else if (lines > MAX_HARD_LINES && !r.startsWith('js/modules/')) {
-    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.17 暂不阻断，但后续必须拆分`);
+    warn(`${r} ${lines} 行是 legacy 大文件，v0.3.0 暂不阻断，但后续必须拆分`);
   }
 }
 
@@ -2073,7 +2073,7 @@ if (fs.existsSync(screenManifestPath)) {
     ...indexText.matchAll(/<[^>]*\bclass=["'][^"']*\bscreen\b[^"']*["'][^>]*\bid=["']([^"']+)["']/g),
     ...indexText.matchAll(/<[^>]*\bid=["']([^"']+)["'][^>]*\bclass=["'][^"']*\bscreen\b[^"']*["']/g)
   ].map(m => m[1]))];
-  if (htmlIds.length !== 70) error(`index.html 当前 screen 数量应为 70，实际为 ${htmlIds.length}`);
+  if (htmlIds.length !== 71) error(`index.html 当前 screen 数量应为 71，实际为 ${htmlIds.length}`);
   if (manifestIds.length !== htmlIds.length) error(`screenManifest 登记数量 ${manifestIds.length} 与 DOM screen 数量 ${htmlIds.length} 不一致`);
   for (const id of htmlIds) {
     if (!manifestIds.includes(id)) error(`screenManifest 缺少 DOM screen：${id}`);
@@ -2325,14 +2325,14 @@ for (const [file, label] of [
 }
 
 if (fs.existsSync(docsRootPath)) {
-  const allowedRootEntries = new Set(['0.1', '0.2', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
+  const allowedRootEntries = new Set(['0.1', '0.2', '0.3', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
   const extraRootEntries = fs.readdirSync(docsRootPath).filter(name => !allowedRootEntries.has(name));
   if (extraRootEntries.length) error(`docs 根路径存在多余文件或目录：${extraRootEntries.join(', ')}`);
 }
 
 if (fs.existsSync(docsRootReadmePath)) {
   const docsRootText = read(docsRootReadmePath);
-  for (const token of ['docs/0.1', 'docs/0.2', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '不要提前创建空的 `0.3` 目录']) {
+  for (const token of ['docs/0.1', 'docs/0.2', 'docs/0.3', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '0.3` 版本线已在 `v0.3.0` 正式开启']) {
     if (!docsRootText.includes(token)) error(`docs/README.md 缺少文档根路径说明：${token}`);
   }
 }
@@ -2344,7 +2344,13 @@ if (fs.existsSync(docsLegacyCaifenDir)) error('docs/caifen 已移除，不再保
 const docsOtherDir = path.join(root, 'docs', 'other');
 if (fs.existsSync(docsOtherDir)) error('docs/other 已移除；确实需要新版本线时先更新 VERSIONING.md');
 const docsV03Dir = path.join(root, 'docs', '0.3');
-if (fs.existsSync(docsV03Dir)) error('尚未开启 v0.3.x，不要提前创建 docs/0.3');
+if (!fs.existsSync(docsV03Dir)) error('v0.3.0 已开启长期记忆脑主线，必须存在 docs/0.3');
+const docsV03Readme = path.join(docsV03Dir, 'README.md');
+const docsV03ReleasePlan = path.join(docsV03Dir, 'release-plan.md');
+const docsV030Plan = path.join(docsV03Dir, 'release-v0.3.0-plan.md');
+for (const requiredV03Doc of [docsV03Readme, docsV03ReleasePlan, docsV030Plan]) {
+  if (!fs.existsSync(requiredV03Doc)) error(`缺少 v0.3 文档：${rel(requiredV03Doc)}`);
+}
 
 if (fs.existsSync(docsV02ReleasePlanPath)) {
   const docsV02Text = read(docsV02ReleasePlanPath);
@@ -2353,6 +2359,35 @@ if (fs.existsSync(docsV02ReleasePlanPath)) {
   }
 }
 
+
+
+// v0.3.0 Memory Brain ownership gate
+for (const relPath of [
+  'js/core/memoryBrain/types.js',
+  'js/core/memoryBrain/public.js',
+  'js/platform/memoryBrain/memoryBrainStore.js',
+  'js/platform/memoryBrain/public.js',
+  'js/features/memoryBrain/model.js',
+  'js/features/memoryBrain/service.js',
+  'js/features/memoryBrain/view.js',
+  'js/features/memoryBrain/public.js',
+  'css/modules/memory_brain.css'
+]) {
+  if (!fs.existsSync(path.join(root, relPath))) error(`缺少 Memory Brain 文件：${relPath}`);
+}
+if (indexText) {
+  requireScriptBefore(indexText, 'js/core/memoryBrain/types.js', 'js/platform/memoryBrain/memoryBrainStore.js', '保证 store 能读取纯类型');
+  requireScriptBefore(indexText, 'js/platform/memoryBrain/public.js', 'js/features/memoryBrain/service.js', '保证 feature 只走 platform facade');
+  requireScriptBefore(indexText, 'js/features/memoryBrain/service.js', 'js/features/memoryBrain/view.js', '保证 view 不承载用例编排');
+}
+const memoryBrainServiceText = read(path.join(root, 'js/features/memoryBrain/service.js'));
+if (/memory_table|vector_memory|journal\.js/.test(memoryBrainServiceText)) {
+  error('features/memoryBrain/service.js 不应直接调用旧 memory_table/vector_memory/journal 文件；旧系统只能通过 platform scan 作为 read-only source');
+}
+const memoryBrainStoreText = read(path.join(root, 'js/platform/memoryBrain/memoryBrainStore.js'));
+for (const token of ["legacyMode: 'read-only-source'", 'noDualWrite: true', 'rememberLegacyScan']) {
+  if (!memoryBrainStoreText.includes(token)) error(`memoryBrainStore.js 缺少替换/双系统约束标记：${token}`);
+}
 
 if (hasError) {
   console.error('\n架构检查未通过。');

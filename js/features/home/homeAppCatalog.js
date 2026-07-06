@@ -7,6 +7,7 @@
 
     const primaryApps = Object.freeze([
         Object.freeze({ target: 'chat-list-screen', iconId: 'chat-list-screen', nameId: 'chat-list-screen', group: 'primary' }),
+        Object.freeze({ target: 'memory-brain-screen', iconId: 'memory-brain-screen', nameId: 'memory-brain-screen', group: 'memory' }),
         Object.freeze({ target: 'world-book-screen', iconId: 'world-book-screen', nameId: 'world-book-screen', group: 'memory' }),
         Object.freeze({ target: 'pomodoro-screen', iconId: 'pomodoro-screen', nameId: 'pomodoro-screen', group: 'tool' }),
         Object.freeze({ target: 'forum-screen', iconId: 'forum-screen', nameId: 'forum-screen', group: 'community' }),
@@ -48,13 +49,13 @@
     function getRoutingReport() {
         return {
             owner: 'features/home/homeAppCatalog',
-            release: 'v0.2.17',
+            release: 'v0.3.0',
             primaryCount: primaryApps.length,
             secondaryCount: secondaryApps.length,
             dockTargets: dockApps.map(item => item.target),
             primaryTargets: primaryApps.map(item => item.target),
             mergedLegacyScreens: Array.from(mergedLegacyScreens),
-            note: 'v0.2.17: Data Management / Prompt / Appearance are Dock-only, API is first Dock item.'
+            note: 'v0.3.0: Memory Brain enters primary apps; Data Management / Prompt / Appearance remain Dock-only, API is first Dock item.'
         };
     }
 

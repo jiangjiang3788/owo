@@ -82,6 +82,7 @@ const defaultIcons = {
     'data-management-screen': {name: '数据管理', url: 'https://i.postimg.cc/J0F3Lt0T/chan-107.png'},
     'magic-room-screen': {name: '提示词', url: 'https://i.postimg.cc/hPCcZG3v/png-(143).png'},
     'appearance-settings-screen': {name: '外观设置', url: 'https://i.postimg.cc/KcgT1wzQ/DF424409FC54EDFF74D78ECB1311E1D7.png'},
+    'memory-brain-screen': {name: '记忆脑', url: 'https://i.postimg.cc/prCWkrKT/chan-74.png'},
     'theater-screen': {name: '小剧场', url: 'https://i.postimg.cc/t4gXjG8P/7632D362A35EC703E7A81F6FF0F8AE34.png'}
 };
 
@@ -100,4 +101,4 @@ const peekScreenApps = {
 };
 
 const appName = "章鱼喷墨机";
-const appVersion = "0.2.17";
+const appVersion = "0.3.0";

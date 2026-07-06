@@ -43,6 +43,7 @@
         if (!Array.isArray(targetDb.stickerCategories)) targetDb.stickerCategories = [];
         if (!Array.isArray(targetDb.vectorMemoryTemplates)) targetDb.vectorMemoryTemplates = [];
         if (!Array.isArray(targetDb.vectorApiPresets)) targetDb.vectorApiPresets = [];
+        if (!targetDb.memoryBrain || typeof targetDb.memoryBrain !== 'object') targetDb.memoryBrain = null;
         if (!targetDb.piggyBank) targetDb.piggyBank = { balance: 520, transactions: [], familyCards: [], receivedFamilyCards: [] };
         if (typeof targetDb.piggyBank.balance !== 'number') targetDb.piggyBank.balance = 520;
         if (!Array.isArray(targetDb.piggyBank.transactions)) targetDb.piggyBank.transactions = [];

@@ -313,6 +313,13 @@
       "role": "feature-module",
       "status": "canonical",
       "maxLines": 280
+    },
+    {
+      "path": "css/modules/memory_brain.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 320
     }
   ]
 }
