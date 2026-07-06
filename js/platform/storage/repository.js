@@ -1,6 +1,6 @@
 // --- platform/storage/repository.js ---
-// V3 存储单写路径桥接层。
-// 注意：这一版不把 db.js 的 Dexie 写入实现复制到这里；repository 只拥有公开入口和保存状态，实际 writer 只能注册一次。
+// V10 存储公开入口。
+// repository 只拥有公开 API 和保存状态；实际 IndexedDB writer 归 dexieWriter，writer 仍只能注册一次。
 (function registerStorageRepository(global) {
     const app = global.OwoApp;
     if (!app || !app.platform || !app.platform.storage) {
@@ -22,21 +22,28 @@
 
     function getWriters() {
         if (!writers) {
-            throw new Error('[OwoApp.storage] writers 尚未注册；请确认 db.js 已加载并完成 setLegacyWriters');
+            throw new Error('[OwoApp.storage] writers 尚未注册；请确认 db.js 已加载并完成 setWriters');
         }
         return writers;
     }
 
-    function setLegacyWriters(nextWriters, meta) {
+    function setWriters(nextWriters, meta) {
         if (writers) {
             throw new Error('[OwoApp.storage] writers 只能注册一次，避免双写路径');
         }
         assertFunctionMap(nextWriters);
         writers = Object.freeze(Object.assign({}, nextWriters));
         writerMeta = Object.freeze(Object.assign({
-            state: 'legacy-owner',
-            owner: 'js/db.js',
-            note: 'V3 bridge: repository 是公开入口，db.js private writer 是唯一写入实现'
+            state: 'canonical',
+            owner: 'OwoApp.platform.storage.dexieWriter',
+            note: 'V10: repository 是公开入口，dexieWriter 是唯一写入实现'
+        }, meta || {}));
+    }
+
+    function setLegacyWriters(nextWriters, meta) {
+        return setWriters(nextWriters, Object.assign({
+            state: 'compat',
+            note: 'compat alias: 请使用 setWriters 注册唯一 writer'
         }, meta || {}));
     }
 
@@ -80,6 +87,7 @@
     }
 
     app.platform.storage.repository = {
+        setWriters,
         setLegacyWriters,
         saveData,
         saveCharacter,

@@ -9,51 +9,34 @@ let theaterSelectedIds = new Set();
 let theaterCurrentMode = 'text';
 
 /** 用于把 HTML 安全地塞进 textarea / innerHTML（避免标签被当成 DOM 解析） */
+// @compat canonical: OwoApp.core.theater.sceneSemantics / OwoApp.features.theater.model / OwoApp.features.theater.promptService
+const theaterSceneSemantics = window.OwoApp.core.theater.sceneSemantics;
+const theaterPromptSemantics = window.OwoApp.core.theater.promptSemantics;
+const theaterModel = window.OwoApp.features.theater.model;
+const theaterPromptService = window.OwoApp.features.theater.promptService;
+
 function theaterEscapeHtml(s) {
-    return String(s ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    return theaterSceneSemantics.escapeHtml(s);
 }
 
 /** 获取当前模式的剧情列表 */
 function getTheaterScenarios() {
-    if (theaterCurrentMode === 'html') {
-        if (!db.theaterHtmlScenarios) db.theaterHtmlScenarios = [];
-        return db.theaterHtmlScenarios;
-    }
-    if (!db.theaterScenarios) db.theaterScenarios = [];
-    return db.theaterScenarios;
+    return theaterModel.getScenarioList(db, theaterCurrentMode);
 }
 
 /** 设置当前模式的剧情列表 */
 function setTheaterScenarios(list) {
-    if (theaterCurrentMode === 'html') {
-        db.theaterHtmlScenarios = list;
-    } else {
-        db.theaterScenarios = list;
-    }
+    return theaterModel.setScenarioList(db, theaterCurrentMode, list);
 }
 
 /** 获取当前模式的提示词预设列表 */
 function getTheaterPromptPresets() {
-    if (theaterCurrentMode === 'html') {
-        if (!db.theaterHtmlPromptPresets) db.theaterHtmlPromptPresets = [];
-        return db.theaterHtmlPromptPresets;
-    }
-    if (!db.theaterPromptPresets) db.theaterPromptPresets = [];
-    return db.theaterPromptPresets;
+    return theaterModel.getPromptPresetList(db, theaterCurrentMode);
 }
 
 /** 设置当前模式的提示词预设列表 */
 function setTheaterPromptPresets(list) {
-    if (theaterCurrentMode === 'html') {
-        db.theaterHtmlPromptPresets = list;
-    } else {
-        db.theaterPromptPresets = list;
-    }
+    return theaterModel.setPromptPresetList(db, theaterCurrentMode, list);
 }
 
 /**
@@ -128,15 +111,7 @@ async function callChatCompletion(apiPayload, overrideSettings) {
 
 /** 去掉 AI 开场白，只保留剧本正文 */
 function stripTheaterIntro(text) {
-    if (!text || typeof text !== 'string') return text;
-    let s = text.trim();
-    // 去掉开头的「好的，编剧。这是一段根据…」类开场白（含换行）
-    const introRe = /^好的[，,]?\s*编剧[。.]?\s*[^\n]*?(根据你提供的提示词|根据提示词|根据设定)[^\n]*(短剧脚本|剧情脚本|脚本)[^\n]*[。.!\s]*\n?/i;
-    s = s.replace(introRe, '');
-    // 去掉仅由这类说明组成的首行
-    const firstLineRe = /^[^\n]*(这是一段|下面是根据|以下是)[^\n]*(根据你提供的提示词|短剧脚本|剧情脚本)[^\n]*[。.!\s]*\n?/im;
-    s = s.replace(firstLineRe, '');
-    return s.trim();
+    return theaterSceneSemantics.stripTheaterIntro(text);
 }
 
 /** 将剧本正文中的 Markdown 转为 HTML（**粗体**、*斜体*、换行），并做安全过滤 */
@@ -176,7 +151,7 @@ function renderTheaterScenarios() {
     }
 
     // 获取所有分类
-    const categories = [...new Set(allScenarios.map(s => s.category || '未分类'))];
+    const categories = theaterModel.getCategories(db, theaterCurrentMode);
     const currentSelectedCategory = categoryFilter ? categoryFilter.value : '';
     
     if (categoryFilter) {
@@ -192,28 +167,15 @@ function renderTheaterScenarios() {
         });
     }
 
-    // 过滤场景
+    // 过滤并排序场景
     const selectedCategory = categoryFilter ? categoryFilter.value : '';
-    let filteredScenarios = allScenarios;
-    if (selectedCategory) {
-        filteredScenarios = allScenarios.filter(s => (s.category || '未分类') === selectedCategory);
-    }
+    let filteredScenarios = theaterModel.getScenarioListForView(db, theaterCurrentMode, selectedCategory);
 
     if (filteredScenarios.length === 0) {
         scenariosList.innerHTML = '<div class="theater-empty-state">该分类下暂无剧情</div>';
         updateTheaterMultiSelectBar();
         return;
     }
-
-    // 按收藏状态和创建时间排序（收藏的置顶）
-    filteredScenarios.sort((a, b) => {
-        const aFav = a.isFavorite ? 1 : 0;
-        const bFav = b.isFavorite ? 1 : 0;
-        if (aFav !== bFav) {
-            return bFav - aFav; // 收藏的在前
-        }
-        return (b.createdAt || 0) - (a.createdAt || 0); // 同收藏状态下按时间倒序
-    });
 
     const isMultiSelect = theaterMultiSelectMode;
 
@@ -353,10 +315,7 @@ function theaterSelectAll() {
     const filterId = theaterCurrentMode === 'html' ? 'theater-html-category-filter' : 'theater-category-filter';
     const categoryFilter = document.getElementById(filterId);
     const selectedCategory = categoryFilter ? categoryFilter.value : '';
-    let list = getTheaterScenarios();
-    if (selectedCategory) {
-        list = list.filter(s => (s.category || '未分类') === selectedCategory);
-    }
+    const list = theaterModel.getScenarioListForView(db, theaterCurrentMode, selectedCategory);
     list.forEach(s => { theaterSelectedIds.add(s.id); });
     updateTheaterMultiSelectBar();
     renderTheaterScenarios();
@@ -365,7 +324,7 @@ function theaterSelectAll() {
 function theaterDeleteSelected() {
     if (theaterSelectedIds.size === 0) return;
     if (!confirm('确定删除选中的 ' + theaterSelectedIds.size + ' 个剧情吗？')) return;
-    setTheaterScenarios(getTheaterScenarios().filter(s => !theaterSelectedIds.has(s.id)));
+    theaterModel.deleteScenariosByIds(db, theaterCurrentMode, theaterSelectedIds);
     saveData().then(() => {
         showToast('已删除选中剧情');
         exitTheaterMultiSelectMode();
@@ -418,20 +377,10 @@ function showTheaterScenarioDetail(scenario) {
     // 正文占位符替换：使用用户/角色名字替换 {{user}} / {{char}} 等
     let displayContent = scenario.content || '';
     if (!isEditing && typeof displayContent === 'string') {
-        // 用户名优先使用人设名称，其次退回“我”
-        const userName = personaName || '我';
-        if (userName) {
-            displayContent = displayContent
-                // {{user}} / {{User}} / {{USER}} / {{user_name}}
-                .replace(/\{\{\s*(user|User|USER|user_name)\s*\}\}/g, userName);
-        }
-        // 如果有多个角色，{{char_name}} 使用第一个角色的名字
-        if (charNames.length > 0) {
-            const firstCharName = charNames[0];
-            displayContent = displayContent
-                // {{char}} / {{Char}} / {{CHAR}} / {{char_name}}
-                .replace(/\{\{\s*(char|Char|CHAR|char_name)\s*\}\}/g, firstCharName);
-        }
+        displayContent = theaterSceneSemantics.replaceScenarioPlaceholders(displayContent, {
+            userName: personaName || '我',
+            charName: charNames.length > 0 ? charNames[0] : ''
+        });
     }
 
     // 获取字号设置，默认15px
@@ -986,153 +935,32 @@ async function generateTheaterScenario() {
         const apiSettings = db.apiSettings || {};
         const model = apiSettings.model || 'gpt-4o-mini';
 
-        // 根据当前模式选择不同的系统提示词
-        const isHtmlMode = theaterCurrentMode === 'html';
-        const systemPrompt = isHtmlMode
-            ? `你精通HTML/CSS。请根据用户提供的提示词，结合可能的角色设定和世界观，以 HTML 格式输出。
-
-【最高优先级规则 —— 必须包含完整 CSS】
-你的输出第一行必须是 <style> 标签，里面包含本次所有 class / id 的完整 CSS 规则。
-绝对禁止只输出 HTML 结构而省略 CSS！没有 CSS 的 HTML 等于白纸，用户什么都看不到。
-如果用户提示词里附带了 CSS 模板/示例代码，你必须将该 CSS 原样保留在 <style> 中，不可删减、不可省略、不可拆分。
-
-其他要求：
-1. 输出纯 HTML+CSS，禁止使用 <script> 标签或任何 JavaScript。
-2. 允许包含交互与动画效果，可用方案：
-   - <details><summary>点击展开</summary><div>折叠内容</div></details>
-   - <input type="checkbox" id="x"><label for="x">切换</label> 配合 :checked 选择器控制显示/隐藏/样式切换
-   - <input type="radio" name="grp" id="r1"><label for="r1">选项</label> 配合 :checked 实现选项卡/分支选择
-   - :hover 悬停动画、:target 锚点定位变化
-   - CSS transition / animation / @keyframes 制作渐变、淡入淡出、滑动等动画
-3. 用 <style> 标签在输出最开头集中书写 CSS，所有视觉效果（布局、颜色、字体、间距、动画、交互状态）全部写在这个 <style> 里。
-4. 如果用户提示词中包含了"必须原样输出"的 HTML/CSS 模板代码，你必须逐字保留模板结构与 CSS（标签、属性、ID、class、顺序都不改），只替换占位符文本（如：[中文占位符]）。禁止省略 <style> 或任何关键节点。
-5. 直接输出 HTML，不要输出开场白、说明文字或 markdown 代码块包裹（不要写 \`\`\`html ... \`\`\`）。`
-            : `你是一名擅长写短篇小说的作家。请根据用户提供的提示词，结合可能的角色设定和世界观，生成一段完整而精彩的短篇小说。要求：
-1. 剧情结构完整，有开端、发展和结尾。
-2. 如果提示词中没有明确的世界观和设定，可以自行补充，但不要偏离提示词的核心需求。
-3. 直接输出剧本正文，不要输出任何开场白或说明（例如不要输出「好的，作家。这是一段根据你提供的提示词和设定生成的短篇小说。」等句子）。`;
-
-        let finalPrompt = customPrompt;
-
-        // 如果选择了角色，注入角色信息
-        if (charIds.length > 0) {
-            const chars = charIds.map(id => db.characters.find(c => c.id === id)).filter(Boolean);
-            if (chars.length > 0) {
-                const charInfoText = chars.map(char => 
-                    `角色名：${char.realName || char.remarkName || '未命名角色'}\n角色人设：${char.persona || '未设定'}`
-                ).join('\n\n');
-                finalPrompt = `【角色信息】\n${charInfoText}\n\n【用户提示】\n${customPrompt}`;
-            }
-        }
-
-        // 如果选择了人设预设，注入人设内容
-        if (personaId) {
-            const persona = db.myPersonaPresets.find(p => (p.id || p.name) === personaId);
-            if (persona) {
-                finalPrompt += `\n\n【用户人设】\n名称：${persona.name}\n人设内容：${persona.content}\n\n注意：在生成的小说中，如果提到用户角色，请使用"${persona.name}"作为用户的名字，或使用{{user_name}}占位符（后续会自动替换）。`;
-            }
-        }
-
-        // 如果选择了世界书，注入世界书内容
+        // V29: prompt pieces/context 归 theater promptService，chat_ai / provider stream 不改
+        const isHtmlMode = theaterSceneSemantics.isHtmlMode(theaterCurrentMode);
         const worldbookOptions = document.getElementById('theater-worldbook-options');
-        if (worldbookOptions && db.worldBooks && db.worldBooks.length > 0) {
-            const selectedOptions = worldbookOptions.querySelectorAll('.theater-multiselect-option.selected');
-            if (selectedOptions.length > 0) {
-                const selectedIds = Array.from(selectedOptions).map(opt => opt.dataset.id);
-                const selectedBooks = db.worldBooks.filter(wb => selectedIds.includes(wb.id) && !wb.disabled);
-                if (selectedBooks.length > 0) {
-                    const worldbookText = selectedBooks
-                        .map(wb => `【${wb.name || wb.title || '未命名世界书'}】\n${wb.content || ''}`)
-                        .join('\n\n');
-                    finalPrompt += `\n\n【世界观设定参考】\n${worldbookText}`;
-                }
-            }
-        }
-
-        // 如果开启了聊天记录 & 日记总结读取，注入到提示词中
-        // 如果选择了多个角色，读取所有选中角色的聊天记录和日记总结
+        const worldBookIds = worldbookOptions
+            ? Array.from(worldbookOptions.querySelectorAll('.theater-multiselect-option.selected')).map(opt => opt.dataset.id).filter(Boolean)
+            : [];
         const contextToggle = document.getElementById('theater-context-toggle');
         const contextEnabled = contextToggle && contextToggle.getAttribute('aria-checked') === 'true';
-        if (contextEnabled && charIds.length > 0) {
-            const chatHistoryCountInput = document.getElementById('theater-chat-history-count');
-            const journalCountInput = document.getElementById('theater-journal-count');
-            const chatHistoryCount = Math.max(0, Math.min(parseInt(chatHistoryCountInput?.value) || 0, 200));
-            const journalCount = Math.max(0, Math.min(parseInt(journalCountInput?.value) || 0, 50));
-
-            const userName = personaId
-                ? (db.myPersonaPresets.find(p => (p.id || p.name) === personaId)?.name || '用户')
-                : '用户';
-
-            // 收集所有角色的聊天记录
-            const allHistoryTexts = [];
-            let totalHistoryCount = 0;
-
-            // 收集所有角色的日记总结
-            const allJournalTexts = [];
-            let totalJournalCount = 0;
-
-            // 遍历所有选中的角色
-            charIds.forEach(charId => {
-                const char = db.characters.find(c => c.id === charId);
-                if (!char) return;
-
-                const charName = char.realName || char.remarkName || '角色';
-
-                // 读取该角色的聊天记录
-                if (chatHistoryCount > 0 && Array.isArray(char.history) && char.history.length > 0) {
-                    let recent = char.history.slice(-chatHistoryCount);
-                    // 过滤掉不应进入上下文的消息
-                    if (typeof filterHistoryForAI === 'function') {
-                        recent = filterHistoryForAI(char, recent);
-                    }
-                    recent = recent
-                        .filter(m => !m.isContextDisabled)
-                        .filter(m => m.role === 'user' || m.role === 'assistant');
-
-                    if (recent.length > 0) {
-                        const historyText = recent.map(m => {
-                            let content = '';
-                            if (m && Array.isArray(m.parts) && m.parts.length > 0) {
-                                content = m.parts.map(p => p.text || '[图片]').join('');
-                            } else {
-                                content = (m && m.content) ? m.content : '';
-                            }
-                            const sender = m.role === 'user' ? userName : charName;
-                            return `${sender}: ${content}`;
-                        }).join('\n');
-                        allHistoryTexts.push(`【${charName}的聊天记录（共${recent.length}条）】\n${historyText}`);
-                        totalHistoryCount += recent.length;
-                    }
-                }
-
-                // 读取该角色的日记总结
-                if (journalCount > 0 && Array.isArray(char.memoryJournals) && char.memoryJournals.length > 0) {
-                    let journals = char.memoryJournals
-                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-                        .slice(0, journalCount);
-
-                    if (journals.length > 0) {
-                        const journalText = journals
-                            .map(j => `标题：${j.title || '无标题'}\n内容：${j.content || ''}`)
-                            .join('\n\n---\n\n');
-                        allJournalTexts.push(`【${charName}的日记总结（共${journals.length}条）】\n${journalText}`);
-                        totalJournalCount += journals.length;
-                    }
-                }
-            });
-
-            // 将所有角色的聊天记录合并到提示词中
-            if (allHistoryTexts.length > 0) {
-                const combinedHistoryText = allHistoryTexts.join('\n\n---\n\n');
-                finalPrompt += `\n\n【用户与所有角色的最近聊天记录（共${totalHistoryCount}条）】\n${combinedHistoryText}`;
-            }
-
-            // 将所有角色的日记总结合并到提示词中
-            if (allJournalTexts.length > 0) {
-                const combinedJournalText = allJournalTexts.join('\n\n---\n\n');
-                finalPrompt += `\n\n【用户与所有角色的日记总结（共${totalJournalCount}条）】\n${combinedJournalText}`;
-            }
-        }
+        const chatHistoryCountInput = document.getElementById('theater-chat-history-count');
+        const journalCountInput = document.getElementById('theater-journal-count');
+        const chatHistoryCount = Math.max(0, Math.min(parseInt(chatHistoryCountInput?.value) || 0, 200));
+        const journalCount = Math.max(0, Math.min(parseInt(journalCountInput?.value) || 0, 50));
+        const promptRequest = theaterPromptService.buildManualGenerationRequest({
+            state: db,
+            mode: theaterCurrentMode,
+            customPrompt,
+            charIds,
+            personaId,
+            worldBookIds,
+            contextEnabled,
+            chatHistoryCount,
+            journalCount,
+            filterHistory: (typeof filterHistoryForAI === 'function') ? filterHistoryForAI : null
+        });
+        const systemPrompt = promptRequest.systemPrompt;
+        const finalPrompt = promptRequest.userPrompt;
 
         // 检查是否使用独立API
         const theaterApiToggleEl = document.getElementById('theater-api-toggle');
@@ -1170,99 +998,37 @@ async function generateTheaterScenario() {
         const response = await callChatCompletion(apiPayload, overrideSettings);
         if (response && response.choices && response.choices[0] && response.choices[0].message) {
             const content = response.choices[0].message.content.trim();
-
-            // 替换可能的占位符角色名
-            let processedContent = content;
-
-            // HTML 模式下去掉可能的 markdown 代码块包裹
-            if (isHtmlMode) {
-                processedContent = processedContent.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-
-                // 安全检查：如果 HTML 中有 class= 但缺少 <style>，尝试从用户提示词里提取 <style> 补上
-                const hasClassOrId = /class\s*=\s*["']/i.test(processedContent);
-                const hasStyleTag = /<style\b/i.test(processedContent);
-                if (hasClassOrId && !hasStyleTag) {
-                    // 从用户提示词里提取 <style>...</style> 块
-                    const styleMatch = (customPrompt || '').match(/<style\b[^>]*>[\s\S]*?<\/style>/i);
-                    if (styleMatch) {
-                        processedContent = styleMatch[0] + '\n' + processedContent;
-                        console.log('[HTML模式] AI 输出缺少 <style>，已从用户提示词自动补回');
-                    } else {
-                        console.warn('[HTML模式] AI 输出含 class 但缺少 <style>，用户提示词中也未找到可补充的 CSS');
-                        showToast('⚠️ 生成的 HTML 缺少 CSS 样式，显示可能异常。建议在提示词中附上 CSS 或重新生成。');
-                    }
-                }
+            const normalized = theaterPromptService.normalizeGeneratedContent(content, {
+                state: db,
+                mode: theaterCurrentMode,
+                customPrompt,
+                personaId,
+                charIds
+            });
+            let processedContent = normalized.content;
+            if (normalized.missingStyle) {
+                console.warn('[HTML模式] AI 输出含 class 但缺少 <style>，用户提示词中也未找到可补充的 CSS');
+                showToast('⚠️ 生成的 HTML 缺少 CSS 样式，显示可能异常。建议在提示词中附上 CSS 或重新生成。');
             }
-
-            // 处理角色名占位符替换（如果有多个角色，使用第一个角色的名字）
             if (charIds.length > 0) {
                 const char = db.characters.find(c => c.id === charIds[0]);
                 const charName = char?.realName || char?.remarkName;
-                if (charName) {
-                    processedContent = processedContent.replace(/【角色名】|<角色名>|{{角色名}}|\[角色名\]/g, charName);
-                }
-            }
-            // 去掉 AI 开场白，只保留剧本正文
-            if (!isHtmlMode) {
-                processedContent = stripTheaterIntro(processedContent);
-            }
-
-            // 统一变量占位符：
-            // {{user}}/{{USER}}/{{User}} -> {{user_name}}
-            // {{char}}/{{CHAR}}/{{Char}} -> {{char_name}}
-            processedContent = processedContent
-                .replace(/\{\{\s*(user|User|USER)\s*\}\}/g, '{{user_name}}')
-                .replace(/\{\{\s*(char|Char|CHAR)\s*\}\}/g, '{{char_name}}');
-            // 纯文字模式下额外替换裸 user/char 单词（HTML 模式可能破坏标签）
-            if (!isHtmlMode) {
-                processedContent = processedContent
-                    .replace(/\b(user|User|USER)\b/g, '{{user_name}}')
-                    .replace(/\b(char|Char|CHAR)\b/g, '{{char_name}}');
-            }
-
-            // 替换{{user_name}}为实际的人设名称
-            if (personaId) {
-                const persona = db.myPersonaPresets.find(p => (p.id || p.name) === personaId);
-                if (persona && persona.name) {
-                    // 将{{user_name}}替换为实际选择的人设名称
-                    processedContent = processedContent.replace(/\{\{user_name\}\}/g, persona.name);
-                }
-            }
-            
-            // 替换{{char_name}}为实际的角色名称（如果有多个角色，使用第一个角色的名字）
-            if (charIds.length > 0) {
-                const char = db.characters.find(c => c.id === charIds[0]);
-                const charName = char?.realName || char?.remarkName;
-                if (charName) {
-                    processedContent = processedContent.replace(/\{\{char_name\}\}/g, charName);
-                }
+                if (charName) processedContent = processedContent.replace(/【角色名】|<角色名>|{{角色名}}|\[角色名\]/g, charName);
             }
 
             // 默认标题为"剧情"，用户可以后续编辑
-            // charId 支持向后兼容：单个角色保存为字符串，多个角色保存为数组
-            let savedCharId = null;
-            if (charIds.length === 1) {
-                savedCharId = charIds[0]; // 单个角色保存为字符串（向后兼容）
-            } else if (charIds.length > 1) {
-                savedCharId = charIds; // 多个角色保存为数组
-            }
-            
-            const scenario = {
-                id: Date.now().toString(),
+            const scenario = theaterSceneSemantics.createScenario({
                 title: isHtmlMode ? 'HTML 剧情' : '剧情',
                 content: processedContent,
                 category: category,
-                charId: savedCharId,
+                charId: theaterSceneSemantics.normalizeCharIdForScenario(charIds),
                 personaId: (personaId && personaId.trim()) ? personaId : null,
-                worldBookIds: [],
+                worldBookIds,
                 customPrompt: customPrompt || null,
-                createdAt: Date.now(),
                 mode: theaterCurrentMode
-            };
+            });
 
-            const list = getTheaterScenarios();
-            list.unshift(scenario);
-            setTheaterScenarios(list);
+            theaterModel.addScenario(db, theaterCurrentMode, scenario);
             await saveData();
             
             showToast('剧情生成成功！');
@@ -2384,125 +2150,19 @@ async function saveHtmlEditScenario() {
  * @param {string} charId - 角色ID
  */
 async function generateCharTheater(charId) {
-    const char = db.characters.find(c => c.id === charId);
-    if (!char || !char.charTheaterEnabled) return;
+    const theaterRequest = theaterPromptService.buildCharacterGenerationRequest(charId, {
+        state: db,
+        randomValue: Math.random()
+    });
+    if (!theaterRequest) return;
 
-    const format = char.charTheaterFormat || 'text';
-    const customPrompt = (char.charTheaterPrompt || '').trim();
-    const charName = char.realName || char.remarkName || '角色';
-    const charPersona = char.persona || '';
-
-    // ── 1. 读取聊天记录（条数可配置）────────────────────────────
-    const chatCount = Math.max(0, Math.min(parseInt(char.charTheaterChatCount) || 20, 200));
-    const myName = char.myName || '用户';
-    const recentHistory = chatCount > 0
-        ? (char.history || [])
-            .filter(m => !m.isContextDisabled && !m.isThinking && (m.role === 'user' || m.role === 'assistant'))
-            .slice(-chatCount)
-            .map(m => {
-                let content = '';
-                if (m.parts && m.parts.length > 0) {
-                    content = m.parts.map(p => p.text || '').join('');
-                } else {
-                    content = m.content || '';
-                }
-                // 过滤 system 标记、分享卡片等杂项
-                content = content.replace(/\[system[^\]]*\]/gi, '').replace(/\[小剧场分享:[^\]]*\]/gi, '').trim();
-                const sender = m.role === 'user' ? myName : charName;
-                return `${sender}：${content.slice(0, 300)}`;
-            })
-            .filter(line => line.length > 4)
-            .join('\n')
-        : '';
-
-    // ── 2. 读取日记总结（条数可配置）────────────────────────────
-    const journalCount = Math.max(0, Math.min(parseInt(char.charTheaterJournalCount) || 0, 50));
-    let journalText = '';
-    if (journalCount > 0 && Array.isArray(char.memoryJournals) && char.memoryJournals.length > 0) {
-        const journals = char.memoryJournals
-            .slice()
-            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-            .slice(0, journalCount);
-        if (journals.length > 0) {
-            journalText = journals
-                .map(j => `【${j.title || '日记'}】${(j.content || '').slice(0, 400)}`)
-                .join('\n\n');
-        }
-    }
-
-    // ── 3. 读取绑定的世界书──────────────────────────────────────
-    const wbIds = Array.isArray(char.charTheaterWorldBookIds) ? char.charTheaterWorldBookIds : [];
-    let worldBookText = '';
-    if (wbIds.length > 0 && Array.isArray(db.worldBooks)) {
-        const selectedBooks = db.worldBooks.filter(wb => wbIds.includes(wb.id) && !wb.disabled);
-        if (selectedBooks.length > 0) {
-            worldBookText = selectedBooks
-                .map(wb => `【${wb.name || wb.title || '世界书'}】\n${(wb.content || '').slice(0, 600)}`)
-                .join('\n\n');
-        }
-    }
-
-    // ── 4. 读取当前用户人设──────────────────────────────────────
-    // 优先使用角色绑定的 myPersona，其次尝试全局当前人设预设
-    let userPersonaText = (char.myPersona || '').trim();
-    if (!userPersonaText && db.myPersonaPresets && db.myPersonaPresets.length > 0) {
-        // 取第一个预设作为默认（若存在）
-        const firstPreset = db.myPersonaPresets[0];
-        if (firstPreset) userPersonaText = `${firstPreset.name}：${firstPreset.content || ''}`;
-    }
-
-    // ── 5. 决定格式（"both"随机选一种）──────────────────────────
-    // Math.random() 是真随机，确保不固定
-    const useHtml = (format === 'html') || (format === 'both' && Math.random() < 0.5);
-    const mode = useHtml ? 'html' : 'text';
-
-    // ── 6. 构建系统提示词（角色视角）───────────────────────────
-    let systemPrompt;
-    if (useHtml) {
-        systemPrompt = `你是"${charName}"，一个有自己独立想法和情感的角色。你平时喜欢写作，会把自己的感受和与身边人的故事写成小剧场。
-现在，你要基于自己的人设和最近与用户的聊天，主动写一段你自己的HTML小剧场作品。
-
-【最高优先级规则 —— 必须包含完整 CSS】
-你的输出第一行必须是 <style> 标签，里面包含本次所有 class / id 的完整 CSS 规则。
-绝对禁止只输出 HTML 结构而省略 CSS！
-
-其他要求：
-1. 以角色自己的视角写作——就像角色亲手写的，不要透露"你是AI"。
-2. 输出纯 HTML+CSS，禁止使用 <script> 标签或 JavaScript。
-3. 可以包含 :hover、:checked 选择器等纯CSS交互效果。
-4. 直接输出 HTML，不要输出开场白、说明文字或 markdown 代码块包裹（不要写 \`\`\`html）。`;
-    } else {
-        systemPrompt = `你是"${charName}"，一个有自己独立想法和情感的角色。你平时喜欢写作，会把自己的感受和与身边人的故事写成小短篇。
-现在，你要基于自己的人设和最近与用户的聊天，主动写一段你自己的小剧场作品（纯文字短篇故事）。
-
-要求：
-1. 以角色自己的视角写作——就像角色亲手写的，用第一人称或全知视角均可，体现角色独特性格。
-2. 剧情结构完整，有开端、发展和结尾。
-3. 直接输出正文，不要输出任何开场白或"这是根据……生成的"等说明。`;
-    }
-
-    // ── 7. 构建用户提示词──────────────────────────────────────
-    let userPrompt = `【我的角色设定（${charName}）】\n${charPersona || '（未设定）'}`;
-
-    if (userPersonaText) {
-        userPrompt += `\n\n【与我互动的用户人设】\n用户名：${myName}\n${userPersonaText}`;
-    }
-
-    if (worldBookText) {
-        userPrompt += `\n\n【世界观参考设定】\n${worldBookText}`;
-    }
-
-    if (journalText) {
-        userPrompt += `\n\n【我们之间的记忆总结】\n${journalText}`;
-    }
-
-    userPrompt += `\n\n【最近的聊天记录（共${chatCount}条）】\n${recentHistory || '（暂无聊天记录）'}`;
-
-    if (customPrompt) {
-        userPrompt += `\n\n【额外创作要求】\n${customPrompt}`;
-    }
-
-    userPrompt += `\n\n请现在写一段小剧场作品，题材和风格由你自由发挥，但需要体现你（${charName}）的性格特点，以及你与用户（${myName}）之间的关系和最近发生的事。`;
+    const char = theaterRequest.char;
+    const charName = theaterRequest.charName;
+    const mode = theaterRequest.mode;
+    const useHtml = theaterRequest.useHtml;
+    const wbIds = theaterRequest.worldBookIds;
+    const systemPrompt = theaterRequest.systemPrompt;
+    const userPrompt = theaterRequest.userPrompt;
 
     const isCurrentChat = () => (typeof currentChatId !== 'undefined' && currentChatId === charId
         && typeof currentChatType !== 'undefined' && currentChatType === 'private');
@@ -2549,17 +2209,12 @@ async function generateCharTheater(charId) {
         }
 
         let content = (response.choices[0].message.content || '').trim();
-
-        // 处理内容格式
-        if (useHtml) {
-            content = content.replace(/^```(?:html)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-            // 安全检查：有 class 但缺 <style>
-            if (/class\s*=\s*["']/i.test(content) && !/<style\b/i.test(content)) {
-                content = '<style>body{font-family:sans-serif;padding:12px;line-height:1.7;}</style>\n' + content;
-            }
-        } else {
-            content = stripTheaterIntro(content);
-        }
+        const normalized = theaterPromptService.normalizeGeneratedContent(content, {
+            state: db,
+            mode,
+            fallbackStyle: '<style>body{font-family:sans-serif;padding:12px;line-height:1.7;}</style>'
+        });
+        content = normalized.content;
 
         if (!content) {
             _hideTheaterTyping();
@@ -2571,8 +2226,7 @@ async function generateCharTheater(charId) {
         const dateStr = `${now.getMonth() + 1}月${now.getDate()}日`;
         const title = `${charName}的小剧场 · ${dateStr}`;
 
-        const scenario = {
-            id: Date.now().toString(),
+        const scenario = theaterSceneSemantics.createScenario({
             title: title,
             content: content,
             category: '角色创作',
@@ -2581,17 +2235,10 @@ async function generateCharTheater(charId) {
             charGeneratedBy: charName,
             personaId: null,
             worldBookIds: wbIds,
-            createdAt: Date.now(),
             mode: mode
-        };
+        });
 
-        // 存入对应模式的小剧场列表（临时切换模式，存完恢复）
-        const savedMode = theaterCurrentMode;
-        theaterCurrentMode = mode;
-        const list = getTheaterScenarios();
-        list.unshift(scenario);
-        setTheaterScenarios(list);
-        theaterCurrentMode = savedMode;
+        theaterModel.addScenario(db, mode, scenario);
 
         // ── 11. 根据 charTheaterSelfAware 决定显示方式
         // 注意：历史数据里该字段可能被保存为字符串 "false"/"true"，因此这里使用严格布尔判断

@@ -1,5 +1,12 @@
 // --- 消息渲染模块 ---
 
+const chatMessageViewModel = window.OwoApp.features.chat.messageViewModel;
+const chatRenderMessageBubble = window.OwoApp.features.chat.renderMessageBubble;
+const walletPublicApi = window.OwoApp.features.wallet.publicApi;
+const walletPaymentSemantics = walletPublicApi.paymentSemantics;
+const walletPaymentCardViewModel = walletPublicApi.paymentCardViewModel;
+const theaterPublicApi = window.OwoApp.features.theater.publicApi;
+
 // NovelAI 自动生图队列（避免同时发出大量请求）
 const _naiAutoGenQueue = [];
 let _naiAutoGenRunning = false;
@@ -19,17 +26,29 @@ async function _naiAutoGenProcess() {
     _naiAutoGenRunning = false;
 }
 
-// 根据时间戳格式设置生成时间字符串
+// @compat canonical: OwoApp.features.chat.messageViewModel.formatTimestampByFormat
 function formatTimestampByFormat(timestamp, chat) {
-    const d = new Date(timestamp);
-    const fmt = chat.timestampFormat || 'hm';
-    if (fmt === 'hms') {
-        return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
-    if (fmt === 'ymd') {
-        return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
-    }
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return chatMessageViewModel.formatTimestampByFormat(timestamp, chat, pad);
+}
+
+function createChatBubbleRenderOptions(isContinuous = false) {
+    return {
+        state: db,
+        currentChatType,
+        currentChatId,
+        isDebugMode,
+        isContinuous,
+        pad
+    };
+}
+
+function renderMessageBubble(message, isContinuous = false) {
+    return chatRenderMessageBubble.renderMessageBubble(message, createChatBubbleRenderOptions(isContinuous));
+}
+
+// @compat canonical: OwoApp.features.chat.renderMessageBubble.renderMessageBubble
+function createMessageBubbleElement(message, isContinuous = false) {
+    return renderMessageBubble(message, isContinuous);
 }
 
 function renderMessages(isLoadMore = false, forceScrollToBottom = false) {
@@ -137,7 +156,7 @@ function renderMessages(isLoadMore = false, forceScrollToBottom = false) {
             }
         }
 
-        const bubble = createMessageBubbleElement(msg, isContinuous);
+        const bubble = renderMessageBubble(msg, isContinuous);
         if (bubble) {
             fragment.appendChild(bubble);
             
@@ -243,19 +262,14 @@ function loadNewerMessages() {
     }
 }
 
-function createMessageBubbleElement(message, isContinuous = false) {
-    const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-    // 这里需要把 isThinking 从 message 里解构出来
-    let {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent, isStatusUpdate, isThinking} = message;
-    // 角色消息中的 {{user}} 替换为当前对话的「我的名字」
-    if (role === 'assistant' && chat && chat.myName && typeof content === 'string') {
-        content = content.replace(/\{\{user\}\}/g, chat.myName);
-    }
-    // 【新增补丁】如果内容以 <thinking> 开头，强制标记为 isThinking
-    // 防止因为数据库加载导致 isThinking 属性丢失，或者正则没匹配到的情况
-    if (content && typeof content === 'string' && content.trim().startsWith('<thinking>')) {
-        isThinking = true;
-    }
+function legacyCreateMessageBubbleElement(message, isContinuous = false, viewModel = null) {
+    const renderViewModel = viewModel || chatMessageViewModel.createMessageViewModel(
+        message,
+        createChatBubbleRenderOptions(isContinuous)
+    );
+    const chat = renderViewModel.chat || ((currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId));
+    // 这里需要把 isThinking 从 message view model 里解构出来
+    let {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent, isStatusUpdate, isThinking} = renderViewModel.message;
 
     // 拦截：如果是状态更新、思考过程或转账指令消息，且没开调试模式，直接不渲染
     if ((isStatusUpdate || isThinking || message.isTransferAction) && !isDebugMode) return null;
@@ -347,68 +361,13 @@ function createMessageBubbleElement(message, isContinuous = false) {
     // ... 后续代码不变 ...
 
 
-    const avatarMode = chat.avatarMode || 'full';
-    let avatarClass = 'message-avatar';
-    
-    if (avatarMode === 'hidden') {
-        avatarClass += ' avatar-hidden';
-    } else if (avatarMode === 'kkt') {
-        if (role === 'user') {
-            avatarClass += ' avatar-hidden';
-        } else if (isContinuous) {
-            avatarClass += ' avatar-invisible';
-        }
-    } else if (avatarMode === 'merge') {
-        if (isContinuous) {
-            avatarClass += ' avatar-invisible';
-        }
-    }
+    const avatarClass = renderViewModel.avatarClass;
 
-    const isBilingualMode = chat.bilingualModeEnabled;
-    let bilingualMatch = null;
-    // 增加 && !isThinking，防止思考内容被当成双语消息解析
-    if (isBilingualMode && role === 'assistant' && !isThinking) {
-        // 修改正则以兼容 "的消息：" 和 "回复：" (包括 "并回复")
-const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
-        if (contentMatch) {
-            const mainText = contentMatch[1].trim();
-            
-            // 优先尝试匹配「」
-            const lastCloseBracket = mainText.lastIndexOf('」');
-            if (lastCloseBracket > -1) {
-                const lastOpenBracket = mainText.lastIndexOf('「', lastCloseBracket);
-                if (lastOpenBracket > -1) {
-                    const chineseText = mainText.substring(lastOpenBracket + 1, lastCloseBracket).trim();
-                    const foreignText = mainText.substring(0, lastOpenBracket).trim();
-                    if (foreignText && chineseText) {
-                        bilingualMatch = [null, foreignText, chineseText];
-                    }
-                }
-            }
-
-            // 如果没有匹配到「」，则回退匹配 () 或 （）以兼容旧消息
-            if (!bilingualMatch) {
-                const lastCloseParen = Math.max(mainText.lastIndexOf(')'), mainText.lastIndexOf('）'));
-                if (lastCloseParen > -1) {
-                    const lastOpenParen = Math.max(
-                        mainText.lastIndexOf('(', lastCloseParen),
-                        mainText.lastIndexOf('（', lastCloseParen)
-                    );
-                    if (lastOpenParen > -1) {
-                        const chineseText = mainText.substring(lastOpenParen + 1, lastCloseParen).trim();
-                        const foreignText = mainText.substring(0, lastOpenParen).trim();
-                        if (foreignText && chineseText) {
-                            bilingualMatch = [null, foreignText, chineseText];
-                        }
-                    }
-                }
-            }
-        }
-    }
+    const bilingualMatch = renderViewModel.bilingual;
 
     if (bilingualMatch) {
-        const foreignText = bilingualMatch[1].trim();
-        const chineseText = bilingualMatch[2].trim();
+        const foreignText = bilingualMatch.foreignText.trim();
+        const chineseText = bilingualMatch.chineseText.trim();
         const wrapper = document.createElement('div');
         wrapper.dataset.id = id;
         wrapper.className = 'message-wrapper received';
@@ -644,48 +603,13 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
                 if (typeof isDebugMode !== 'undefined' && isDebugMode) return;
                 const scId = message.theaterScenarioId;
                 const scMode = message.theaterScenarioMode || 'text';
-                // 切换到小剧场App，然后打开对应的场景详情
-                // 标记：从聊天气泡打开，返回时需回到聊天界面
-                window._theaterDetailFromChat = true;
-                if (typeof openApp === 'function') openApp('theater');
-                // 稍作延迟等待视图切换后再查找场景
-                setTimeout(() => {
-                    // 直接根据 scMode 查找对应模式的小剧场，无需切换 theaterCurrentMode
-                    let scenario = null;
-                    if (scMode === 'html') {
-                        // HTML 模式：直接从 db.theaterHtmlScenarios 查找
-                        if (typeof db !== 'undefined' && db.theaterHtmlScenarios) {
-                            scenario = db.theaterHtmlScenarios.find(s => s.id === scId);
-                        }
-                    } else {
-                        // 文本模式：直接从 db.theaterScenarios 查找
-                        if (typeof db !== 'undefined' && db.theaterScenarios) {
-                            scenario = db.theaterScenarios.find(s => s.id === scId);
-                        }
-                    }
-                    // 如果按模式找不到，尝试在两种模式中都查找（兼容旧数据）
-                    if (!scenario) {
-                        if (typeof db !== 'undefined') {
-                            if (db.theaterHtmlScenarios) {
-                                scenario = db.theaterHtmlScenarios.find(s => s.id === scId);
-                            }
-                            if (!scenario && db.theaterScenarios) {
-                                scenario = db.theaterScenarios.find(s => s.id === scId);
-                            }
-                        }
-                    }
-                    if (scenario) {
-                        // 根据 scenario.mode 或 scMode 决定调用哪个详情函数
-                        const actualMode = scenario.mode || scMode;
-                        if (actualMode === 'html' && typeof showTheaterHtmlScenarioDetail === 'function') {
-                            showTheaterHtmlScenarioDetail(scenario);
-                        } else if (typeof showTheaterScenarioDetail === 'function') {
-                            showTheaterScenarioDetail(scenario);
-                        }
-                    } else {
-                        if (typeof showToast === 'function') showToast('未找到该小剧场，可能已被删除');
-                    }
-                }, 300);
+                // V33: 跨 feature 打开小剧场只走 theater public facade，不直接读取 theater 私有状态。
+                const scenario = theaterPublicApi.findScenarioById(db, scId, scMode);
+                if (scenario) {
+                    theaterPublicApi.openScenarioFromChat(scenario, { mode: scMode, delay: 300 });
+                } else {
+                    if (typeof showToast === 'function') showToast('未找到该小剧场，可能已被删除');
+                }
             });
             wrapper.appendChild(bubble);
         } else {
@@ -741,10 +665,7 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
     
     const voiceRegex = /\[(?:.+?)的语音[：:]([\s\S]+?)\]/;
     const photoVideoRegex = /\[(?:.+?)发来的照片\/视频[：:]([\s\S]+?)\]/;
-    const privateSentTransferRegex = /\[.*?给你转账[：:]([\d.,]+)元[；;]备注[：:](.*?)\]/;
-    const privateReceivedTransferRegex = /\[.*?的转账[：:]([\d.,]+)元[；;]备注[：:](.*?)\]/;
-    const groupTransferRegex = /\[(.*?)\s*向\s*(.*?)\s*转账[：:]([\d.,]+)元[；;]备注[：:](.*?)\]/;
-    const familyCardGiftRegex = /\[(.+?)赠送(.+?)亲属卡[：:]额度([\d.,]+)元[；;]刷新周期[：:](.+?)\]/;
+    // V33: 钱包 / 商城 / 代付 / 亲属卡卡片通过 features.wallet.publicApi 获取唯一语义和 view model。
     const privateGiftRegex = /\[(?:.+?)送来的礼物[：:]([\s\S]+?)\]/;
     const groupGiftRegex = /\[(.*?)\s*向\s*(.*?)\s*送来了礼物[：:]([\s\S]+?)\]/;
     const imageRecogRegex = /\[.*?发来了一张图片[：:]\]/;
@@ -752,10 +673,7 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
     /* 用户定位 [我的位置：...] 或 角色定位 [XXX的位置：...] */
     const locationRegex = /\[(.+?)的位置[：:](.+?)(?:；距你约\s*([\d.]+)\s*(米|千米|公里))?\]/;
     
-    // 新版购物车小票格式: [A为B下单了：配送方式|总价|商品名 x数量]
-    const shopOrderRegexNew = /\[(.*?)为(.*?)下单了[：:](.*?)\|(.*?)\|(.*?)\]/;
-    // 代付请求格式: [A向B发起了代付请求:总价|商品名 x数量]
-    const shopPayRequestRegex = /\[(.*?)向(.*?)发起了代付请求[：:](.*?)\|(.*?)\]/;
+    // V32: shop order / pay request 正则归 walletPaymentSemantics 统一维护。
     
     // 通话记录格式: [视频通话记录：时间；时长；总结] 或 [语音通话记录：...]
     const callRecordRegex = /\[(视频|语音)通话记录[：:](.*?)[；;](.*?)[；;](.*?)\]/;
@@ -764,8 +682,12 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
     
     const pomodoroRecordRegex = /\[专注记录\]\s*任务[：:]([\s\S]+?)，时长[：:]([\s\S]+?)，期间与 .*? 互动 (\d+)\s*次。/;
     const pomodoroMatch = content.match(pomodoroRecordRegex);
-    const shopOrderMatchNew = content.match(shopOrderRegexNew);
-    const shopPayRequestMatch = content.match(shopPayRequestRegex);
+    const shopOrderViewModel = walletPaymentCardViewModel.createShopOrderViewModel({ content, timestamp, message });
+    const shopPayRequestViewModel = walletPaymentCardViewModel.createPayRequestViewModel({ content, timestamp, message, isSent });
+    const transferCardViewModel = walletPaymentCardViewModel.createTransferCardViewModel({ content, message, isSent, currentChatType, chat });
+    const familyCardViewModel = walletPaymentCardViewModel.createFamilyCardViewModel({ content, timestamp, message, isSent, state: db });
+    const shopOrderMatchNew = shopOrderViewModel ? shopOrderViewModel.match : null;
+    const shopPayRequestMatch = shopPayRequestViewModel ? shopPayRequestViewModel.match : null;
     const callRecordMatch = content.match(callRecordRegex);
     const theaterShareMatch = content.match(theaterShareRegex);
     
@@ -773,12 +695,12 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
     const receivedStickerMatch = content.match(receivedStickerRegex);
     const voiceMatch = content.match(voiceRegex);
     const photoVideoMatch = content.match(photoVideoRegex);
-    const privateSentTransferMatch = content.match(privateSentTransferRegex);
-    const privateReceivedTransferMatch = content.match(privateReceivedTransferRegex);
-    const groupTransferMatch = content.match(groupTransferRegex);
-    const familyCardGiftMatch = content.match(familyCardGiftRegex);
-    const familyCardData = (message.familyCardId && db.piggyBank && db.piggyBank.familyCards) ? db.piggyBank.familyCards.find(c => c.id === message.familyCardId) : null;
-    const receivedFamilyCardData = (message.receivedFamilyCardId && db.piggyBank && db.piggyBank.receivedFamilyCards) ? db.piggyBank.receivedFamilyCards.find(c => c.id === message.receivedFamilyCardId) : null;
+    const privateSentTransferMatch = transferCardViewModel ? transferCardViewModel.privateSentMatch : null;
+    const privateReceivedTransferMatch = transferCardViewModel ? transferCardViewModel.privateReceivedMatch : null;
+    const groupTransferMatch = transferCardViewModel ? transferCardViewModel.groupMatch : null;
+    const familyCardGiftMatch = familyCardViewModel && familyCardViewModel.gift ? familyCardViewModel.gift.match : null;
+    const familyCardData = familyCardViewModel ? familyCardViewModel.sentCard : null;
+    const receivedFamilyCardData = familyCardViewModel ? familyCardViewModel.receivedCard : null;
     const privateGiftMatch = content.match(privateGiftRegex);
     const groupGiftMatch = content.match(groupGiftRegex);
     const imageRecogMatch = content.match(imageRecogRegex);
@@ -815,34 +737,21 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
         
         return wrapper; // 直接返回，跳过后续的气泡组装逻辑
 
-    } else if (shopOrderMatchNew) {
-        // 新版小票渲染 (普通订单)
-        // [A为B下单了：配送方式|总价|商品名 x数量]
-        const deliveryType = shopOrderMatchNew[3];
-        const totalPrice = shopOrderMatchNew[4];
-        const itemsStr = shopOrderMatchNew[5];
-        
-        // 解析商品列表字符串 "汉堡 x2, 可乐 x1" -> [{name, qty}]
-        const items = itemsStr.split(/,\s*/).map(s => {
-            const parts = s.match(/(.+?)\s*x(\d+)$/);
-            if (parts) {
-                return { name: parts[1], qty: parts[2] };
-            }
-            return { name: s, qty: 1 };
-        });
-
-        const now = new Date(timestamp);
-        const orderId = `NO.${now.getTime().toString().slice(-8)}`;
-        const dateStr = `${now.getMonth()+1}/${now.getDate()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    } else if (shopOrderViewModel) {
+        // V32 新版小票 view model：解析和订单状态归 features/wallet/paymentCardViewModel。
+        const deliveryType = shopOrderViewModel.deliveryType;
+        const totalPrice = shopOrderViewModel.totalPrice;
+        const items = shopOrderViewModel.items;
+        const orderId = shopOrderViewModel.orderId;
+        const dateStr = shopOrderViewModel.dateStr;
 
         bubbleElement = document.createElement('div');
         bubbleElement.className = 'receipt-bubble';
         
         // 检查是否为自提订单
-        const pickupMatch = deliveryType.match(/自提口令:\s*(.*)/);
-        let isPickup = !!pickupMatch;
-        let pickupCode = pickupMatch ? pickupMatch[1] : '';
-        let isPickedUp = message.isPickedUp || false;
+        const isPickup = shopOrderViewModel.isPickup;
+        const pickupCode = shopOrderViewModel.pickupCode;
+        const isPickedUp = shopOrderViewModel.isPickedUp;
 
         let itemsHtml = '';
         let stampHtml = '';
@@ -902,24 +811,13 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
             </div>
         `;
 
-    } else if (shopPayRequestMatch) {
-        // 代付请求小票渲染
-        // [A向B发起了代付请求:总价|商品名 x数量]
+    } else if (shopPayRequestViewModel) {
+        // V32 代付请求 view model：解析、状态文案和按钮显示归 features/wallet/paymentCardViewModel。
         let stampHtml = '';
-        const totalPrice = shopPayRequestMatch[3];
-        const itemsStr = shopPayRequestMatch[4];
-        
-        const items = itemsStr.split(/,\s*/).map(s => {
-            const parts = s.match(/(.+?)\s*x(\d+)$/);
-            if (parts) {
-                return { name: parts[1], qty: parts[2] };
-            }
-            return { name: s, qty: 1 };
-        });
-
-        const now = new Date(timestamp);
-        const orderId = `REQ.${now.getTime().toString().slice(-8)}`;
-        const dateStr = `${now.getMonth()+1}/${now.getDate()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        const totalPrice = shopPayRequestViewModel.totalPrice;
+        const items = shopPayRequestViewModel.items;
+        const orderId = shopPayRequestViewModel.orderId;
+        const dateStr = shopPayRequestViewModel.dateStr;
 
         bubbleElement = document.createElement('div');
         bubbleElement.className = 'receipt-bubble pay-request';
@@ -933,16 +831,11 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
         `).join('');
 
         // 移除印章逻辑，改为修改底部文字
-        let statusText = '待支付';
-        if (message.payStatus === 'paid') {
-            statusText = '已支付';
-        } else if (message.payStatus === 'rejected') {
-            statusText = '已拒绝';
-        }
+        const statusText = shopPayRequestViewModel.statusText;
 
         let actionButtonsHtml = '';
         // 如果是接收到的消息 (AI -> User) 且状态为 pending，显示操作按钮
-        if (!isSent && !message.payStatus) {
+        if (shopPayRequestViewModel.showActions) {
             actionButtonsHtml = `
                 <div class="receipt-actions">
                     <button class="receipt-action-btn" onclick="sendPayResponse('${id}', 'pay')">支付</button>
@@ -990,40 +883,17 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
     } else if (theaterShareMatch) {
         // 小剧场分享卡片渲染
         const scenarioId = theaterShareMatch[1];
-        let scenario = null;
-        if (typeof db !== 'undefined' && db) {
-            if (Array.isArray(db.theaterScenarios)) {
-            scenario = db.theaterScenarios.find(s => s.id === scenarioId);
-            }
-            if (!scenario && Array.isArray(db.theaterHtmlScenarios)) {
-                scenario = db.theaterHtmlScenarios.find(s => s.id === scenarioId);
-            }
-        }
+        // V33: 小剧场分享卡片 view model 通过 theater public facade 获取，不直接读取 theater 私有状态。
+        const theaterShareViewModel = theaterPublicApi.createScenarioShareViewModel(db, scenarioId);
+        const scenario = theaterShareViewModel.scenario;
 
         bubbleElement = document.createElement('div');
         bubbleElement.className = 'theater-share-card-bubble';
 
-        let title = '小剧场';
-        let category = '未分类';
-        let charName = '';
-        let preview = '';
-
-        if (scenario) {
-            title = scenario.title || '剧情';
-            category = scenario.category || '未分类';
-            if (scenario.charId && db && Array.isArray(db.characters)) {
-                const ch = db.characters.find(c => c.id === scenario.charId);
-                if (ch) {
-                    charName = ch.remarkName || ch.realName || '';
-                }
-            }
-            if (scenario.content) {
-                const raw = scenario.content.replace(/\s+/g, ' ').trim();
-                preview = raw.slice(0, 60) + (raw.length > 60 ? '…' : '');
-            }
-        }
-
-        const charLine = charName ? `角色：${DOMPurify.sanitize(charName)}` : '小剧场分享';
+        const title = theaterShareViewModel.title;
+        const category = theaterShareViewModel.category;
+        const preview = theaterShareViewModel.preview;
+        const charLine = theaterShareViewModel.charName ? `角色：${DOMPurify.sanitize(theaterShareViewModel.charName)}` : '小剧场分享';
 
         bubbleElement.innerHTML = `
             <div class="theater-share-card-header">
@@ -1041,13 +911,8 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
         if (scenario) {
             bubbleElement.addEventListener('click', () => {
                 try {
-                    // 标记：从聊天气泡打开，返回时需回到聊天界面
-                    window._theaterDetailFromChat = true;
-                    if (scenario.mode === 'html' && typeof showTheaterHtmlScenarioDetail === 'function') {
-                        showTheaterHtmlScenarioDetail(scenario);
-                    } else if (typeof showTheaterScenarioDetail === 'function') {
-                        showTheaterScenarioDetail(scenario);
-                    }
+                    // V33: 从聊天卡片打开小剧场只走 public facade。
+                    theaterPublicApi.openScenarioFromChat(scenario);
                 } catch (e) {
                     console.error('Failed to open theater scenario detail:', e);
                 }
@@ -1245,19 +1110,17 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
                 bubbleElement.innerHTML = `<div class="pv-card-content">${displayContent}</div><div class="pv-card-image-overlay" style="background-image: url('${isSent ? 'https://i.postimg.cc/L8NFrBrW/1752307494497.jpg' : 'https://i.postimg.cc/1tH6ds9g/1752301200490.jpg'}');"></div><div class="pv-card-footer"><svg viewBox="0 0 24 24"><path d="M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H20V6H4M10,9A1,1 0 0,1 11,10A1,1 0 0,1 10,11A1,1 0 0,1 9,10A1,1 0 0,1 10,9M8,17L11,13L13,15L17,10L20,14V17H8Z"></path></svg><span>照片/视频・点击查看</span></div>`;
             }
         }
-    } else if (familyCardGiftMatch || familyCardData || receivedFamilyCardData) {
-        const card = familyCardData || receivedFamilyCardData;
-        const status = message.familyCardStatus || message.receivedFamilyCardStatus || 'pending';
-        const statusText = status === 'accepted' ? '已接收' : status === 'returned' ? '已退还' : status === 'revoked' ? '已收回' : '待接收';
-        const cardNum = card ? card.cardNumber : '****';
-        const limitNum = card ? card.limit : (familyCardGiftMatch ? familyCardGiftMatch[3] : '');
-        const periodText = card ? (card.refreshPeriod === 'daily' ? '每天' : card.refreshPeriod === 'weekly' ? '每周' : card.refreshPeriod === 'monthly' ? '每月' : (card.refreshDays || 30) + '天') : (familyCardGiftMatch ? familyCardGiftMatch[4] : '');
-        const holderName = isSent ? (card ? card.targetCharName : (familyCardGiftMatch ? familyCardGiftMatch[2] : '')) : (card ? card.fromCharName : '');
-        const now = new Date(timestamp);
-        const dateStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const cardIdShort = (card && card.id) ? card.id.slice(-8) : String(timestamp).slice(-8);
+    } else if (familyCardViewModel) {
+        const card = familyCardViewModel.card;
+        const status = familyCardViewModel.status;
+        const statusText = familyCardViewModel.statusText;
+        const limitNum = familyCardViewModel.limitText;
+        const periodText = familyCardViewModel.periodText;
+        const holderName = familyCardViewModel.holderName;
+        const dateStr = familyCardViewModel.dateStr;
+        const cardIdShort = familyCardViewModel.cardIdShort;
         let actionButtonsHtml = '';
-        if (!isSent && status === 'pending') {
+        if (familyCardViewModel.showActions) {
             actionButtonsHtml = `
                 <div class="receipt-actions">
                     <button class="receipt-action-btn family-card-accept" data-msg-id="${DOMPurify.sanitize(id)}">接收</button>
@@ -1293,72 +1156,17 @@ const contentMatch = content.match(/^\[.*?(?:消息|回复)[：:]([\s\S]+)\]$/);
                 </div>
                 ${actionButtonsHtml}
             </div>`;
-    } else if (privateSentTransferMatch || privateReceivedTransferMatch || groupTransferMatch) {
-        const isSentTransfer = !!privateSentTransferMatch || (groupTransferMatch && isSent);
-        const match = privateSentTransferMatch || privateReceivedTransferMatch || groupTransferMatch;
-        let amount, remarkText, titleText;
-        if (groupTransferMatch) {
-            const from = groupTransferMatch[1];
-            const to = groupTransferMatch[2];
-            amount = parseFloat(groupTransferMatch[3].replace(/,/g, '')).toFixed(2);
-            remarkText = groupTransferMatch[4] || '';
-            
-            const myName = (currentChatType === 'private') ? chat.myName : chat.me.nickname;
-            const isToMe = (to === myName);
-
-            if (isSent) {
-                titleText = `向 ${to} 转账`;
-            } else {
-                if (isToMe) {
-                    titleText = `${from} 向你转账`;
-                } else {
-                    titleText = `${from} 向 ${to} 转账`;
-                }
-            }
-        } else {
-            amount = parseFloat(match[1].replace(/,/g, '')).toFixed(2);
-            remarkText = match[2] || '';
-            titleText = isSentTransfer ? '给你转账' : '转账';
-        }
+    } else if (transferCardViewModel) {
+        const isSentTransfer = transferCardViewModel.isSentTransfer;
+        const amount = transferCardViewModel.amountText;
+        const remarkText = transferCardViewModel.remark;
+        const titleText = transferCardViewModel.titleText;
+        const statusText = transferCardViewModel.statusText;
         bubbleElement = document.createElement('div');
         bubbleElement.className = `transfer-card ${isSentTransfer ? 'sent-transfer' : 'received-transfer'}`;
-        
-        let statusText = isSentTransfer ? '待查收' : '转账给你';
-        if (groupTransferMatch && !isSent) {
-            const to = groupTransferMatch[2];
-            const myName = (currentChatType === 'private') ? chat.myName : chat.me.nickname;
-            if (to === myName) {
-                statusText = '转账给你';
-            } else {
-                statusText = '转账给Ta';
-            }
-        }
-        
-        if (transferStatus === 'received') {
-            statusText = '已收款';
-            bubbleElement.classList.add('received');
-        } else if (transferStatus === 'returned') {
-            statusText = '已退回';
-            bubbleElement.classList.add('returned');
-        }
-        // 在群聊中，如果是待处理的转账且是发给用户的，应该可以点击
-        if (currentChatType === 'group') {
-            if (transferStatus === 'pending' && groupTransferMatch) {
-                const to = groupTransferMatch[2];
-                const myName = chat.me.nickname;
-                const isToMe = (to === myName);
-                // 只有发给用户的转账（角色向用户转账）可以点击接收
-                if (isToMe && !isSent) {
-                    bubbleElement.style.cursor = 'pointer';
-                } else {
-                    bubbleElement.style.cursor = 'default';
-                }
-            } else {
-                bubbleElement.style.cursor = 'default';
-            }
-        } else if (transferStatus !== 'pending' && currentChatType === 'private') {
-            bubbleElement.style.cursor = 'default';
-        }
+        if (transferCardViewModel.isReceived) bubbleElement.classList.add('received');
+        if (transferCardViewModel.isReturned) bubbleElement.classList.add('returned');
+        if (transferCardViewModel.cursor) bubbleElement.style.cursor = transferCardViewModel.cursor;
         const remarkHTML = remarkText ? `<p class="transfer-remark">${remarkText}</p>` : '';
         bubbleElement.innerHTML = `<div class="overlay"></div><div class="transfer-content"><p class="transfer-title">${titleText}</p><p class="transfer-amount">¥${amount}</p>${remarkHTML}<p class="transfer-status">${statusText}</p></div>`;
     } else if (locationMatch) {
@@ -1567,20 +1375,14 @@ window.sendPayResponse = async function(msgId, action) {
 
     // 用户同意代付时：从存钱罐扣款并记账
     if (action === 'pay') {
-        const payReqMatch = (msg.content || '').match(/发起了代付请求[：:]([\d.]+)\|/);
-        const amount = payReqMatch ? parseFloat(payReqMatch[1]) : 0;
+        const payReqData = walletPaymentSemantics.parsePayRequestContent(msg.content || '');
+        const amount = payReqData ? payReqData.totalAmount : 0;
         if (amount > 0 && typeof getPiggyBalance === 'function' && getPiggyBalance() < amount) {
             if (typeof showToast === 'function') showToast('存钱罐余额不足，无法代付');
             return;
         }
         if (amount > 0 && typeof addPiggyTransaction === 'function') {
-            addPiggyTransaction({
-                type: 'expense',
-                amount,
-                remark: '代付给' + (chat.realName || ''),
-                source: '商城代付',
-                charName: chat.realName || ''
-            });
+            addPiggyTransaction(walletPaymentSemantics.createPayExpenseRecord(amount, chat.realName || ''));
         }
     }
 
@@ -1598,11 +1400,7 @@ window.sendPayResponse = async function(msgId, action) {
     const realName = chat.realName;
     let responseText = '';
     
-    if (action === 'pay') {
-        responseText = `[${myName}同意了${realName}的代付请求]`;
-    } else {
-        responseText = `[${myName}拒绝了${realName}的代付请求]`;
-    }
+    responseText = walletPaymentSemantics.buildPayResponseText(myName, realName, action);
 
     // 4. 【关键修改】直接手动添加消息，不走发送按钮逻辑
     // 这样就不会被包裹成 [用户消息：...] 了
@@ -1620,6 +1418,17 @@ window.sendPayResponse = async function(msgId, action) {
     if (typeof saveData === 'function') await saveData(); 
     renderMessages(false, true); 
 };
+
+
+chatRenderMessageBubble.setLegacyRenderer((message, renderContext) => legacyCreateMessageBubbleElement(
+    message,
+    renderContext.isContinuous,
+    renderContext.viewModel
+), {
+    state: 'legacy-dom-renderer',
+    owner: 'js/modules/chat_render.js::legacyCreateMessageBubbleElement',
+    note: 'V16: canonical renderMessageBubble 入口已迁到 features/chat，DOM 细节后续继续拆分'
+});
 
 
 function addMessageBubble(message, targetChatId, targetChatType) {
@@ -1952,7 +1761,7 @@ function addMessageBubble(message, targetChatId, targetChatType) {
 
             // 标记新消息，允许 NovelAI 自动生图
             if (message.id) _naiAutoGenNewMsgIds.add(message.id);
-            const bubbleElement = createMessageBubbleElement(message, isContinuous);
+            const bubbleElement = renderMessageBubble(message, isContinuous);
             if (bubbleElement) {
                 // Check for timestamp display
                 const history = character.history;
@@ -2129,7 +1938,7 @@ function addMessageBubble(message, targetChatId, targetChatType) {
 
         // 标记新消息，允许 NovelAI 自动生图
         if (message.id) _naiAutoGenNewMsgIds.add(message.id);
-        const bubbleElement = createMessageBubbleElement(message, isContinuous);
+        const bubbleElement = renderMessageBubble(message, isContinuous);
         if (bubbleElement) {
             // Check for timestamp display
             const history = group.history;

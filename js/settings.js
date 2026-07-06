@@ -1591,68 +1591,8 @@ function loadSettingsToSidebar() {
         const journalFavTopEl = document.getElementById('setting-journal-favorite-top');
         if (journalFavTopEl) journalFavTopEl.checked = e.journalFavoriteTop !== false; // 默认开启
 
-        // 加载单人思维链设置
-        const charCotEnabledEl = document.getElementById('setting-char-cot-enabled');
-        const charCotOptionsEl = document.getElementById('setting-char-cot-options');
-        const charCotChatEnabledEl = document.getElementById('setting-char-cot-chat-enabled');
-        const charCotChatPresetEl = document.getElementById('setting-char-cot-chat-preset');
-        const charCotChatPresetCont = document.getElementById('setting-char-cot-chat-preset-container');
-        const charCotCallEnabledEl = document.getElementById('setting-char-cot-call-enabled');
-        const charCotCallPresetEl = document.getElementById('setting-char-cot-call-preset');
-        const charCotCallPresetCont = document.getElementById('setting-char-cot-call-preset-container');
-        const charCotOfflineEnabledEl = document.getElementById('setting-char-cot-offline-enabled');
-        const charCotOfflinePresetEl = document.getElementById('setting-char-cot-offline-preset');
-        const charCotOfflinePresetCont = document.getElementById('setting-char-cot-offline-preset-container');
-        
-        if (charCotEnabledEl) {
-            charCotEnabledEl.checked = e.cotSettings?.enabled || false;
-            if (charCotOptionsEl) {
-                charCotOptionsEl.style.display = e.cotSettings?.enabled ? 'block' : 'none';
-            }
-            charCotEnabledEl.onchange = function() {
-                if (charCotOptionsEl) charCotOptionsEl.style.display = this.checked ? 'block' : 'none';
-            };
-        }
-        
-        if (charCotChatEnabledEl) {
-            charCotChatEnabledEl.checked = e.cotSettings?.chatEnabled || false;
-            if (charCotChatPresetCont) charCotChatPresetCont.style.display = charCotChatEnabledEl.checked ? 'block' : 'none';
-            charCotChatEnabledEl.onchange = function() {
-                if (charCotChatPresetCont) charCotChatPresetCont.style.display = this.checked ? 'block' : 'none';
-            };
-        }
-        if (charCotCallEnabledEl) {
-            charCotCallEnabledEl.checked = e.cotSettings?.callEnabled || false;
-            if (charCotCallPresetCont) charCotCallPresetCont.style.display = charCotCallEnabledEl.checked ? 'block' : 'none';
-            charCotCallEnabledEl.onchange = function() {
-                if (charCotCallPresetCont) charCotCallPresetCont.style.display = this.checked ? 'block' : 'none';
-            };
-        }
-        if (charCotOfflineEnabledEl) {
-            charCotOfflineEnabledEl.checked = e.cotSettings?.offlineEnabled || false;
-            if (charCotOfflinePresetCont) charCotOfflinePresetCont.style.display = charCotOfflineEnabledEl.checked ? 'block' : 'none';
-            charCotOfflineEnabledEl.onchange = function() {
-                if (charCotOfflinePresetCont) charCotOfflinePresetCont.style.display = this.checked ? 'block' : 'none';
-            };
-        }
-        
-        // 填充预设下拉框
-        const presets = db.cotPresets || [];
-        const populateCotPreset = (selectEl, defaultText, activeId) => {
-            if (!selectEl) return;
-            selectEl.innerHTML = `<option value="">${defaultText}</option>`;
-            presets.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.name;
-                selectEl.appendChild(opt);
-            });
-            if (activeId) selectEl.value = activeId;
-        };
-        
-        populateCotPreset(charCotChatPresetEl, '默认预设', e.cotSettings?.activePresetId);
-        populateCotPreset(charCotCallPresetEl, '默认通话预设', e.cotSettings?.activeCallPresetId);
-        populateCotPreset(charCotOfflinePresetEl, '默认线下预设', e.cotSettings?.activeOfflinePresetId);
+        // V21: 单角色 CoT 设置 UI 读写已迁入 features/settings/voiceCot/cotCharacterSettingsView.js。
+        window.OwoApp.features.settings.voiceCot.publicApi.loadCharacterCotSettings(e, db);
 
         // 加载小剧场设置
         const charTheaterEnabledEl = document.getElementById('setting-char-theater-enabled');
@@ -2416,23 +2356,8 @@ async function saveSettingsFromSidebar() {
             e.journalFavoriteTop = true; // 如果元素不存在且未定义过，默认保护为 true
         }
 
-        // 保存单人思维链设置
-        const charCotEnabledSave = document.getElementById('setting-char-cot-enabled');
-        const charCotChatEnabledSave = document.getElementById('setting-char-cot-chat-enabled');
-        const charCotChatPresetSave = document.getElementById('setting-char-cot-chat-preset');
-        const charCotCallEnabledSave = document.getElementById('setting-char-cot-call-enabled');
-        const charCotCallPresetSave = document.getElementById('setting-char-cot-call-preset');
-        const charCotOfflineEnabledSave = document.getElementById('setting-char-cot-offline-enabled');
-        const charCotOfflinePresetSave = document.getElementById('setting-char-cot-offline-preset');
-        
-        if (!e.cotSettings) e.cotSettings = {};
-        e.cotSettings.enabled = charCotEnabledSave ? charCotEnabledSave.checked : false;
-        e.cotSettings.chatEnabled = charCotChatEnabledSave ? charCotChatEnabledSave.checked : false;
-        e.cotSettings.activePresetId = charCotChatPresetSave ? charCotChatPresetSave.value : '';
-        e.cotSettings.callEnabled = charCotCallEnabledSave ? charCotCallEnabledSave.checked : false;
-        e.cotSettings.activeCallPresetId = charCotCallPresetSave ? charCotCallPresetSave.value : '';
-        e.cotSettings.offlineEnabled = charCotOfflineEnabledSave ? charCotOfflineEnabledSave.checked : false;
-        e.cotSettings.activeOfflinePresetId = charCotOfflinePresetSave ? charCotOfflinePresetSave.value : '';
+        // V21: 单角色 CoT 设置保存已迁入 features/settings/voiceCot/cotCharacterSettingsView.js。
+        window.OwoApp.features.settings.voiceCot.publicApi.saveCharacterCotSettings(e);
 
         // 保存小剧场设置
         const charTheaterEnabledSave = document.getElementById('setting-char-theater-enabled');
@@ -3031,220 +2956,10 @@ B. 纯线上互动：这是一个完全虚拟的线上聊天。你扮演的角�
     }
 }
 
+// V18: API 设置模块已迁入 features/settings/apiSettings。
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.setupApiSettingsApp
 function setupApiSettingsApp() {
-    const e = document.getElementById('api-form'), t = document.getElementById('fetch-models-btn'),
-        a = document.getElementById('api-model'), n = document.getElementById('api-provider'),
-        r = document.getElementById('api-url'), s = document.getElementById('api-key'), c = {
-            newapi: '',
-            deepseek: 'https://api.deepseek.com',
-            claude: 'https://api.anthropic.com',
-            gemini: 'https://generativelanguage.googleapis.com'
-        };
-    db.apiSettings && (n.value = db.apiSettings.provider || 'newapi', r.value = db.apiSettings.url || '', s.value = db.apiSettings.key || '', db.apiSettings.model && (a.innerHTML = `<option value="${db.apiSettings.model}">${db.apiSettings.model}</option>`));
-    if (db.apiSettings && typeof db.apiSettings.onlineRoleEnabled !== 'undefined') { document.getElementById('online-role-switch').checked = db.apiSettings.onlineRoleEnabled; } else { document.getElementById('online-role-switch').checked = true; }
-    if (db.apiSettings && typeof db.apiSettings.timePerceptionEnabled !== 'undefined') { document.getElementById('time-perception-switch').checked = db.apiSettings.timePerceptionEnabled; }
-    if (db.apiSettings && typeof db.apiSettings.streamEnabled !== 'undefined') { document.getElementById('stream-switch').checked = db.apiSettings.streamEnabled; } else { document.getElementById('stream-switch').checked = true; }
-    if (db.apiSettings && typeof db.apiSettings.quickReplyEnabled !== 'undefined') { document.getElementById('quick-reply-switch').checked = db.apiSettings.quickReplyEnabled; } else { document.getElementById('quick-reply-switch').checked = false; }
-
-    const tempSlider = document.getElementById('temperature-slider');
-    const tempValue = document.getElementById('temperature-value');
-    if (tempSlider && tempValue) {
-        const savedTemp = (db.apiSettings && db.apiSettings.temperature !== undefined) ? db.apiSettings.temperature : 1.0;
-        tempSlider.value = savedTemp;
-        tempValue.textContent = savedTemp;
-
-        tempSlider.addEventListener('input', (e) => {
-            tempValue.textContent = e.target.value;
-        });
-    }
-
-    populateApiSelect();
-    n?.addEventListener('change', () => {
-        if (r) r.value = c[n.value] || ''
-    });
-
-    // 提取为全局函数以便复用
-    window.fetchAndPopulateModels = async (showToastFlag = true) => {
-        const provider = n.value;
-        let apiUrl = r.value.trim();
-        const apiKey = s.value.trim();
-        const modelSelect = a;
-        const fetchBtn = t;
-
-        if (!apiUrl || !apiKey) {
-            if (showToastFlag) showToast('请先填写API地址和密钥！');
-            return;
-        }
-
-        if (BLOCKED_API_DOMAINS.some(domain => apiUrl.includes(domain))) {
-            if (showToastFlag) showToast('该 API 站点已被屏蔽，无法使用！');
-            return;
-        }
-
-        if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
-        
-        const endpoint = provider === 'gemini' 
-            ? `${apiUrl}/v1beta/models?key=${getRandomValue(apiKey)}` 
-            : `${apiUrl}/v1/models`;
-
-        if (fetchBtn) {
-            fetchBtn.classList.add('loading');
-            fetchBtn.disabled = true;
-        }
-
-        try {
-            const headers = provider === 'gemini' ? {} : { Authorization: `Bearer ${apiKey}` };
-            const response = await fetch(endpoint, { method: 'GET', headers });
-            
-            if (!response.ok) {
-                const error = new Error(`网络响应错误: ${response.status}`);
-                error.response = response;
-                throw error;
-            }
-
-            const data = await response.json();
-            let models = [];
-            
-            if (provider !== 'gemini' && data.data) {
-                models = data.data.map(e => e.id);
-            } else if (provider === 'gemini' && data.models) {
-                models = data.models.map(e => e.name.replace('models/', ''));
-            }
-
-            // 保留当前选中的值（如果仍在列表中）
-            const currentVal = modelSelect.value;
-            
-            modelSelect.innerHTML = '';
-            if (models.length > 0) {
-                models.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m;
-                    modelSelect.appendChild(opt);
-                });
-                
-                // 尝试恢复之前的选择，或者使用设置中的值
-                if (models.includes(currentVal)) {
-                    modelSelect.value = currentVal;
-                } else if (db.apiSettings && db.apiSettings.model && models.includes(db.apiSettings.model)) {
-                    modelSelect.value = db.apiSettings.model;
-                }
-                
-                if (showToastFlag) showToast('模型列表拉取成功！');
-            } else {
-                modelSelect.innerHTML = '<option value="">未找到任何模型</option>';
-                if (showToastFlag) showToast('未找到任何模型');
-            }
-        } catch (err) {
-            console.error(err);
-            if (showToastFlag) {
-                showApiError(err);
-                modelSelect.innerHTML = '<option value="">拉取失败</option>';
-            }
-        } finally {
-            if (fetchBtn) {
-                fetchBtn.classList.remove('loading');
-                fetchBtn.disabled = false;
-            }
-        }
-    };
-
-    t?.addEventListener('click', () => window.fetchAndPopulateModels(true));
-    e?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!a.value) return showToast('请选择模型后保存！');
-        if (BLOCKED_API_DOMAINS.some(domain => r.value.includes(domain))) {
-            return showToast('该 API 站点已被屏蔽，无法保存！');
-        }
-        db.apiSettings = {
-            provider: n.value,
-            url: r.value,
-            key: s.value,
-            model: a.value,
-            onlineRoleEnabled: document.getElementById('online-role-switch').checked,
-            timePerceptionEnabled: document.getElementById('time-perception-switch').checked,
-            streamEnabled: document.getElementById('stream-switch').checked,
-            quickReplyEnabled: document.getElementById('quick-reply-switch').checked,
-            temperature: parseFloat(document.getElementById('temperature-slider').value)
-        };
-        
-        // 保存自动识图全局开关
-        const irSwitch = document.getElementById('imageRecognition-enabled-switch');
-        if (irSwitch) {
-            db.imageRecognitionEnabled = irSwitch.checked;
-        }
-
-        await saveData();
-        showToast('API设置已保存！')
-    });
-    
-    // === 副API设置：总结API ===
-    setupSubApiSettings('summary', 'summaryApiSettings', 'summaryApiPresets');
-    
-    // === 副API设置：后台活动API ===
-    setupSubApiSettings('background', 'backgroundApiSettings', 'backgroundApiPresets');
-
-    // === 副API设置：向量记忆 Embedding API ===
-    setupSubApiSettings('vector', 'vectorApiSettings', 'vectorApiPresets');
-    
-    // === 副API设置：补齐人设API ===
-    setupSubApiSettings('supplementPersona', 'supplementPersonaApiSettings', 'supplementPersonaApiPresets');
-    
-    // === 副API设置：偷看手机API ===
-    setupSubApiSettings('peek', 'peekApiSettings', 'peekApiPresets');
-
-    // === 副API设置：自动识图 API ===
-    setupSubApiSettings('imageRecognition', 'imageRecognitionApiSettings', 'imageRecognitionApiPresets');
-    
-    if (db.imageRecognitionEnabled !== undefined) {
-        document.getElementById('imageRecognition-enabled-switch').checked = db.imageRecognitionEnabled;
-    } else {
-        document.getElementById('imageRecognition-enabled-switch').checked = false; // 默认关闭
-    }
-
-    // === 副API设置：表情包识图 API ===
-    setupSubApiSettings('stickerRecognition', 'stickerRecognitionApiSettings', 'stickerRecognitionApiPresets');
-
-    // === 全局天气服务 API ===
-    const weatherProviderEl = document.getElementById('weather-api-provider');
-    const weatherKeyEl = document.getElementById('weather-api-key');
-    const weatherKeyCont = document.getElementById('weather-api-key-container');
-    const weatherSaveBtn = document.getElementById('weather-api-save-btn');
-
-    if (weatherProviderEl) {
-        if (db.weatherApiSettings) {
-            weatherProviderEl.value = db.weatherApiSettings.provider || 'openmeteo';
-            if (weatherKeyEl) weatherKeyEl.value = db.weatherApiSettings.key || '';
-        }
-        
-        const updateWeatherKeyVisibility = () => {
-            const provider = weatherProviderEl.value;
-            if (provider === 'qweather' || provider === 'seniverse') {
-                if (weatherKeyCont) weatherKeyCont.style.display = 'flex';
-            } else {
-                if (weatherKeyCont) weatherKeyCont.style.display = 'none';
-            }
-        };
-        weatherProviderEl.addEventListener('change', updateWeatherKeyVisibility);
-        updateWeatherKeyVisibility();
-
-        if (weatherSaveBtn) {
-            weatherSaveBtn.addEventListener('click', async () => {
-                db.weatherApiSettings = {
-                    provider: weatherProviderEl.value,
-                    key: weatherKeyEl ? weatherKeyEl.value.trim() : ''
-                };
-                await saveData();
-                showToast('全局天气 API 设置已保存！');
-            });
-        }
-    }
-
-    // === NovelAI 生图 API 设置 ===
-    setupNovelAiSettings();
-
-    // === GPT 生图 API 设置 ===
-    setupGptImageSettings();
+    return window.OwoApp.features.settings.apiSettings.publicApi.setupApiSettingsApp.apply(this, arguments);
 }
 
 // 提取为全局函数以便复用
@@ -3314,474 +3029,48 @@ window.fetchAndPopulateGptModels = async (showToastFlag = true) => {
     }
 };
 
-// --- 预设管理 ---
-function _getApiPresets() {
-    return db.apiPresets || [];
-}
-function _saveApiPresets(arr) {
-    db.apiPresets = arr || [];
-    saveData();
-}
-
+// --- V18 API 设置预设兼容入口 ---
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.populateApiSelect
 function populateApiSelect() {
-    const sel = document.getElementById('api-preset-select');
-    if (!sel) return;
-    const presets = _getApiPresets();
-    sel.innerHTML = '<option value="">— 选择 API 预设 —</option>';
-    presets.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.name;
-    opt.textContent = p.name;
-    sel.appendChild(opt);
-    });
+    return window.OwoApp.features.settings.apiSettings.publicApi.populateApiSelect.apply(this, arguments);
 }
-
+// @compat canonical: OwoApp.features.settings.apiSettings.apiPresetService.getPresets
+function _getApiPresets() {
+    return window.OwoApp.features.settings.apiSettings.apiPresetService.getPresets(db, 'apiPresets');
+}
+// @compat canonical: OwoApp.features.settings.apiSettings.apiPresetService.savePresets
+function _saveApiPresets(arr) {
+    window.OwoApp.features.settings.apiSettings.apiPresetService.savePresets(db, 'apiPresets', arr || []);
+    return saveData();
+}
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.saveCurrentApiAsPreset
 function saveCurrentApiAsPreset() {
-    const apiKeyEl = document.querySelector('#api-key');
-    const apiUrlEl = document.querySelector('#api-url');
-    const providerEl = document.querySelector('#api-provider');
-    const modelEl = document.querySelector('#api-model');
-
-    const data = {
-        apiKey: apiKeyEl ? apiKeyEl.value : '',
-        apiUrl: apiUrlEl ? apiUrlEl.value : '',
-        provider: providerEl ? providerEl.value : '',
-        model: modelEl ? modelEl.value : ''
-    };
-    
-    let name = prompt('为该 API 预设填写名称（会覆盖同名预设）：');
-    if (!name) return;
-    const presets = _getApiPresets();
-    const idx = presets.findIndex(p => p.name === name);
-    const preset = {name: name, data: data};
-    if (idx >= 0) presets[idx] = preset; else presets.push(preset);
-    _saveApiPresets(presets);
-    populateApiSelect();
-    showToast('API 预设已保存');
+    return window.OwoApp.features.settings.apiSettings.publicApi.saveCurrentApiAsPreset.apply(this, arguments);
 }
-
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.applyApiPreset
 async function applyApiPreset(name) {
-    const presets = _getApiPresets();
-    const p = presets.find(x => x.name === name);
-    if (!p) return showToast('未找到该预设');
-    try {
-        const apiKeyEl = document.querySelector('#api-key');
-        const apiUrlEl = document.querySelector('#api-url');
-        const providerEl = document.querySelector('#api-provider');
-        const modelEl = document.querySelector('#api-model');
-
-        if (apiKeyEl && p.data && typeof p.data.apiKey !== 'undefined') apiKeyEl.value = p.data.apiKey;
-        if (apiUrlEl && p.data && typeof p.data.apiUrl !== 'undefined') apiUrlEl.value = p.data.apiUrl;
-        if (providerEl && p.data && typeof p.data.provider !== 'undefined') providerEl.value = p.data.provider;
-        if (modelEl && p.data && typeof p.data.model !== 'undefined') {
-            modelEl.innerHTML = `<option value="${p.data.model}">${p.data.model}</option>`;
-            modelEl.value = p.data.model;
-        }
-
-        showToast('已应用 API 预设');
-    } catch(e) {
-        console.error('applyApiPreset error', e);
-    }
+    return window.OwoApp.features.settings.apiSettings.publicApi.applyApiPreset.apply(this, arguments);
 }
-
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.openApiManageModal
 function openApiManageModal() {
-    const modal = document.getElementById('api-presets-modal');
-    const list = document.getElementById('api-presets-list');
-    if (!modal || !list) return;
-    list.innerHTML = '';
-    const presets = _getApiPresets();
-    if (!presets.length) {
-        list.innerHTML = '<p style="color:#888;margin:6px 0;">暂无预设</p>';
-    }
-    presets.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.padding = '8px 6px';
-        row.style.borderBottom = '1px solid #f6f6f6';
-
-        const left = document.createElement('div');
-        left.style.flex = '1';
-        left.style.minWidth = '0';
-        left.innerHTML = '<div style="font-weight:600;">'+p.name+'</div><div style="font-size:12px;color:#666;margin-top:4px;">' + (p.data && p.data.provider ? ('提供者：'+p.data.provider) : '') + '</div>';
-
-        const btns = document.createElement('div');
-        btns.style.display = 'flex';
-        btns.style.gap = '6px';
-
-        const applyBtn = document.createElement('button');
-        applyBtn.className = 'btn';
-        applyBtn.textContent = '应用';
-        applyBtn.onclick = function(){ applyApiPreset(p.name); modal.style.display='none'; };
-
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'btn';
-        renameBtn.textContent = '重命名';
-        renameBtn.onclick = function(){
-            const newName = prompt('输入新名称：', p.name);
-            if (!newName) return;
-            const all = _getApiPresets();
-            all[idx].name = newName;
-            _saveApiPresets(all);
-            openApiManageModal();
-            populateApiSelect();
-        };
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn';
-        delBtn.textContent = '删除';
-        delBtn.onclick = function(){ if(!confirm('确定删除 "'+p.name+'" ?')) return; const all=_getApiPresets(); all.splice(idx,1); _saveApiPresets(all); openApiManageModal(); populateApiSelect(); };
-
-        btns.appendChild(applyBtn); btns.appendChild(renameBtn); btns.appendChild(delBtn);
-
-        row.appendChild(left); row.appendChild(btns);
-        list.appendChild(row);
-    });
-    modal.style.display = 'flex';
+    return window.OwoApp.features.settings.apiSettings.publicApi.openApiManageModal.apply(this, arguments);
 }
-
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.exportApiPresets
 function exportApiPresets() {
-    const presets = _getApiPresets();
-    const blob = new Blob([JSON.stringify(presets, null, 2)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'api_presets.json'; document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
+    return window.OwoApp.features.settings.apiSettings.publicApi.exportApiPresets.apply(this, arguments);
 }
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.importApiPresets
 function importApiPresets() {
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'application/json';
-    inp.onchange = function(e){
-        const f = e.target.files[0];
-        if (!f) return;
-        const r = new FileReader();
-        r.onload = function(){ try { const data = JSON.parse(r.result); if (Array.isArray(data)) { _saveApiPresets(data); populateApiSelect(); openApiManageModal(); } else alert('文件格式不正确'); } catch(e){ alert('导入失败：'+e.message); } };
-        r.readAsText(f);
-    };
-    inp.click();
+    return window.OwoApp.features.settings.apiSettings.publicApi.importApiPresets.apply(this, arguments);
 }
-
-    // === 副API通用设置函数 ===
-    var subApiDisplayNames = { summary: '总结', background: '后台活动', vector: '向量记忆', supplementPersona: '补齐人设', peek: '偷看手机', imageRecognition: '自动识图', stickerRecognition: '表情包识图' };
+var subApiDisplayNames = { summary: '总结', background: '后台活动', vector: '向量记忆', supplementPersona: '补齐人设', peek: '偷看手机', imageRecognition: '自动识图', stickerRecognition: '表情包识图' };
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.setupSubApiSettings
 function setupSubApiSettings(prefix, dbKey, presetsKey) {
-    const displayName = subApiDisplayNames[prefix] || prefix;
-    const providerEl = document.getElementById(`${prefix}-api-provider`);
-    const urlEl = document.getElementById(`${prefix}-api-url`);
-    const keyEl = document.getElementById(`${prefix}-api-key`);
-    const modelEl = document.getElementById(`${prefix}-api-model`);
-    const fetchBtn = document.getElementById(`${prefix}-fetch-models-btn`);
-    const saveBtn = document.getElementById(`${prefix}-api-save-btn`);
-    
-    const providerUrls = {
-        newapi: '',
-        deepseek: 'https://api.deepseek.com',
-        claude: 'https://api.anthropic.com',
-        gemini: 'https://generativelanguage.googleapis.com'
-    };
-    
-    // 加载保存的设置
-    if (db[dbKey]) {
-        providerEl.value = db[dbKey].provider || 'newapi';
-        urlEl.value = db[dbKey].url || '';
-        keyEl.value = db[dbKey].key || '';
-        if (db[dbKey].model) {
-            modelEl.innerHTML = `<option value="${db[dbKey].model}">${db[dbKey].model}</option>`;
-        }
-    }
-    
-    // 服务商切换时自动填充URL
-    providerEl.addEventListener('change', () => {
-        urlEl.value = providerUrls[providerEl.value] || '';
-    });
-    
-    // 拉取模型列表
-    fetchBtn.addEventListener('click', async () => {
-        const provider = providerEl.value;
-        let apiUrl = urlEl.value.trim();
-        const apiKey = keyEl.value.trim();
-        
-        if (!apiUrl || !apiKey) {
-            showToast('请先填写API地址和密钥！');
-            return;
-        }
-        
-        if (BLOCKED_API_DOMAINS.some(domain => apiUrl.includes(domain))) {
-            showToast('该 API 站点已被屏蔽，无法使用！');
-            return;
-        }
-        
-        if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
-        
-        const endpoint = provider === 'gemini' 
-            ? `${apiUrl}/v1beta/models?key=${getRandomValue(apiKey)}` 
-            : `${apiUrl}/v1/models`;
-        
-        fetchBtn.classList.add('loading');
-        fetchBtn.disabled = true;
-        
-        try {
-            const headers = provider === 'gemini' ? {} : { Authorization: `Bearer ${apiKey}` };
-            const response = await fetch(endpoint, { method: 'GET', headers });
-            
-            if (!response.ok) {
-                throw new Error(`网络响应错误: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            let models = [];
-            
-            if (provider !== 'gemini' && data.data) {
-                models = data.data.map(e => e.id);
-            } else if (provider === 'gemini' && data.models) {
-                models = data.models.map(e => e.name.replace('models/', ''));
-            }
-            
-            modelEl.innerHTML = '';
-            if (models.length > 0) {
-                models.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m;
-                    modelEl.appendChild(opt);
-                });
-                showToast('模型列表拉取成功！');
-            } else {
-                modelEl.innerHTML = '<option value="">未找到任何模型</option>';
-                showToast('未找到任何模型');
-            }
-        } catch (err) {
-            console.error(err);
-            showApiError(err);
-            modelEl.innerHTML = '<option value="">拉取失败</option>';
-        } finally {
-            fetchBtn.classList.remove('loading');
-            fetchBtn.disabled = false;
-        }
-    });
-    
-    // 保存设置
-    saveBtn.addEventListener('click', async () => {
-        if (!modelEl.value && (urlEl.value.trim() || keyEl.value.trim())) {
-            showToast('请选择模型后保存！');
-            return;
-        }
-        
-        if (BLOCKED_API_DOMAINS.some(domain => urlEl.value.includes(domain))) {
-            showToast('该 API 站点已被屏蔽，无法保存！');
-            return;
-        }
-        
-        // 如果全部为空，则清空设置
-        if (!urlEl.value.trim() && !keyEl.value.trim() && !modelEl.value) {
-            db[dbKey] = {};
-            await saveData();
-            showToast(displayName + 'API设置已清空！');
-            return;
-        }
-        
-        db[dbKey] = {
-            provider: providerEl.value,
-            url: urlEl.value,
-            key: keyEl.value,
-            model: modelEl.value
-        };
-        await saveData();
-        showToast(displayName + 'API设置已保存！');
-    });
-    
-    // 预设管理
-    setupSubApiPresets(prefix, dbKey, presetsKey);
+    return window.OwoApp.features.settings.apiSettings.publicApi.setupSubApiSettings.apply(this, arguments);
 }
-
-// === 副API预设管理 ===
+// @compat canonical: OwoApp.features.settings.apiSettings.publicApi.setupSubApiPresets
 function setupSubApiPresets(prefix, dbKey, presetsKey) {
-    const presetSelect = document.getElementById(`${prefix}-api-preset-select`);
-    const applyBtn = document.getElementById(`${prefix}-api-apply-preset`);
-    const savePresetBtn = document.getElementById(`${prefix}-api-save-preset`);
-    const manageBtn = document.getElementById(`${prefix}-api-manage-presets`);
-    const importBtn = document.getElementById(`${prefix}-api-import-presets`);
-    const exportBtn = document.getElementById(`${prefix}-api-export-presets`);
-    const modal = document.getElementById(`${prefix}-api-presets-modal`);
-    const closeModalBtn = document.getElementById(`${prefix}-api-close-modal`);
-    const presetsList = document.getElementById(`${prefix}-api-presets-list`);
-    
-    // 填充预设列表
-    function populatePresets() {
-        const presets = db[presetsKey] || [];
-        if (presetSelect) presetSelect.innerHTML = '<option value="">— 选择 —</option>';
-        presets.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.name;
-            opt.textContent = p.name;
-            if (presetSelect) presetSelect.appendChild(opt);
-        });
-    }
-    
-    populatePresets();
-    
-    // 应用预设
-    applyBtn?.addEventListener('click', async () => {
-        const name = presetSelect ? presetSelect.value : '';
-        if (!name) return showToast('请选择预设');
-        
-        const presets = db[presetsKey] || [];
-        const preset = presets.find(p => p.name === name);
-        if (!preset) return showToast('未找到该预设');
-        
-        try {
-            const providerEl = document.getElementById(`${prefix}-api-provider`);
-            const urlEl = document.getElementById(`${prefix}-api-url`);
-            const keyEl = document.getElementById(`${prefix}-api-key`);
-            const modelEl = document.getElementById(`${prefix}-api-model`);
-            
-            if (providerEl && preset.data.provider) providerEl.value = preset.data.provider;
-            if (urlEl && preset.data.apiUrl) urlEl.value = preset.data.apiUrl;
-            if (keyEl && preset.data.apiKey) keyEl.value = preset.data.apiKey;
-            if (modelEl && preset.data.model) {
-                modelEl.innerHTML = `<option value="${preset.data.model}">${preset.data.model}</option>`;
-            }
-            
-            showToast('预设已应用到表单！');
-        } catch (err) {
-            console.error(err);
-            showToast('应用预设失败');
-        }
-    });
-    
-    // 另存为预设
-    savePresetBtn?.addEventListener('click', () => {
-        const providerEl = document.getElementById(`${prefix}-api-provider`);
-        const urlEl = document.getElementById(`${prefix}-api-url`);
-        const keyEl = document.getElementById(`${prefix}-api-key`);
-        const modelEl = document.getElementById(`${prefix}-api-model`);
-        
-        const data = {
-            provider: providerEl ? providerEl.value : '',
-            apiUrl: urlEl ? urlEl.value : '',
-            apiKey: keyEl ? keyEl.value : '',
-            model: modelEl ? modelEl.value : ''
-        };
-        
-        let name = prompt('为该预设填写名称（会覆盖同名预设）：');
-        if (!name) return;
-        
-        const presets = db[presetsKey] || [];
-        const idx = presets.findIndex(p => p.name === name);
-        const preset = { name: name, data: data };
-        
-        if (idx >= 0) presets[idx] = preset;
-        else presets.push(preset);
-        
-        db[presetsKey] = presets;
-        saveData();
-        populatePresets();
-        showToast('预设已保存');
-    });
-    
-    // 管理预设
-    manageBtn?.addEventListener('click', () => {
-        renderPresetsList();
-        if (modal) modal.style.display = 'flex';
-    });
-    
-    function renderPresetsList() {
-        const presets = db[presetsKey] || [];
-        presetsList.innerHTML = '';
-        
-        if (presets.length === 0) {
-            presetsList.innerHTML = '<p style="text-align:center;color:#999;">暂无预设</p>';
-            return;
-        }
-        
-        presets.forEach((preset, idx) => {
-            const div = document.createElement('div');
-            div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px;margin-bottom:6px;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa;';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = preset.name;
-            nameSpan.style.cssText = 'flex:1;font-weight:500;';
-            
-            const delBtn = document.createElement('button');
-            delBtn.textContent = '删除';
-            delBtn.className = 'btn btn-small';
-            delBtn.style.cssText = 'background:#ff4444;color:white;padding:4px 12px;';
-            delBtn.onclick = () => {
-                if (confirm(`确定删除预设"${preset.name}"吗？`)) {
-                    presets.splice(idx, 1);
-                    db[presetsKey] = presets;
-                    saveData();
-                    renderPresetsList();
-                    populatePresets();
-                    showToast('预设已删除');
-                }
-            };
-            
-            div.appendChild(nameSpan);
-            div.appendChild(delBtn);
-            if (presetsList) presetsList.appendChild(div);
-        });
-    }
-    
-    closeModalBtn?.addEventListener('click', () => {
-        if (modal) modal.style.display = 'none';
-    });
-    
-    // 导入预设
-    importBtn?.addEventListener('click', () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            try {
-                const text = await file.text();
-                const imported = JSON.parse(text);
-                
-                if (!Array.isArray(imported)) {
-                    showToast('文件格式错误');
-                    return;
-                }
-                
-                db[presetsKey] = db[presetsKey] || [];
-                imported.forEach(preset => {
-                    const idx = db[presetsKey].findIndex(p => p.name === preset.name);
-                    if (idx >= 0) db[presetsKey][idx] = preset;
-                    else db[presetsKey].push(preset);
-                });
-                
-                await saveData();
-                populatePresets();
-                showToast('预设已导入');
-            } catch (err) {
-                console.error(err);
-                showToast('导入失败，请检查文件格式');
-            }
-        };
-        input.click();
-    });
-    
-    // 导出预设
-    exportBtn?.addEventListener('click', () => {
-        const presets = db[presetsKey] || [];
-        if (presets.length === 0) {
-            showToast('暂无预设可导出');
-            return;
-        }
-        
-        const json = JSON.stringify(presets, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${prefix}_api_presets_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('预设已导出');
-    });
+    return window.OwoApp.features.settings.apiSettings.publicApi.setupSubApiPresets.apply(this, arguments);
 }
 
 // === NovelAI 生图 API 设置 ===
@@ -4888,146 +4177,14 @@ function openManageMyPersonaModal() {
     modal.style.display = 'flex';
 }
 
-function _getFontPresets() {
-    return db.fontPresets || [];
-}
-function _saveFontPresets(arr) {
-    db.fontPresets = arr || [];
-    saveData();
-}
-
-function populateFontPresetSelect() {
-    const sel = document.getElementById('font-preset-select');
-    if (!sel) return;
-    const presets = _getFontPresets();
-    sel.innerHTML = '<option value="">— 选择预设 —</option>';
-    presets.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.name;
-        opt.textContent = p.name;
-        sel.appendChild(opt);
-    });
-}
-
-function saveCurrentFontAsPreset() {
-    const fontUrlInput = document.getElementById('customize-font-url');
-    const urlVal = fontUrlInput ? fontUrlInput.value.trim() : '';
-    const currentFont = urlVal || db.fontUrl || '';
-    if (!currentFont) return showToast('当前无字体可保存');
-    
-    let name = prompt('请输入预设名称（将覆盖同名预设）：');
-    if (!name) return;
-    
-    const presets = _getFontPresets();
-    const idx = presets.findIndex(p => p.name === name);
-    const preset = { name, url: currentFont, localFontName: db.localFontName || '' };
-    
-    if (idx >= 0) presets[idx] = preset; 
-    else presets.push(preset);
-    
-    _saveFontPresets(presets);
-    populateFontPresetSelect();
-    showToast('字体预设已保存');
-}
-
-function applyFontPreset(name) {
-    const presets = _getFontPresets();
-    const p = presets.find(x => x.name === name);
-    if (!p) return showToast('未找到该预设');
-    
-    const fontUrlInput = document.getElementById('customize-font-url');
-    const isLocal = p.url && p.url.startsWith('data:');
-    if (fontUrlInput) fontUrlInput.value = isLocal ? '' : p.url;
-    
-    db.fontUrl = p.url;
-    db.localFontName = p.localFontName || '';
-    saveData();
-    applyGlobalFont(p.url);
-    
-    const nameEl = document.getElementById('local-font-name');
-    if (nameEl) {
-        if (isLocal && p.localFontName) {
-            nameEl.textContent = '已加载本地字体：' + p.localFontName;
-            nameEl.style.display = 'block';
-        } else {
-            nameEl.style.display = 'none';
-        }
-    }
-    showToast('已应用字体预设');
-}
-
-function openFontManageModal() {
-    const modal = document.getElementById('font-presets-modal');
-    const list = document.getElementById('font-presets-list');
-    if (!modal || !list) return;
-    
-    list.innerHTML = '';
-    const presets = _getFontPresets();
-    if (!presets.length) list.innerHTML = '<p style="color:#888;margin:6px 0;">暂无预设</p>';
-    
-    presets.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.padding = '8px 0';
-        row.style.borderBottom = '1px solid #f0f0f0';
-
-        const nameDiv = document.createElement('div');
-        nameDiv.style.flex = '1';
-        nameDiv.style.whiteSpace = 'nowrap';
-        nameDiv.style.overflow = 'hidden';
-        nameDiv.style.textOverflow = 'ellipsis';
-        nameDiv.textContent = p.name;
-        row.appendChild(nameDiv);
-
-        const btnWrap = document.createElement('div');
-        btnWrap.style.display = 'flex';
-        btnWrap.style.gap = '6px';
-
-        const applyBtn = document.createElement('button');
-        applyBtn.className = 'btn btn-primary';
-        applyBtn.style.padding = '6px 8px;border-radius:8px';
-        applyBtn.textContent = '应用';
-        applyBtn.onclick = function(){ applyFontPreset(p.name); modal.style.display = 'none'; };
-
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'btn';
-        renameBtn.style.padding = '6px 8px;border-radius:8px';
-        renameBtn.textContent = '重命名';
-        renameBtn.onclick = function(){
-            const newName = prompt('输入新名称：', p.name);
-            if (!newName) return;
-            const all = _getFontPresets();
-            all[idx].name = newName;
-            _saveFontPresets(all);
-            openFontManageModal();
-            populateFontPresetSelect();
-        };
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn';
-        deleteBtn.style.padding = '6px 8px;border-radius:8px;color:#e53935';
-        deleteBtn.textContent = '删除';
-        deleteBtn.onclick = function(){
-            if (!confirm('确认删除该预设？')) return;
-            const all = _getFontPresets();
-            all.splice(idx,1);
-            _saveFontPresets(all);
-            openFontManageModal();
-            populateFontPresetSelect();
-        };
-
-        btnWrap.appendChild(applyBtn);
-        btnWrap.appendChild(renameBtn);
-        btnWrap.appendChild(deleteBtn);
-        row.appendChild(btnWrap);
-
-        list.appendChild(row);
-    });
-
-    modal.style.display = 'flex';
-}
+// V19: 字体预设 UI 已迁入 features/settings/appearance/fontPresetView.js。
+// @compat canonical: OwoApp.features.settings.appearance.publicApi
+function _getFontPresets() { return window.OwoApp.features.settings.appearance.publicApi.getFontPresets(); }
+function _saveFontPresets(arr) { return window.OwoApp.features.settings.appearance.publicApi.saveFontPresets(arr); }
+function populateFontPresetSelect() { return window.OwoApp.features.settings.appearance.publicApi.populateFontPresetSelect.apply(this, arguments); }
+function saveCurrentFontAsPreset() { return window.OwoApp.features.settings.appearance.publicApi.saveCurrentFontAsPreset.apply(this, arguments); }
+function applyFontPreset(name) { return window.OwoApp.features.settings.appearance.publicApi.applyFontPreset.apply(this, arguments); }
+function openFontManageModal() { return window.OwoApp.features.settings.appearance.publicApi.openFontManageModal.apply(this, arguments); }
 
 function setupPresetFeatures() {
     const saveBtn = document.getElementById('api-save-preset');
@@ -5045,21 +4202,10 @@ function setupPresetFeatures() {
     if (importBtn) importBtn.addEventListener('click', importApiPresets);
     if (exportBtn) exportBtn.addEventListener('click', exportApiPresets);
     
-    // === TTS 预设管理 ===
-    const ttsSaveBtn = document.getElementById('tts-save-preset');
-    const ttsManageBtn = document.getElementById('tts-manage-presets');
-    const ttsApplyBtn = document.getElementById('tts-apply-preset');
-    const ttsSelect = document.getElementById('tts-preset-select');
-    const ttsModalClose = document.getElementById('tts-close-modal');
-    const ttsImportBtn = document.getElementById('tts-import-presets');
-    const ttsExportBtn = document.getElementById('tts-export-presets');
-
-    if (ttsSaveBtn) ttsSaveBtn.addEventListener('click', saveCurrentTTSAsPreset);
-    if (ttsManageBtn) ttsManageBtn.addEventListener('click', openTTSManageModal);
-    if (ttsApplyBtn) ttsApplyBtn.addEventListener('click', function(){ const v=ttsSelect.value; if(!v) return showToast('请选择预设'); applyTTSPreset(v); });
-    if (ttsModalClose) ttsModalClose.addEventListener('click', function(){ document.getElementById('tts-presets-modal').style.display='none'; });
-    if (ttsImportBtn) ttsImportBtn.addEventListener('click', importTTSPresets);
-    if (ttsExportBtn) ttsExportBtn.addEventListener('click', exportTTSPresets);
+    // V21: TTS 预设绑定已迁入 features/settings/voiceCot/ttsPresetView.js。
+    if (window.OwoApp.features.settings.voiceCot?.publicApi?.setupVoiceCotPresetFeatures) {
+        window.OwoApp.features.settings.voiceCot.publicApi.setupVoiceCotPresetFeatures();
+    }
     
     const bubbleApplyBtn = document.getElementById('apply-preset-btn');
     const bubbleSaveBtn = document.getElementById('save-preset-btn');
@@ -5193,200 +4339,12 @@ function setupPresetFeatures() {
     });
 }
 
-const DEFAULT_WALLPAPER_URL = 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg';
-
-function setupWallpaperApp() {
-    const e = document.getElementById('wallpaper-upload'), t = document.getElementById('wallpaper-preview');
-    if (t) {
-        t.style.backgroundImage = `url(${db.wallpaper})`;
-        t.textContent = '';
-    }
-    const resetBtn = document.getElementById('wallpaper-reset-btn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', async () => {
-            db.wallpaper = DEFAULT_WALLPAPER_URL;
-            applyWallpaper(DEFAULT_WALLPAPER_URL);
-            if (t) {
-                t.style.backgroundImage = `url(${DEFAULT_WALLPAPER_URL})`;
-                t.textContent = '';
-            }
-            if (e) e.value = '';
-            await saveData();
-            showToast('已恢复默认壁纸');
-        });
-    }
-    if (e) {
-        e.addEventListener('change', async (a) => {
-            const n = a.target.files[0];
-            if (n) {
-                try {
-                    const r = await compressImage(n, {quality: 0.85, maxWidth: 1080, maxHeight: 1920});
-                    db.wallpaper = r;
-                    applyWallpaper(r);
-                    if (t) t.style.backgroundImage = `url(${r})`;
-                    await saveData();
-                    showToast('壁纸已更新');
-                } catch (error) {
-                    showToast('壁纸压缩失败');
-                }
-            }
-        });
-    }
-    // 全局聊天壁纸（在壁纸APP中管理）
-    setupGlobalChatWallpaperInWallpaperScreen();
-    
-    // 全局通话壁纸（在壁纸APP中管理）
-    setupGlobalCallWallpaperInWallpaperScreen();
-}
-
-function setupGlobalChatWallpaperInWallpaperScreen() {
-    const GLOBAL_CHAT_BG_KEY = 'global_chat_bg';
-    const preview = document.getElementById('global-chat-wallpaper-preview');
-    const previewText = document.getElementById('global-chat-wallpaper-preview-text');
-    const localBtn = document.getElementById('global-chat-wallpaper-local-btn');
-    const urlBtn = document.getElementById('global-chat-wallpaper-url-btn');
-    const resetBtn = document.getElementById('global-chat-wallpaper-reset-btn');
-    const urlRow = document.getElementById('global-chat-wallpaper-url-row');
-    const urlInput = document.getElementById('global-chat-wallpaper-url-input');
-    const urlApply = document.getElementById('global-chat-wallpaper-url-apply');
-    const fileInput = document.getElementById('global-chat-wallpaper-file-input');
-
-    function refreshPreview() {
-        var url = db.globalChatWallpaper || '';
-        if (preview) {
-            if (url) {
-                preview.style.backgroundImage = 'url(' + url + ')';
-                if (previewText) previewText.style.display = 'none';
-            } else {
-                preview.style.backgroundImage = '';
-                if (previewText) previewText.style.display = '';
-            }
-        }
-    }
-
-    refreshPreview();
-
-    if (localBtn && fileInput) {
-        localBtn.addEventListener('click', function () { fileInput.click(); });
-        fileInput.addEventListener('change', async function () {
-            var file = this.files && this.files[0];
-            if (!file) return;
-            try {
-                var dataUrl = await compressImage(file, { quality: 0.85, maxWidth: 1080, maxHeight: 1920 });
-                db.globalChatWallpaper = dataUrl;
-                await saveData();
-                refreshPreview();
-                showToast('全局聊天壁纸已更新');
-            } catch (_) {
-                showToast('图片压缩失败');
-            }
-            this.value = '';
-        });
-    }
-
-    if (urlBtn) {
-        urlBtn.addEventListener('click', function () {
-            if (urlRow) urlRow.style.display = urlRow.style.display === 'none' ? 'flex' : 'none';
-            if (urlRow && urlRow.style.display === 'flex' && urlInput) urlInput.focus();
-        });
-    }
-
-    if (urlApply && urlInput) {
-        urlApply.addEventListener('click', async function () {
-            var url = urlInput.value.trim();
-            if (!url) return;
-            if (!url.startsWith('http')) { showToast('请输入有效的 http/https 链接'); return; }
-            db.globalChatWallpaper = url;
-            await saveData();
-            refreshPreview();
-            if (urlRow) urlRow.style.display = 'none';
-            showToast('全局聊天壁纸已更新');
-        });
-    }
-
-    if (resetBtn) {
-        resetBtn.addEventListener('click', async function () {
-            db.globalChatWallpaper = '';
-            await saveData();
-            refreshPreview();
-            showToast('已恢复默认全局聊天壁纸');
-        });
-    }
-}
-
-function setupGlobalCallWallpaperInWallpaperScreen() {
-    const preview = document.getElementById('global-call-wallpaper-preview');
-    const previewText = document.getElementById('global-call-wallpaper-preview-text');
-    const localBtn = document.getElementById('global-call-wallpaper-local-btn');
-    const urlBtn = document.getElementById('global-call-wallpaper-url-btn');
-    const resetBtn = document.getElementById('global-call-wallpaper-reset-btn');
-    const urlRow = document.getElementById('global-call-wallpaper-url-row');
-    const urlInput = document.getElementById('global-call-wallpaper-url-input');
-    const urlApply = document.getElementById('global-call-wallpaper-url-apply');
-    const fileInput = document.getElementById('global-call-wallpaper-file-input');
-
-    function refreshPreview() {
-        var url = db.globalCallWallpaper || '';
-        if (preview) {
-            if (url) {
-                preview.style.backgroundImage = 'url(' + url + ')';
-                if (previewText) previewText.style.display = 'none';
-            } else {
-                preview.style.backgroundImage = '';
-                if (previewText) previewText.style.display = '';
-            }
-        }
-    }
-
-    refreshPreview();
-
-    if (localBtn && fileInput) {
-        localBtn.addEventListener('click', function () { fileInput.click(); });
-        fileInput.addEventListener('change', async function () {
-            var file = this.files && this.files[0];
-            if (!file) return;
-            try {
-                var dataUrl = await compressImage(file, { quality: 0.85, maxWidth: 1080, maxHeight: 1920 });
-                db.globalCallWallpaper = dataUrl;
-                await saveData();
-                refreshPreview();
-                showToast('全局通话壁纸已更新');
-            } catch (_) {
-                showToast('图片压缩失败');
-            }
-            this.value = '';
-        });
-    }
-
-    if (urlBtn) {
-        urlBtn.addEventListener('click', function () {
-            if (urlRow) urlRow.style.display = urlRow.style.display === 'none' ? 'flex' : 'none';
-            if (urlRow && urlRow.style.display === 'flex' && urlInput) urlInput.focus();
-        });
-    }
-
-    if (urlApply && urlInput) {
-        urlApply.addEventListener('click', async function () {
-            var url = urlInput.value.trim();
-            if (!url) return;
-            if (!url.startsWith('http')) { showToast('请输入有效的 http/https 链接'); return; }
-            db.globalCallWallpaper = url;
-            await saveData();
-            refreshPreview();
-            if (urlRow) urlRow.style.display = 'none';
-            showToast('全局通话壁纸已更新');
-        });
-    }
-
-    if (resetBtn) {
-        resetBtn.addEventListener('click', async function () {
-            db.globalCallWallpaper = '';
-            await saveData();
-            refreshPreview();
-            showToast('已恢复默认全局通话壁纸');
-        });
-    }
-}
+// V19: 壁纸设置 UI 已迁入 features/settings/appearance/wallpaperSettingsView.js。
+// @compat canonical: OwoApp.features.settings.appearance.publicApi
+const DEFAULT_WALLPAPER_URL = window.OwoApp.features.settings.appearance.model.DEFAULT_WALLPAPER_URL;
+function setupWallpaperApp() { return window.OwoApp.features.settings.appearance.publicApi.setupWallpaperApp.apply(this, arguments); }
+function setupGlobalChatWallpaperInWallpaperScreen() { return window.OwoApp.features.settings.appearance.publicApi.setupGlobalChatWallpaperInWallpaperScreen.apply(this, arguments); }
+function setupGlobalCallWallpaperInWallpaperScreen() { return window.OwoApp.features.settings.appearance.publicApi.setupGlobalCallWallpaperInWallpaperScreen.apply(this, arguments); }
 
 function populateGlobalCssPresetSelect() {
     const select = document.getElementById('global-css-preset-select');
@@ -5600,159 +4558,14 @@ function openSoundManageModal() {
 }
 
 // ========== 音色预设库 ==========
-function _getVoicePresets() {
-    return db.voicePresets || [];
-}
-function _saveVoicePresets(arr) {
-    db.voicePresets = arr || [];
-    saveData();
-}
-
-function populateVoicePresetSelect() {
-    const sel = document.getElementById('voice-preset-select');
-    if (!sel) return;
-    const presets = _getVoicePresets();
-    sel.innerHTML = '<option value="">— 选择 —</option>';
-    presets.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.name;
-        opt.textContent = p.name;
-        sel.appendChild(opt);
-    });
-}
-
-function saveCurrentVoiceAsPreset() {
-    if (typeof currentChatId === 'undefined' || !currentChatId) return showToast('请先打开一个角色');
-    const chat = db.characters && db.characters.find(c => c.id === currentChatId);
-    if (!chat || !chat.ttsConfig) return showToast('当前角色无语音配置');
-
-    const tc = chat.ttsConfig;
-    const preset = {
-        voiceId: tc.voiceId || '',
-        customVoiceId: tc.customVoiceId || '',
-        language: tc.language || 'auto',
-        speed: tc.speed != null ? tc.speed : 1,
-        userVoiceId: tc.userVoiceId || '',
-        userCustomVoiceId: tc.userCustomVoiceId || '',
-        userLanguage: tc.userLanguage || 'auto',
-        userSpeed: tc.userSpeed != null ? tc.userSpeed : 1
-    };
-
-    const name = prompt('请输入音色预设名称（将覆盖同名预设）：');
-    if (!name) return;
-
-    const presets = _getVoicePresets();
-    const idx = presets.findIndex(p => p.name === name);
-    const entry = { name, ...preset };
-    if (idx >= 0) presets[idx] = entry;
-    else presets.push(entry);
-
-    _saveVoicePresets(presets);
-    populateVoicePresetSelect();
-    showToast('音色预设已保存');
-}
-
-function applyVoicePreset(name) {
-    if (typeof currentChatId === 'undefined' || !currentChatId) return showToast('请先打开一个角色');
-    const chat = db.characters && db.characters.find(c => c.id === currentChatId);
-    if (!chat) return showToast('未找到角色');
-
-    const presets = _getVoicePresets();
-    const p = presets.find(x => x.name === name);
-    if (!p) return showToast('未找到该预设');
-
-    if (!chat.ttsConfig) chat.ttsConfig = {};
-    chat.ttsConfig.voiceId = p.voiceId || '';
-    chat.ttsConfig.customVoiceId = p.customVoiceId || '';
-    chat.ttsConfig.language = p.language || 'auto';
-    chat.ttsConfig.speed = p.speed != null ? p.speed : 1;
-    chat.ttsConfig.userVoiceId = p.userVoiceId || '';
-    chat.ttsConfig.userCustomVoiceId = p.userCustomVoiceId || '';
-    chat.ttsConfig.userLanguage = p.userLanguage || 'auto';
-    chat.ttsConfig.userSpeed = p.userSpeed != null ? p.userSpeed : 1;
-
-    saveData();
-
-    // 刷新表单 UI
-    if (typeof TTSSettings !== 'undefined') TTSSettings.loadChatTTSConfig(currentChatId);
-
-    showToast('已应用音色预设：' + name);
-}
-
-function openVoicePresetManageModal() {
-    const modal = document.getElementById('voice-presets-modal');
-    const list = document.getElementById('voice-presets-list');
-    if (!modal || !list) return;
-
-    list.innerHTML = '';
-    const presets = _getVoicePresets();
-    if (!presets.length) list.innerHTML = '<p style="color:#888;margin:6px 0;">暂无预设</p>';
-
-    presets.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.padding = '8px 0';
-        row.style.borderBottom = '1px solid #f0f0f0';
-
-        const nameDiv = document.createElement('div');
-        nameDiv.style.flex = '1';
-        nameDiv.style.whiteSpace = 'nowrap';
-        nameDiv.style.overflow = 'hidden';
-        nameDiv.style.textOverflow = 'ellipsis';
-        // 显示预设名 + 简要信息
-        const voiceLabel = p.customVoiceId || p.voiceId || '未设置';
-        nameDiv.innerHTML = '<div>' + p.name + '</div><div style="font-size:11px;color:#999;">' + voiceLabel + '</div>';
-        row.appendChild(nameDiv);
-
-        const btnWrap = document.createElement('div');
-        btnWrap.style.display = 'flex';
-        btnWrap.style.gap = '6px';
-
-        const applyBtn = document.createElement('button');
-        applyBtn.className = 'btn btn-primary';
-        applyBtn.style.padding = '6px 8px;border-radius:8px';
-        applyBtn.textContent = '应用';
-        applyBtn.onclick = function () { applyVoicePreset(p.name); modal.style.display = 'none'; };
-
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'btn';
-        renameBtn.style.padding = '6px 8px;border-radius:8px';
-        renameBtn.textContent = '重命名';
-        renameBtn.onclick = function () {
-            const newName = prompt('输入新名称：', p.name);
-            if (!newName) return;
-            const all = _getVoicePresets();
-            all[idx].name = newName;
-            _saveVoicePresets(all);
-            openVoicePresetManageModal();
-            populateVoicePresetSelect();
-        };
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn';
-        deleteBtn.style.padding = '6px 8px;border-radius:8px;color:#e53935';
-        deleteBtn.textContent = '删除';
-        deleteBtn.onclick = function () {
-            if (!confirm('确认删除该预设？')) return;
-            const all = _getVoicePresets();
-            all.splice(idx, 1);
-            _saveVoicePresets(all);
-            openVoicePresetManageModal();
-            populateVoicePresetSelect();
-        };
-
-        btnWrap.appendChild(applyBtn);
-        btnWrap.appendChild(renameBtn);
-        btnWrap.appendChild(deleteBtn);
-        row.appendChild(btnWrap);
-
-        list.appendChild(row);
-    });
-
-    modal.style.display = 'flex';
-}
+// V21: 音色预设 UI 已迁入 features/settings/voiceCot/voicePresetView.js。
+// @compat canonical: OwoApp.features.settings.voiceCot.publicApi
+function _getVoicePresets() { return window.OwoApp.features.settings.voiceCot.publicApi.getVoicePresets(); }
+function _saveVoicePresets(arr) { return window.OwoApp.features.settings.voiceCot.publicApi.saveVoicePresets(arr); }
+function populateVoicePresetSelect() { return window.OwoApp.features.settings.voiceCot.publicApi.populateVoicePresetSelect.apply(this, arguments); }
+function saveCurrentVoiceAsPreset() { return window.OwoApp.features.settings.voiceCot.publicApi.saveCurrentVoiceAsPreset.apply(this, arguments); }
+function applyVoicePreset(name) { return window.OwoApp.features.settings.voiceCot.publicApi.applyVoicePreset.apply(this, arguments); }
+function openVoicePresetManageModal() { return window.OwoApp.features.settings.voiceCot.publicApi.openVoicePresetManageModal.apply(this, arguments); }
 
 function _getWidgetPresets() {
     return db.homeWidgetPresets || [];
@@ -5860,248 +4673,20 @@ function openWidgetManageModal() {
 }
 
 // ---------- 主屏幕预设方案 ----------
-const DEFAULT_HOME_SIGNATURE = '编辑个性签名...';
-const DEFAULT_INS_WIDGET = { avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg', bubble1: 'love u.', avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg', bubble2: 'miss u.' };
-
-function _getWidgetWallpaperPresets() {
-    return db.widgetWallpaperPresets || [];
-}
-function _saveWidgetWallpaperPresets(arr) {
-    db.widgetWallpaperPresets = arr || [];
-    saveData();
-}
-
-function _captureCurrentWidgetWallpaperScheme() {
-    // 收集当前角色的偷看图标
-    let peekCustomIcons = {};
-    if (typeof currentChatId !== 'undefined' && db.characters) {
-        const char = db.characters.find(c => c.id === currentChatId);
-        if (char && char.peekScreenSettings && char.peekScreenSettings.customIcons) {
-            peekCustomIcons = JSON.parse(JSON.stringify(char.peekScreenSettings.customIcons));
-        }
-    }
-    return {
-        wallpaper: db.wallpaper || DEFAULT_WALLPAPER_URL,
-        homeWidgetSettings: JSON.parse(JSON.stringify(db.homeWidgetSettings || {})),
-        homeSignature: db.homeSignature !== undefined ? db.homeSignature : DEFAULT_HOME_SIGNATURE,
-        insWidgetSettings: JSON.parse(JSON.stringify(db.insWidgetSettings || DEFAULT_INS_WIDGET)),
-        customIcons: JSON.parse(JSON.stringify(db.customIcons || {})),
-        customAppNames: JSON.parse(JSON.stringify(db.customAppNames || {})),
-        peekCustomIcons: peekCustomIcons
-    };
-}
-
-function populateWidgetWallpaperPresetSelect() {
-    const sel = document.getElementById('widget-wallpaper-preset-select');
-    if (!sel) return;
-    const presets = _getWidgetWallpaperPresets();
-    sel.innerHTML = '<option value="">— 选择方案 —</option>';
-    presets.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.name;
-        opt.textContent = p.name;
-        sel.appendChild(opt);
-    });
-}
-
-function saveCurrentWidgetWallpaperAsPreset() {
-    const scheme = _captureCurrentWidgetWallpaperScheme();
-    const name = prompt('请输入方案名称（将覆盖同名方案）：');
-    if (!name || !name.trim()) return;
-    const presets = _getWidgetWallpaperPresets();
-    const idx = presets.findIndex(p => p.name === name.trim());
-    const preset = { name: name.trim(), ...scheme };
-    if (idx >= 0) presets[idx] = preset;
-    else presets.push(preset);
-    _saveWidgetWallpaperPresets(presets);
-    populateWidgetWallpaperPresetSelect();
-    showToast('方案已保存到预设库');
-}
-
-function applyWidgetWallpaperPreset(name) {
-    const presets = _getWidgetWallpaperPresets();
-    const p = presets.find(x => x.name === name);
-    if (!p) return showToast('未找到该方案');
-    db.wallpaper = p.wallpaper || DEFAULT_WALLPAPER_URL;
-    if (typeof applyWallpaper === 'function') applyWallpaper(db.wallpaper);
-    db.homeWidgetSettings = JSON.parse(JSON.stringify(p.homeWidgetSettings || {}));
-    db.homeSignature = p.homeSignature !== undefined ? p.homeSignature : DEFAULT_HOME_SIGNATURE;
-    db.insWidgetSettings = JSON.parse(JSON.stringify(p.insWidgetSettings || DEFAULT_INS_WIDGET));
-    if (p.customIcons && typeof p.customIcons === 'object') {
-        db.customIcons = JSON.parse(JSON.stringify(p.customIcons));
-    }
-    if (p.customAppNames && typeof p.customAppNames === 'object') {
-        db.customAppNames = JSON.parse(JSON.stringify(p.customAppNames));
-    }
-    // 应用偷看图标
-    if (p.peekCustomIcons && typeof p.peekCustomIcons === 'object' && Object.keys(p.peekCustomIcons).length > 0) {
-        if (typeof currentChatId !== 'undefined' && db.characters) {
-            const char = db.characters.find(c => c.id === currentChatId);
-            if (char) {
-                if (!char.peekScreenSettings) {
-                    char.peekScreenSettings = { wallpaper: '', customIcons: {}, unlockAvatar: '', unlockCommentsEnabled: false, charAwarePeek: false, refreshCounts: {} };
-                }
-                char.peekScreenSettings.customIcons = JSON.parse(JSON.stringify(p.peekCustomIcons));
-            }
-        }
-    }
-    saveData();
-    if (typeof setupHomeScreen === 'function') setupHomeScreen();
-    if (typeof updatePolaroidImage === 'function' && db.homeWidgetSettings.polaroidImage) {
-        updatePolaroidImage(db.homeWidgetSettings.polaroidImage);
-    }
-    const preview = document.getElementById('wallpaper-preview');
-    if (preview) {
-        preview.style.backgroundImage = `url(${db.wallpaper})`;
-        preview.textContent = '';
-    }
-    renderCustomizeForm();
-    showToast('已应用方案');
-}
-
-function openWidgetWallpaperManageModal() {
-    const modal = document.getElementById('widget-wallpaper-presets-modal');
-    const list = document.getElementById('widget-wallpaper-presets-list');
-    if (!modal || !list) return;
-    list.innerHTML = '';
-    const presets = _getWidgetWallpaperPresets();
-    if (!presets.length) {
-        list.innerHTML = '<p style="color:#888;margin:6px 0;">暂无方案</p>';
-    }
-    presets.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;';
-        const nameDiv = document.createElement('div');
-        nameDiv.style.cssText = 'flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-        nameDiv.textContent = p.name;
-        row.appendChild(nameDiv);
-        const btnWrap = document.createElement('div');
-        btnWrap.style.cssText = 'display:flex;gap:8px;';
-        const applyBtn = document.createElement('button');
-        applyBtn.className = 'btn btn-primary';
-        applyBtn.style.cssText = 'padding:6px 8px;border-radius:8px;';
-        applyBtn.textContent = '应用';
-        applyBtn.onclick = function () { applyWidgetWallpaperPreset(p.name); modal.style.display = 'none'; };
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'btn';
-        renameBtn.style.cssText = 'padding:6px 8px;border-radius:8px;';
-        renameBtn.textContent = '重命名';
-        renameBtn.onclick = function () {
-            const newName = prompt('输入新名称：', p.name);
-            if (!newName || !newName.trim()) return;
-            const all = _getWidgetWallpaperPresets();
-            all[idx].name = newName.trim();
-            _saveWidgetWallpaperPresets(all);
-            openWidgetWallpaperManageModal();
-            populateWidgetWallpaperPresetSelect();
-        };
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn';
-        deleteBtn.style.cssText = 'padding:6px 8px;border-radius:8px;color:#e53935;';
-        deleteBtn.textContent = '删除';
-        deleteBtn.onclick = function () {
-            if (!confirm('确认删除该方案？')) return;
-            const all = _getWidgetWallpaperPresets();
-            all.splice(idx, 1);
-            _saveWidgetWallpaperPresets(all);
-            openWidgetWallpaperManageModal();
-            populateWidgetWallpaperPresetSelect();
-        };
-        btnWrap.appendChild(applyBtn);
-        btnWrap.appendChild(renameBtn);
-        btnWrap.appendChild(deleteBtn);
-        row.appendChild(btnWrap);
-        list.appendChild(row);
-    });
-    modal.style.display = 'flex';
-}
-
-function exportWidgetWallpaperScheme() {
-    const presets = _getWidgetWallpaperPresets();
-    const sel = document.getElementById('widget-wallpaper-preset-select');
-    const chosen = sel && sel.value;
-    let payload;
-    if (chosen) {
-        const p = presets.find(x => x.name === chosen);
-        if (!p) return showToast('未找到所选方案');
-        const schemeName = prompt('请输入导出方案名称（留空则使用预设名称）：', p.name);
-        if (schemeName === null) return; // 用户取消
-        const exportPreset = JSON.parse(JSON.stringify(p));
-        if (schemeName.trim()) exportPreset.name = schemeName.trim();
-        payload = { type: 'widget-wallpaper-scheme', version: 1, preset: exportPreset };
-    } else {
-        const current = _captureCurrentWidgetWallpaperScheme();
-        const schemeName = prompt('请输入导出方案名称（留空则使用默认名称）：', '当前主屏');
-        if (schemeName === null) return; // 用户取消
-        const finalName = schemeName.trim() || '当前主屏';
-        payload = { type: 'widget-wallpaper-scheme', version: 1, preset: { name: finalName, ...current } };
-    }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = (payload.preset.name || '主屏幕预设方案') + '.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    showToast('方案已导出');
-}
-
-function importWidgetWallpaperScheme(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function () {
-        try {
-            const data = JSON.parse(reader.result);
-            if (!data || data.type !== 'widget-wallpaper-scheme' || !data.preset) {
-                showToast('不是有效的主屏幕预设方案文件');
-                return;
-            }
-            const preset = data.preset;
-            const name = preset.name || '导入的方案';
-            const presets = _getWidgetWallpaperPresets();
-            const existingIdx = presets.findIndex(p => p.name === name);
-            const toAdd = { name, wallpaper: preset.wallpaper, homeWidgetSettings: preset.homeWidgetSettings || {}, homeSignature: preset.homeSignature, insWidgetSettings: preset.insWidgetSettings || {}, customIcons: preset.customIcons || {}, customAppNames: preset.customAppNames || {}, peekCustomIcons: preset.peekCustomIcons || {} };
-            if (existingIdx >= 0) presets[existingIdx] = toAdd;
-            else presets.push(toAdd);
-            _saveWidgetWallpaperPresets(presets);
-            populateWidgetWallpaperPresetSelect();
-            if (confirm('已加入预设库。是否立即应用该方案？')) {
-                applyWidgetWallpaperPreset(name);
-            } else {
-                showToast('方案已导入到预设库');
-            }
-        } catch (e) {
-            showToast('导入失败：' + (e.message || '文件格式错误'));
-        }
-    };
-    reader.readAsText(file);
-}
-
-function resetWidgetWallpaperToDefault() {
-    if (!confirm('确定要恢复默认吗？将清除当前所有主屏幕预设设置（小组件、壁纸、应用图标）。')) return;
-    db.wallpaper = DEFAULT_WALLPAPER_URL;
-    if (typeof applyWallpaper === 'function') applyWallpaper(DEFAULT_WALLPAPER_URL);
-    db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
-    db.homeSignature = DEFAULT_HOME_SIGNATURE;
-    db.insWidgetSettings = JSON.parse(JSON.stringify(DEFAULT_INS_WIDGET));
-    db.customIcons = {};
-    db.customAppNames = {};
-    // 同时清除当前角色的偷看图标
-    if (typeof currentChatId !== 'undefined' && db.characters) {
-        const char = db.characters.find(c => c.id === currentChatId);
-        if (char && char.peekScreenSettings) {
-            char.peekScreenSettings.customIcons = {};
-        }
-    }
-    saveData();
-    if (typeof setupHomeScreen === 'function') setupHomeScreen();
-    const preview = document.getElementById('wallpaper-preview');
-    if (preview) {
-        preview.style.backgroundImage = `url(${DEFAULT_WALLPAPER_URL})`;
-        preview.textContent = '';
-    }
-    renderCustomizeForm();
-    showToast('已恢复默认（主屏幕预设）');
-}
+// V19: 主屏幕壁纸/小组件方案 UI 已迁入 features/settings/appearance/widgetWallpaperPresetView.js。
+// @compat canonical: OwoApp.features.settings.appearance.publicApi
+const DEFAULT_HOME_SIGNATURE = window.OwoApp.features.settings.appearance.model.DEFAULT_HOME_SIGNATURE;
+const DEFAULT_INS_WIDGET = window.OwoApp.features.settings.appearance.model.DEFAULT_INS_WIDGET;
+function _getWidgetWallpaperPresets() { return window.OwoApp.features.settings.appearance.publicApi.getWidgetWallpaperPresets(); }
+function _saveWidgetWallpaperPresets(arr) { return window.OwoApp.features.settings.appearance.publicApi.saveWidgetWallpaperPresets(arr); }
+function _captureCurrentWidgetWallpaperScheme() { return window.OwoApp.features.settings.appearance.publicApi.captureCurrentWidgetWallpaperScheme.apply(this, arguments); }
+function populateWidgetWallpaperPresetSelect() { return window.OwoApp.features.settings.appearance.publicApi.populateWidgetWallpaperPresetSelect.apply(this, arguments); }
+function saveCurrentWidgetWallpaperAsPreset() { return window.OwoApp.features.settings.appearance.publicApi.saveCurrentWidgetWallpaperAsPreset.apply(this, arguments); }
+function applyWidgetWallpaperPreset(name) { return window.OwoApp.features.settings.appearance.publicApi.applyWidgetWallpaperPreset.apply(this, arguments); }
+function openWidgetWallpaperManageModal() { return window.OwoApp.features.settings.appearance.publicApi.openWidgetWallpaperManageModal.apply(this, arguments); }
+function exportWidgetWallpaperScheme() { return window.OwoApp.features.settings.appearance.publicApi.exportWidgetWallpaperScheme.apply(this, arguments); }
+function importWidgetWallpaperScheme(file) { return window.OwoApp.features.settings.appearance.publicApi.importWidgetWallpaperScheme.apply(this, arguments); }
+function resetWidgetWallpaperToDefault() { return window.OwoApp.features.settings.appearance.publicApi.resetWidgetWallpaperToDefault.apply(this, arguments); }
 
 function _getIconPresets() {
     return db.iconPresets || [];
@@ -6567,18 +5152,7 @@ function setupCustomizeApp() {
             openIconPresetManageModal();
         }
 
-        if (target.matches('#voice-apply-preset-btn')) {
-            const select = document.getElementById('voice-preset-select');
-            const presetName = select && select.value;
-            if (!presetName) return showToast('请选择一个预设');
-            applyVoicePreset(presetName);
-        }
-        if (target.matches('#voice-save-preset-btn')) {
-            saveCurrentVoiceAsPreset();
-        }
-        if (target.matches('#voice-manage-presets-btn')) {
-            openVoicePresetManageModal();
-        }
+        // V21: 音色预设按钮委托已迁入 features/settings/voiceCot/voicePresetView.js。
 
         if (target.matches('#name-apply-preset-btn')) {
             const select = document.getElementById('name-preset-select');
@@ -6991,7 +5565,7 @@ function renderCustomizeForm() {
     const iconOrder = [
         'chat-list-screen', 'api-settings-screen', 'wallpaper-screen',
         'world-book-screen', 'customize-screen', 'tutorial-screen',
-        'day-mode-btn', 'night-mode-btn', 'forum-screen', 'music-screen', 'diary-screen', 'piggy-bank-screen', 'pomodoro-screen', 'storage-analysis-screen', 'appearance-settings-screen', 'theater-screen', 'biekan-app', 'xiaowu-app', 'magic-room-screen'
+        'day-mode-btn', 'night-mode-btn', 'forum-screen', 'piggy-bank-screen', 'pomodoro-screen', 'storage-analysis-screen', 'appearance-settings-screen', 'theater-screen', 'magic-room-screen'
     ];
 
     let iconsContentHTML = '';
@@ -7666,328 +6240,18 @@ body.night-mode-active .message-input-area textarea {
 }
 
 // ============================================
-// 夜间模式
+// 夜间模式 / 顶栏状态栏
+// V19: 主题/状态栏 UI 绑定已迁入 features/settings/appearance/themeStatusView.js。
+// @compat canonical: OwoApp.features.settings.appearance.publicApi
 // ============================================
+function setupNightModeBindings() { return window.OwoApp.features.settings.appearance.publicApi.setupNightModeBindings.apply(this, arguments); }
+function applyNightMode() { return window.OwoApp.features.settings.appearance.publicApi.applyNightMode.apply(this, arguments); }
+function parseTimeToMinutes(str) { return window.OwoApp.features.settings.appearance.publicApi.parseTimeToMinutes.apply(this, arguments); }
+function setupStatusBarBindings() { return window.OwoApp.features.settings.appearance.publicApi.setupStatusBarBindings.apply(this, arguments); }
+function updateStatusBarPreviewInSettings() { return window.OwoApp.features.settings.appearance.publicApi.updateStatusBarPreviewInSettings.apply(this, arguments); }
+function applyHomeStatusBar() { return window.OwoApp.features.settings.appearance.publicApi.applyHomeStatusBar.apply(this, arguments); }
 
-function setupNightModeBindings() {
-    const enabledCb = document.getElementById('night-mode-enabled');
-    const autoCb = document.getElementById('night-mode-auto');
-    const scheduleDiv = document.getElementById('night-mode-schedule');
-    const startInput = document.getElementById('night-mode-start');
-    const endInput = document.getElementById('night-mode-end');
-    const cssArea = document.getElementById('night-mode-custom-css');
 
-    if (enabledCb) enabledCb.addEventListener('change', async () => {
-        if (!db.nightModeSettings) db.nightModeSettings = {};
-        db.nightModeSettings.enabled = enabledCb.checked;
-        await saveData();
-        applyNightMode();
-        showToast(enabledCb.checked ? '夜间模式已开启' : '夜间模式已关闭');
-    });
-
-    if (autoCb) autoCb.addEventListener('change', async () => {
-        if (!db.nightModeSettings) db.nightModeSettings = {};
-        db.nightModeSettings.auto = autoCb.checked;
-        if (scheduleDiv) scheduleDiv.style.display = autoCb.checked ? 'flex' : 'none';
-        await saveData();
-        applyNightMode();
-    });
-
-    if (startInput) startInput.addEventListener('change', async () => {
-        if (!db.nightModeSettings) db.nightModeSettings = {};
-        db.nightModeSettings.startTime = startInput.value;
-        await saveData();
-        applyNightMode();
-    });
-
-    if (endInput) endInput.addEventListener('change', async () => {
-        if (!db.nightModeSettings) db.nightModeSettings = {};
-        db.nightModeSettings.endTime = endInput.value;
-        await saveData();
-        applyNightMode();
-    });
-
-    document.getElementById('night-css-apply-btn')?.addEventListener('click', async () => {
-        if (!db.nightModeSettings) db.nightModeSettings = {};
-        db.nightModeSettings.customCss = cssArea?.value || '';
-        await saveData();
-        applyNightMode();
-        showToast('夜间模式 CSS 已应用');
-    });
-
-    document.getElementById('night-css-reset-btn')?.addEventListener('click', async () => {
-        if (!db.nightModeSettings) db.nightModeSettings = {};
-        db.nightModeSettings.customCss = '';
-        if (cssArea) cssArea.value = DEFAULT_NIGHT_MODE_CSS;
-        await saveData();
-        applyNightMode();
-        showToast('夜间模式 CSS 已重置为默认代码');
-    });
-
-    // 导出
-    document.getElementById('night-mode-export-btn')?.addEventListener('click', () => {
-        const payload = { type: 'night-mode-config', settings: db.nightModeSettings || {} };
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = '夜间模式配置.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('夜间模式配置已导出');
-    });
-
-    // 导入
-    document.getElementById('night-mode-import-btn')?.addEventListener('click', () => {
-        document.getElementById('night-mode-import-file')?.click();
-    });
-    document.getElementById('night-mode-import-file')?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async () => {
-            try {
-                const data = JSON.parse(reader.result);
-                if (!data || data.type !== 'night-mode-config' || !data.settings) {
-                    showToast('不是有效的夜间模式配置文件');
-                    return;
-                }
-                db.nightModeSettings = data.settings;
-                await saveData();
-                applyNightMode();
-                renderCustomizeForm();
-                showToast('夜间模式配置已导入');
-            } catch (_) {
-                showToast('文件解析失败');
-            }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-    });
-}
-
-function applyNightMode() {
-    const settings = db.nightModeSettings || {};
-    let shouldBeNight = false;
-
-    if (settings.enabled) {
-        if (settings.auto) {
-            const now = new Date();
-            const hhmm = now.getHours() * 60 + now.getMinutes();
-            const start = parseTimeToMinutes(settings.startTime || '22:00');
-            const end = parseTimeToMinutes(settings.endTime || '07:00');
-            if (start > end) {
-                shouldBeNight = hhmm >= start || hhmm < end;
-            } else {
-                shouldBeNight = hhmm >= start && hhmm < end;
-            }
-        } else {
-            shouldBeNight = true;
-        }
-    }
-
-    if (shouldBeNight) {
-        document.body.classList.add('night-mode-active');
-    } else {
-        document.body.classList.remove('night-mode-active');
-    }
-
-    // 自定义CSS
-    let styleEl = document.getElementById('night-mode-custom-style');
-    if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'night-mode-custom-style';
-        document.head.appendChild(styleEl);
-    }
-    styleEl.textContent = shouldBeNight && settings.customCss ? settings.customCss : '';
-}
-
-function parseTimeToMinutes(str) {
-    const [h, m] = (str || '00:00').split(':').map(Number);
-    return h * 60 + (m || 0);
-}
-
-// ============================================
-// 顶栏状态栏
-// ============================================
-
-function setupStatusBarBindings() {
-    const enabledCb = document.getElementById('home-statusbar-enabled');
-    const containerCssArea = document.getElementById('statusbar-container-css');
-    const timeCssArea = document.getElementById('statusbar-time-css');
-    const batteryCssArea = document.getElementById('statusbar-battery-css');
-
-    // 实时预览
-    updateStatusBarPreviewInSettings();
-
-    if (enabledCb) enabledCb.addEventListener('change', async () => {
-        if (!db.homeStatusBarSettings) db.homeStatusBarSettings = {};
-        db.homeStatusBarSettings.enabled = enabledCb.checked;
-        await saveData();
-        applyHomeStatusBar();
-        showToast(enabledCb.checked ? '顶栏状态栏已开启' : '顶栏状态栏已关闭');
-    });
-
-    document.getElementById('statusbar-apply-btn')?.addEventListener('click', async () => {
-        if (!db.homeStatusBarSettings) db.homeStatusBarSettings = {};
-        db.homeStatusBarSettings.containerCss = containerCssArea?.value || '';
-        db.homeStatusBarSettings.timeCss = timeCssArea?.value || '';
-        db.homeStatusBarSettings.batteryCss = batteryCssArea?.value || '';
-        await saveData();
-        applyHomeStatusBar();
-        showToast('顶栏样式已应用');
-    });
-
-    document.getElementById('statusbar-reset-btn')?.addEventListener('click', async () => {
-        if (!db.homeStatusBarSettings) db.homeStatusBarSettings = {};
-        db.homeStatusBarSettings.containerCss = '';
-        db.homeStatusBarSettings.timeCss = '';
-        db.homeStatusBarSettings.batteryCss = '';
-        if (containerCssArea) containerCssArea.value = '';
-        if (timeCssArea) timeCssArea.value = '';
-        if (batteryCssArea) batteryCssArea.value = '';
-        await saveData();
-        applyHomeStatusBar();
-        showToast('顶栏样式已重置');
-    });
-
-    // 导出
-    document.getElementById('statusbar-export-btn')?.addEventListener('click', () => {
-        const payload = { type: 'home-statusbar-config', settings: db.homeStatusBarSettings || {} };
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = '顶栏状态栏配置.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        showToast('顶栏配置已导出');
-    });
-
-    // 导入
-    document.getElementById('statusbar-import-btn')?.addEventListener('click', () => {
-        document.getElementById('statusbar-import-file')?.click();
-    });
-    document.getElementById('statusbar-import-file')?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async () => {
-            try {
-                const data = JSON.parse(reader.result);
-                if (!data || data.type !== 'home-statusbar-config' || !data.settings) {
-                    showToast('不是有效的顶栏配置文件');
-                    return;
-                }
-                db.homeStatusBarSettings = data.settings;
-                await saveData();
-                applyHomeStatusBar();
-                renderCustomizeForm();
-                showToast('顶栏配置已导入');
-            } catch (_) {
-                showToast('文件解析失败');
-            }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-    });
-}
-
-function updateStatusBarPreviewInSettings() {
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const timeEl = document.getElementById('statusbar-preview-time');
-    if (timeEl) timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
-    if ('getBattery' in navigator) {
-        navigator.getBattery().then(battery => {
-            const level = Math.floor(battery.level * 100);
-            const levelEl = document.getElementById('statusbar-preview-level');
-            const fillEl = document.getElementById('statusbar-preview-battery-fill');
-            if (levelEl) levelEl.textContent = `${level}%`;
-            if (fillEl) fillEl.setAttribute('width', 18 * battery.level);
-        }).catch(() => {});
-    }
-}
-
-function applyHomeStatusBar() {
-    const phoneScreen = document.querySelector('.phone-screen');
-    if (!phoneScreen) return;
-    const settings = db.homeStatusBarSettings || {};
-    let bar = phoneScreen.querySelector('.home-top-statusbar');
-
-    if (!settings.enabled) {
-        if (bar) bar.remove();
-        document.body.classList.remove('has-statusbar');
-        let styleEl = document.getElementById('home-statusbar-custom-style');
-        if (styleEl) styleEl.textContent = '';
-        return;
-    }
-    
-    document.body.classList.add('has-statusbar');
-
-    if (!bar) {
-        bar = document.createElement('div');
-        bar.className = 'home-top-statusbar';
-        bar.innerHTML = `
-            <span class="htsb-time"></span>
-            <span class="htsb-battery">
-                <svg width="18" height="11" viewBox="0 0 24 12" fill="none">
-                    <path d="M1 2.5C1 1.95 1.45 1.5 2 1.5H20C20.55 1.5 21 1.95 21 2.5V9.5C21 10.05 20.55 10.5 20 10.5H2C1.45 10.5 1 10.05 1 9.5V2.5Z" stroke="currentColor" stroke-width="1"/>
-                    <path d="M22.5 4V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    <rect class="htsb-battery-fill" x="2" y="2.5" width="18" height="7" rx="0.5" fill="currentColor"/>
-                </svg>
-                <span class="htsb-battery-level">--%</span>
-            </span>`;
-        phoneScreen.insertBefore(bar, phoneScreen.firstChild);
-    }
-
-    // 更新时间
-    const pad = n => String(n).padStart(2, '0');
-    const updateBar = () => {
-        const now = new Date();
-        const timeEl = bar.querySelector('.htsb-time');
-        if (timeEl) timeEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    };
-    updateBar();
-
-    // 更新电量
-    if ('getBattery' in navigator) {
-        navigator.getBattery().then(battery => {
-            const updateBat = () => {
-                const level = Math.floor(battery.level * 100);
-                const levelEl = bar.querySelector('.htsb-battery-level');
-                const fillEl = bar.querySelector('.htsb-battery-fill');
-                if (levelEl) levelEl.textContent = `${level}%`;
-                if (fillEl) fillEl.setAttribute('width', 18 * battery.level);
-            };
-            updateBat();
-            battery.addEventListener('levelchange', updateBat);
-            battery.addEventListener('chargingchange', updateBat);
-        }).catch(() => {});
-    }
-
-    // 自定义CSS
-    let styleEl = document.getElementById('home-statusbar-custom-style');
-    if (!styleEl) {
-        styleEl = document.createElement('style');
-        styleEl.id = 'home-statusbar-custom-style';
-        document.head.appendChild(styleEl);
-    }
-    let css = '';
-    if (settings.containerCss) css += `.home-top-statusbar { ${settings.containerCss} }\n`;
-    if (settings.timeCss) css += `.home-top-statusbar .htsb-time { ${settings.timeCss} }\n`;
-    if (settings.batteryCss) css += `.home-top-statusbar .htsb-battery, .home-top-statusbar .htsb-battery-level { ${settings.batteryCss} }\n`;
-    styleEl.textContent = css;
-}
-
-// 定时刷新顶栏时间
-setInterval(() => {
-    const bar = document.querySelector('.phone-screen > .home-top-statusbar .htsb-time');
-    if (bar) {
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        bar.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    }
-}, 30000);
 
 // 定时检查夜间模式自动切换
 setInterval(() => {
@@ -7999,153 +6263,15 @@ setInterval(() => {
 
 // ============================================
 // TTS 预设管理
+// V21: TTS 预设 UI 已迁入 features/settings/voiceCot/ttsPresetView.js。
+// @compat canonical: OwoApp.features.settings.voiceCot.publicApi
 // ============================================
-
-function saveCurrentTTSAsPreset() {
-    const name = prompt('请输入 TTS 预设名称：');
-    if (!name || !name.trim()) return;
-    
-    const enabled = document.getElementById('minimax-tts-enabled')?.checked || false;
-    const groupId = document.getElementById('minimax-group-id')?.value || '';
-    const apiKey = document.getElementById('minimax-api-key')?.value || '';
-    const domain = document.getElementById('minimax-domain')?.value || 'api.minimaxi.com';
-    const model = document.getElementById('minimax-tts-model')?.value || 'speech-2.8-hd';
-    
-    if (!db.ttsPresets) db.ttsPresets = [];
-    
-    db.ttsPresets.push({
-        name: name.trim(),
-        enabled,
-        groupId,
-        apiKey,
-        domain,
-        model
-    });
-    
-    saveData();
-    showToast('TTS 预设已保存');
-    populateTTSPresetSelect();
-}
-
-function applyTTSPreset(name) {
-    if (!db.ttsPresets) return;
-    const preset = db.ttsPresets.find(p => p.name === name);
-    if (!preset) return showToast('预设不存在');
-    
-    document.getElementById('minimax-tts-enabled').checked = preset.enabled || false;
-    document.getElementById('minimax-group-id').value = preset.groupId || '';
-    document.getElementById('minimax-api-key').value = preset.apiKey || '';
-    document.getElementById('minimax-domain').value = preset.domain || 'api.minimaxi.com';
-    document.getElementById('minimax-tts-model').value = preset.model || 'speech-2.8-hd';
-    
-    showToast(`已应用 TTS 预设：${name}`);
-}
-
-function populateTTSPresetSelect() {
-    const select = document.getElementById('tts-preset-select');
-    if (!select) return;
-    select.innerHTML = '<option value="">— 选择 —</option>';
-    (db.ttsPresets || []).forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.name;
-        opt.textContent = p.name;
-        select.appendChild(opt);
-    });
-}
-
-function openTTSManageModal() {
-    const modal = document.getElementById('tts-presets-modal');
-    const list = document.getElementById('tts-presets-list');
-    if (!modal || !list) return;
-    list.innerHTML = '';
-    const presets = db.ttsPresets || [];
-    if (!presets.length) list.innerHTML = '<p style="color:#888;margin:6px 0;">暂无预设</p>';
-    
-    presets.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.padding = '8px 0';
-        row.style.borderBottom = '1px solid #f0f0f0';
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.style.flex = '1';
-        nameDiv.textContent = p.name;
-        row.appendChild(nameDiv);
-
-        const btnWrap = document.createElement('div');
-        btnWrap.style.display = 'flex';
-        btnWrap.style.gap = '6px';
-
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'btn';
-        renameBtn.style.padding = '6px 8px';
-        renameBtn.textContent = '重命名';
-        renameBtn.onclick = function() {
-            const newName = prompt('输入新名称：', p.name);
-            if (!newName || newName === p.name) return;
-            db.ttsPresets[idx].name = newName;
-            saveData();
-            openTTSManageModal();
-            populateTTSPresetSelect();
-        };
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn btn-danger';
-        delBtn.style.padding = '6px 8px';
-        delBtn.textContent = '删除';
-        delBtn.onclick = function() {
-            if (!confirm('确定删除预设 "' + p.name + '" ?')) return;
-            db.ttsPresets.splice(idx, 1);
-            saveData();
-            openTTSManageModal();
-            populateTTSPresetSelect();
-        };
-
-        btnWrap.appendChild(renameBtn);
-        btnWrap.appendChild(delBtn);
-        row.appendChild(btnWrap);
-        list.appendChild(row);
-    });
-    modal.style.display = 'flex';
-}
-
-function importTTSPresets() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        try {
-            const text = await file.text();
-            const imported = JSON.parse(text);
-            if (!Array.isArray(imported)) throw new Error('格式错误');
-            db.ttsPresets = db.ttsPresets || [];
-            db.ttsPresets.push(...imported);
-            await saveData();
-            populateTTSPresetSelect();
-            showToast(`已导入 ${imported.length} 个 TTS 预设`);
-        } catch (err) {
-            showToast('导入失败: ' + err.message);
-        }
-    };
-    input.click();
-}
-
-function exportTTSPresets() {
-    const presets = db.ttsPresets || [];
-    if (!presets.length) return showToast('没有可导出的 TTS 预设');
-    const blob = new Blob([JSON.stringify(presets, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tts_presets_' + Date.now() + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('TTS 预设已导出');
-}
+function saveCurrentTTSAsPreset() { return window.OwoApp.features.settings.voiceCot.publicApi.saveCurrentTTSAsPreset.apply(this, arguments); }
+function applyTTSPreset(name) { return window.OwoApp.features.settings.voiceCot.publicApi.applyTTSPreset.apply(this, arguments); }
+function populateTTSPresetSelect() { return window.OwoApp.features.settings.voiceCot.publicApi.populateTTSPresetSelect.apply(this, arguments); }
+function openTTSManageModal() { return window.OwoApp.features.settings.voiceCot.publicApi.openTTSManageModal.apply(this, arguments); }
+function importTTSPresets() { return window.OwoApp.features.settings.voiceCot.publicApi.importTTSPresets.apply(this, arguments); }
+function exportTTSPresets() { return window.OwoApp.features.settings.voiceCot.publicApi.exportTTSPresets.apply(this, arguments); }
 
 // 在页面加载时填充 TTS 预设列表，并绑定气泡样式「导入文档」（委托到 document，因按钮在 chat/group-settings-form 内）
 document.addEventListener('DOMContentLoaded', () => {
@@ -8244,3 +6370,101 @@ function recalculateChatStatus(chat) {
         }
     }
 }
+
+// V22: settings feature public facade bridge.
+// @compat canonical-entry: OwoApp.features.settings.publicApi
+(function registerLegacySettingsFacade(global) {
+    const OwoApp = global.OwoApp;
+    const settingsFeature = OwoApp && OwoApp.features && OwoApp.features.settings;
+    if (!settingsFeature || !settingsFeature.settingsShell || !settingsFeature.publicApi) {
+        console.warn('[settings] V22 settings facade 尚未加载，保留 legacy 全局入口');
+        return;
+    }
+
+    const legacyApi = {
+        setupChatSettings,
+        loadSettingsToSidebar,
+        setupMagicRoomApp,
+        setupPresetFeatures,
+        setupCustomizeApp
+    };
+
+    settingsFeature.settingsShell.registerLegacyApi(legacyApi, {
+        state: 'legacy-settings-owner',
+        owner: 'js/settings.js',
+        note: 'V22: settings.js 只注册尚未迁移的 legacy setup；已迁移入口必须走对应 feature public facade'
+    });
+
+    Object.keys(legacyApi).forEach(name => {
+        OwoApp.compat.expose(name, settingsFeature.publicApi[name], {
+            state: 'canonical-entry',
+            owner: 'OwoApp.features.settings.publicApi.' + name,
+            note: 'V22: 未迁移 settings 全局入口只转发到 settings public facade；具体实现由 settingsShell 保存的 legacy 函数执行'
+        });
+    });
+
+    [
+        ['setupApiSettingsApp', 'OwoApp.features.settings.apiSettings.publicApi.setupApiSettingsApp', 'V18: API 设置 setup 入口迁入 features/settings/apiSettings；旧 window.setupApiSettingsApp 只转发'],
+        ['setupWallpaperApp', 'OwoApp.features.settings.appearance.publicApi.setupWallpaperApp', 'V22: settings legacy shell 收口；壁纸 setup 入口不再注册到 settingsShell，只转发 appearance public facade'],
+        ['setupNightModeBindings', 'OwoApp.features.settings.appearance.publicApi.setupNightModeBindings', 'V22: settings legacy shell 收口；夜间模式绑定入口只转发 appearance public facade'],
+        ['setupStatusBarBindings', 'OwoApp.features.settings.appearance.publicApi.setupStatusBarBindings', 'V22: settings legacy shell 收口；顶栏状态栏绑定入口只转发 appearance public facade']
+    ].forEach(([name, owner, note]) => {
+        OwoApp.compat.expose(name, settingsFeature.publicApi[name], {
+            state: 'canonical-entry',
+            owner,
+            note
+        });
+    });
+
+    const appearancePublic = settingsFeature.appearance && settingsFeature.appearance.publicApi;
+    if (appearancePublic) {
+        [
+            'populateFontPresetSelect',
+            'saveCurrentFontAsPreset',
+            'applyFontPreset',
+            'openFontManageModal',
+            'populateWidgetWallpaperPresetSelect',
+            'saveCurrentWidgetWallpaperAsPreset',
+            'applyWidgetWallpaperPreset',
+            'openWidgetWallpaperManageModal',
+            'exportWidgetWallpaperScheme',
+            'importWidgetWallpaperScheme',
+            'resetWidgetWallpaperToDefault',
+            'applyNightMode',
+            'applyHomeStatusBar',
+            'updateStatusBarPreviewInSettings'
+        ].forEach(name => {
+            if (typeof appearancePublic[name] === 'function') {
+                OwoApp.compat.expose(name, appearancePublic[name], {
+                    state: 'canonical',
+                    owner: 'OwoApp.features.settings.appearance.publicApi.' + name,
+                    note: 'V19: 外观/主题/壁纸/字体实现已迁入 features/settings/appearance；旧全局入口只转发'
+                });
+            }
+        });
+    }
+
+    const voiceCotPublic = settingsFeature.voiceCot && settingsFeature.voiceCot.publicApi;
+    if (voiceCotPublic) {
+        [
+            'saveCurrentTTSAsPreset',
+            'applyTTSPreset',
+            'populateTTSPresetSelect',
+            'openTTSManageModal',
+            'importTTSPresets',
+            'exportTTSPresets',
+            'populateVoicePresetSelect',
+            'saveCurrentVoiceAsPreset',
+            'applyVoicePreset',
+            'openVoicePresetManageModal'
+        ].forEach(name => {
+            if (typeof voiceCotPublic[name] === 'function') {
+                OwoApp.compat.expose(name, voiceCotPublic[name], {
+                    state: 'canonical',
+                    owner: 'OwoApp.features.settings.voiceCot.publicApi.' + name,
+                    note: 'V21: TTS/音色预设实现已迁入 features/settings/voiceCot；旧全局入口只转发'
+                });
+            }
+        });
+    }
+})(window);

@@ -2,6 +2,8 @@
 // Minimax TTS 语音合成服务
 // language_boost 取值见官方文档: https://platform.minimaxi.com/docs/api-reference/speech-t2a-http
 
+const ttsAudioAdapter = window.OwoApp?.platform?.browser?.audioAdapter;
+
 const LANGUAGE_BOOST_MAP = {
     zh: 'Chinese',
     yue: 'Chinese,Yue',
@@ -86,12 +88,8 @@ const MinimaxTTSService = {
         if (this.audioContextActivated) return true;
         
         try {
-            // 播放一个极短的静音音频来激活音频播放权限
-            const silentAudio = new Audio();
-            // 使用一个极短的空白MP3（大约0.1秒）
-            silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7v////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AAAA8UxhdmM1OC4xMzQAAAAAAAAAAAAAAAAkAAAAAAAAAAOEaGMGmgAAAAAAAAAAAAAAAAAAAAD/+xDEAAPAAAGkAAAAIAAANIAAAARMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==';
-            silentAudio.volume = 0.01;
-            await silentAudio.play();
+            // @compat canonical: OwoApp.platform.browser.audioAdapter.activateSilentAudio
+            await ttsAudioAdapter.activateSilentAudio();
             this.audioContextActivated = true;
             console.log('[TTS] 音频上下文已激活');
             return true;
@@ -288,15 +286,15 @@ const MinimaxTTSService = {
     play: async function(audioUrl, playKey) {
         return new Promise((resolve, reject) => {
             try {
-                // 停止当前播放
+                // @compat canonical: OwoApp.platform.browser.audioAdapter.stopAudio / playAudio
                 if (this.currentAudio) {
-                    this.currentAudio.pause();
+                    ttsAudioAdapter.stopAudio(this.currentAudio);
                     this.currentAudio = null;
                 }
                 this.currentPlayKey = playKey || null;
                 this.isPaused = false;
 
-                const audio = new Audio(audioUrl);
+                const audio = ttsAudioAdapter.createAudioElement(audioUrl);
                 this.currentAudio = audio;
 
                 audio.onended = () => {
@@ -316,7 +314,7 @@ const MinimaxTTSService = {
                 };
 
                 this._dispatchState();
-                audio.play().catch(reject);
+                ttsAudioAdapter.playAudio(audio).catch(reject);
 
             } catch (err) {
                 this.currentPlayKey = null;
@@ -365,7 +363,7 @@ const MinimaxTTSService = {
     // 停止播放（清空队列，离开聊天时调用）
     stop: function() {
         if (this.currentAudio) {
-            this.currentAudio.pause();
+            ttsAudioAdapter.stopAudio(this.currentAudio);
             this.currentAudio = null;
         }
         this.currentPlayKey = null;

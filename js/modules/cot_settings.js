@@ -934,5 +934,22 @@ async function importCotPreset(e) {
 }
 
 
-// 暴露给全局
-window.initCotSettings = initCotSettings;
+// V21: CoT 设置页 init 入口由 features/settings/voiceCot/public.js 收口；本文件仍是 legacy UI 实现。
+(function registerLegacyCotSettings(global) {
+    const OwoApp = global.OwoApp;
+    const publicApi = OwoApp && OwoApp.features && OwoApp.features.settings && OwoApp.features.settings.voiceCot && OwoApp.features.settings.voiceCot.publicApi;
+    if (!publicApi || typeof publicApi.registerCotSettingsImplementation !== 'function') {
+        global.initCotSettings = initCotSettings;
+        return;
+    }
+    publicApi.registerCotSettingsImplementation({ initCotSettings }, {
+        state: 'legacy-cot-settings-owner',
+        owner: 'js/modules/cot_settings.js',
+        note: 'V21: CoT 设置页 UI 实现仍在 legacy cot_settings.js；入口由 voiceCot publicApi 收口'
+    });
+    OwoApp.compat.expose('initCotSettings', publicApi.initCotSettings, {
+        state: 'canonical-entry',
+        owner: 'OwoApp.features.settings.voiceCot.publicApi.initCotSettings',
+        note: 'V21: 旧 window.initCotSettings 只转发到 settings voiceCot public facade'
+    });
+})(window);

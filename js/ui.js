@@ -21,8 +21,25 @@ const messageInput = document.getElementById('message-input');
 const getReplyBtn = document.getElementById('get-reply-btn');
 const regenerateBtn = document.getElementById('regenerate-btn');
 
+function getAppScreenRegistry() {
+    return window.OwoApp && window.OwoApp.app && window.OwoApp.app.screenRegistry;
+}
+
+function runScreenRegistryTransition(targetId, previousScreenId, targetScreen) {
+    const screenRegistry = getAppScreenRegistry();
+    if (!screenRegistry || typeof screenRegistry.transitionTo !== 'function') return null;
+    return screenRegistry.transitionTo(targetId, {
+        previousScreenId,
+        targetElement: targetScreen,
+        source: 'switchScreen'
+    });
+}
+
 // 屏幕切换
 const switchScreen = (targetId) => {
+    const previousScreen = document.querySelector('.screen.active');
+    const previousScreenId = previousScreen ? previousScreen.id : null;
+
     // 离开聊天室时停止 TTS 播放，避免退出后继续读
     if (targetId !== 'chat-room-screen' && typeof MinimaxTTSService !== 'undefined' && MinimaxTTSService.stop) {
         MinimaxTTSService.stop();
@@ -51,6 +68,8 @@ const switchScreen = (targetId) => {
     screens.forEach(screen => screen.classList.remove('active'));
     const targetScreen = document.getElementById(targetId);
     if (targetScreen) targetScreen.classList.add('active');
+    const screenRegistryTransition = runScreenRegistryTransition(targetId, previousScreenId, targetScreen);
+    const screenRegistryHandledMount = Boolean(screenRegistryTransition && screenRegistryTransition.handledMount);
     
     // 关闭所有覆盖层和侧边栏
     const overlays = document.querySelectorAll('.modal-overlay, .action-sheet-overlay, .settings-sidebar');
@@ -81,21 +100,23 @@ const switchScreen = (targetId) => {
         }
     }
 
-    if (targetId === 'more-screen') {
-        renderMoreScreen();
-    }
-    if (targetId === 'piggy-bank-screen' && typeof renderPiggyBankScreen === 'function') {
-        renderPiggyBankScreen();
-    }
-    if (targetId === 'family-card-list-screen' && typeof renderFamilyCardList === 'function') {
-        renderFamilyCardList();
-    }
-    if (targetId === 'contacts-screen') {
-        if (typeof renderContactList === 'function') renderContactList();
-        if (typeof renderMyProfile === 'function') renderMyProfile();
-    }
-    if (targetId === 'appearance-settings-screen' && typeof renderAppearanceSettingsScreen === 'function') {
-        renderAppearanceSettingsScreen();
+    if (!screenRegistryHandledMount) {
+        if (targetId === 'more-screen') {
+            renderMoreScreen();
+        }
+        if (targetId === 'piggy-bank-screen' && typeof renderPiggyBankScreen === 'function') {
+            renderPiggyBankScreen();
+        }
+        if (targetId === 'family-card-list-screen' && typeof renderFamilyCardList === 'function') {
+            renderFamilyCardList();
+        }
+        if (targetId === 'contacts-screen') {
+            if (typeof renderContactList === 'function') renderContactList();
+            if (typeof renderMyProfile === 'function') renderMyProfile();
+        }
+        if (targetId === 'appearance-settings-screen' && typeof renderAppearanceSettingsScreen === 'function') {
+            renderAppearanceSettingsScreen();
+        }
     }
 };
 
@@ -442,10 +463,6 @@ function setupHomeScreen() {
                     <img src="${getIcon('piggy-bank-screen')}" alt="存钱罐" class="icon-img">
                     <span class="app-name">${getName('piggy-bank-screen')}</span>
                 </a>
-                <a href="#" class="app-icon" data-target="music-screen">
-                    <img src="${getIcon('music-screen')}" alt="音乐" class="icon-img">
-                    <span class="app-name">${getName('music-screen')}</span>
-                </a>
                 <a href="#" class="app-icon" data-target="theater-screen">
                     <img src="${getIcon('theater-screen')}" alt="小剧场" class="icon-img">
                     <span class="app-name">${getName('theater-screen')}</span>
@@ -453,14 +470,6 @@ function setupHomeScreen() {
                 <a href="#" class="app-icon" data-target="appearance-settings-screen">
                     <img src="${getIcon('appearance-settings-screen')}" alt="外观" class="icon-img">
                     <span class="app-name">${getName('appearance-settings-screen')}</span>
-                </a>
-                <a href="#" class="app-icon" data-action="biekan-app">
-                    <img src="${getIcon('biekan-app')}" alt="别看" class="icon-img">
-                    <span class="app-name">${getName('biekan-app')}</span>
-                </a>
-                <a href="#" class="app-icon" data-action="xiaowu-app">
-                    <img src="${getIcon('xiaowu-app')}" alt="小屋" class="icon-img">
-                    <span class="app-name">${getName('xiaowu-app')}</span>
                 </a>
              </div>
         </div>
@@ -516,8 +525,6 @@ function setupHomeScreen() {
             };
         }
     });
-    document.querySelector('[data-action="biekan-app"]')?.addEventListener('click', (e) => { e.preventDefault(); showToast('别看APP正在开发中…'); });
-    document.querySelector('[data-action="xiaowu-app"]')?.addEventListener('click', (e) => { e.preventDefault(); showToast('小屋APP正在开发中…'); });
     document.querySelector('[data-action="magic-room-app"]')?.addEventListener('click', (e) => { 
         e.preventDefault(); 
         if (typeof setupMagicRoomApp === 'function') setupMagicRoomApp();
@@ -526,7 +533,7 @@ function setupHomeScreen() {
     if (typeof setupPiggyBankApp === 'function') setupPiggyBankApp();
     if (typeof setupReminderModule === 'function') setupReminderModule();
 
-    // 主屏 app-icon 入口：拦截 main.js 全局委托中对 piggy-bank / music 的"开发中"拦截
+    // 主屏 app-icon 入口：确保存钱罐直接进入功能页。
     const piggyIcon = homeScreen.querySelector('.app-icon[data-target="piggy-bank-screen"]');
     if (piggyIcon) piggyIcon.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); switchScreen('piggy-bank-screen'); });
 

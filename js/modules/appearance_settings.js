@@ -144,20 +144,6 @@ function renderAppearanceSettingsScreen() {
                 </div>
             </div>
 
-            <!-- 预留区：壁纸设置 (未来添加) -->
-            <div class="appearance-section" style="opacity: 0.5;">
-                <div class="appearance-section-header">
-                    <h2 class="appearance-section-title">壁纸方案</h2>
-                    <span class="appearance-section-desc">敬请期待</span>
-                </div>
-                <div class="appearance-thumbnail-container">
-                    <div class="appearance-thumbnail-item">
-                        <div class="appearance-thumbnail-box" style="background:#eee;"></div>
-                        <div class="appearance-thumbnail-label">默认</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- 自定义 CSS 区 -->
             <div class="appearance-section">
                 <div class="appearance-section-header">

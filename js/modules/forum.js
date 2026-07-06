@@ -1,64 +1,44 @@
 // --- 论坛功能 (js/modules/forum.js) ---
 
+// @compat canonical: OwoApp.core.forum.forumSemantics
+const forumSemantics = window.OwoApp.core.forum.forumSemantics;
+// @compat canonical: OwoApp.features.forum.profileService
+const forumProfileService = window.OwoApp.features.forum.profileService;
+// @compat canonical: OwoApp.features.forum.postService
+const forumPostService = window.OwoApp.features.forum.postService;
+// @compat canonical: OwoApp.features.forum.dmService
+const forumDmService = window.OwoApp.features.forum.dmService;
+
 // ===== 小号管理系统 =====
 var forumEditingAltId = null; // 当前正在编辑的小号ID，null表示新建
 
 function forumGetActiveAccount() {
-    var activeId = db.forumActiveAccountId || 'main';
-    if (activeId === 'main') {
-        forumInitUserProfile();
-        return { id: 'main', username: db.forumUserProfile.username, avatar: db.forumUserProfile.avatar, bio: db.forumUserProfile.bio, isAlt: false };
-    }
-    var alts = db.forumAltAccounts || [];
-    var alt = alts.find(function(a) { return a.id === activeId; });
-    if (!alt) {
-        db.forumActiveAccountId = 'main';
-        saveData();
-        forumInitUserProfile();
-        return { id: 'main', username: db.forumUserProfile.username, avatar: db.forumUserProfile.avatar, bio: db.forumUserProfile.bio, isAlt: false };
-    }
-    return { id: alt.id, username: alt.username, avatar: alt.avatar, bio: alt.bio, isAlt: true };
+    const active = forumProfileService.getActiveAccount(db);
+    if (active.didResetActiveId) saveData();
+    return { id: active.id, username: active.username, avatar: active.avatar, bio: active.bio, isAlt: !!active.isAlt };
 }
 
 function forumSwitchAccount(accountId) {
-    db.forumActiveAccountId = accountId;
+    const acc = forumProfileService.switchAccount(db, accountId);
     saveData();
     forumRenderAltAccountsList();
-    var acc = forumGetActiveAccount();
     showToast('已切换为: ' + acc.username);
 }
 
 function forumCreateAltAccount(data) {
-    if (!db.forumAltAccounts) db.forumAltAccounts = [];
-    var newAlt = {
-        id: 'alt_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
-        username: data.username || '小号' + Math.floor(1000 + Math.random() * 9000),
-        avatar: data.avatar || 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg',
-        bio: data.bio || '',
-        createdAt: Date.now()
-    };
-    db.forumAltAccounts.push(newAlt);
+    const newAlt = forumProfileService.createAltAccount(db, data || {});
     saveData();
     return newAlt;
 }
 
 function forumUpdateAltAccount(altId, data) {
-    var alts = db.forumAltAccounts || [];
-    var alt = alts.find(function(a) { return a.id === altId; });
-    if (!alt) return;
-    if (data.username) alt.username = data.username;
-    if (data.avatar) alt.avatar = data.avatar;
-    if (data.bio !== undefined) alt.bio = data.bio;
-    saveData();
+    const alt = forumProfileService.updateAltAccount(db, altId, data || {});
+    if (alt) saveData();
+    return alt;
 }
 
 function forumDeleteAltAccount(altId) {
-    if (!db.forumAltAccounts) return;
-    db.forumAltAccounts = db.forumAltAccounts.filter(function(a) { return a.id !== altId; });
-    if (db.forumActiveAccountId === altId) {
-        db.forumActiveAccountId = 'main';
-    }
-    saveData();
+    if (forumProfileService.deleteAltAccount(db, altId)) saveData();
 }
 
 function forumRenderAltAccountsList() {
@@ -1023,9 +1003,9 @@ function renderForumPosts(posts, filter = 'all') {
     let filteredPosts = posts;
     
     if (filter === 'liked') {
-        filteredPosts = posts.filter(p => p.isLiked);
+        filteredPosts = forumSemantics.filterPosts(posts, 'liked');
     } else if (filter === 'favorited') {
-        filteredPosts = posts.filter(p => p.isFavorited);
+        filteredPosts = forumSemantics.filterPosts(posts, 'favorited');
     }
     
     if (filteredPosts.length === 0) {
@@ -1078,14 +1058,8 @@ function renderForumPosts(posts, filter = 'all') {
 }
 
 function forumInitUserProfile() {
-    if (!db.forumUserProfile || typeof db.forumUserProfile !== 'object') {
-        db.forumUserProfile = { username: '', avatar: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg', bio: '', joinDate: Date.now() };
-        saveData();
-    }
-    if (!db.forumUserProfile.username && db.forumUserProfile.joinDate) {
-        db.forumUserProfile.username = '用户' + Math.floor(1000 + Math.random() * 9000);
-        saveData();
-    }
+    const result = forumProfileService.ensureUserProfile(db);
+    if (result && result.changed) saveData();
 }
 
 function forumAddHeaderButtonsAndFAB() {
@@ -1138,10 +1112,8 @@ function forumAddHeaderButtonsAndFAB() {
 }
 
 function forumTogglePostLike(postId) {
-    const post = db.forumPosts.find(p => p.id === postId);
+    const post = forumPostService.togglePostLike(db, postId);
     if (!post) return;
-    post.isLiked = !post.isLiked;
-    post.likeCount = (post.likeCount || 0) + (post.isLiked ? 1 : -1);
     saveData();
     const likeBtn = document.getElementById('like-post-btn');
     const likeCountEl = document.getElementById('like-count');
@@ -1154,9 +1126,8 @@ function forumTogglePostLike(postId) {
 }
 
 function forumTogglePostFavorite(postId) {
-    const post = db.forumPosts.find(p => p.id === postId);
+    const post = forumPostService.togglePostFavorite(db, postId);
     if (!post) return;
-    post.isFavorited = !post.isFavorited;
     saveData();
     const favoriteBtn = document.getElementById('favorite-post-btn');
     if (favoriteBtn) {
@@ -1168,19 +1139,12 @@ function forumTogglePostFavorite(postId) {
 }
 
 function forumPublishComment(postId, content) {
-    const post = db.forumPosts.find(p => p.id === postId);
-    if (!post) return;
     const activeAccount = forumGetActiveAccount();
-    const defaultAvatarUrl = 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg';
-    const newComment = { id: 'comment_' + Date.now() + '_' + Math.random(), authorId: activeAccount.isAlt ? activeAccount.id : 'user', username: activeAccount.username || '用户', avatar: activeAccount.avatar || defaultAvatarUrl, content: content, timestamp: new Date().toLocaleString() };
-    if (forumReplyTarget) {
-        newComment.replyTo = { commentId: forumReplyTarget.commentId, username: forumReplyTarget.username };
-        forumReplyTarget = null;
-    }
-    if (!post.comments) post.comments = [];
-    post.comments.push(newComment);
+    const result = forumPostService.addUserComment(db, postId, content, activeAccount, forumReplyTarget);
+    if (!result) return;
+    forumReplyTarget = null;
     saveData();
-    renderPostDetail(post);
+    renderPostDetail(result.post);
     const input = document.getElementById('forum-comment-input');
     if (input) input.value = '';
     showToast('评论成功');
@@ -1192,32 +1156,19 @@ async function forumPublishPost() {
     const title = titleInput && titleInput.value.trim();
     const content = contentInput && contentInput.value.trim();
     if (!title || !content) { showToast('标题和内容不能为空'); return; }
-    
+
     const activeAccount = forumGetActiveAccount();
-    const newPost = { 
-        id: 'post_' + Date.now() + '_' + Math.random(), 
-        authorId: activeAccount.isAlt ? activeAccount.id : 'user', 
-        username: activeAccount.username || '用户', 
-        title: title, 
-        content: content, 
-        summary: content.length > 100 ? content.substring(0, 100) + '...' : content, 
-        timestamp: Date.now(), 
-        likeCount: 0, 
-        isLiked: false, 
-        comments: [] 
-    };
-    
-    if (!db.forumPosts) db.forumPosts = [];
-    db.forumPosts.unshift(newPost);
+    const newPost = forumPostService.createUserPost(db, { title: title, content: content }, activeAccount);
+    if (!newPost) { showToast('标题和内容不能为空'); return; }
     await saveData();
-    
+
     renderForumPosts(db.forumPosts);
     document.getElementById('create-forum-post-modal').classList.remove('visible');
     showToast('发布成功');
-    
+
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
-    
+
     const autoReplyCount = (db.forumSettings && db.forumSettings.autoReplyCount) || 0;
     if (autoReplyCount > 0) {
         forumGenerateAutoReplies(newPost.id, autoReplyCount);
@@ -1322,11 +1273,10 @@ ${context}
 
 function forumDeletePost(postId) {
     if (!confirm('确定要删除这篇帖子吗？')) return;
-    const index = db.forumPosts.findIndex(p => p.id === postId);
-    if (index === -1) return;
-    const post = db.forumPosts[index];
+    const post = forumPostService.findPost(db, postId);
+    if (!post) return;
     if (post.authorId !== 'user' && !(post.authorId && post.authorId.startsWith('alt_'))) { showToast('只能删除自己的帖子'); return; }
-    db.forumPosts.splice(index, 1);
+    forumPostService.deletePost(db, postId);
     saveData();
     switchScreen('forum-screen');
     renderForumPosts(db.forumPosts);
@@ -1354,7 +1304,7 @@ function forumPostSelectAll() {
 function forumPostDeleteSelected() {
     if (forumSelectedPostIds.size === 0) { showToast('请先选择要删除的帖子'); return; }
     if (!confirm('确定要删除选中的 ' + forumSelectedPostIds.size + ' 个帖子吗？')) return;
-    db.forumPosts = (db.forumPosts || []).filter(function(p) { return !forumSelectedPostIds.has(p.id); });
+    forumPostService.deletePosts(db, Array.from(forumSelectedPostIds));
     saveData();
     forumSelectedPostIds.clear();
     forumPostDeleteMode = false;
@@ -1552,15 +1502,7 @@ function forumSaveSettings() {
 }
 
 function forumGetUserStats() {
-    const posts = db.forumPosts || [];
-    let postCount = 0, commentCount = 0, likeCount = 0;
-    const isOwnId = function(id) { return id === 'user' || (id && id.startsWith('alt_')); };
-    posts.forEach(p => {
-        if (isOwnId(p.authorId)) postCount++;
-        (p.comments || []).forEach(c => { if (isOwnId(c.authorId)) commentCount++; });
-        if (isOwnId(p.authorId)) likeCount += p.likeCount || 0;
-    });
-    return { posts: postCount, comments: commentCount, likes: likeCount };
+    return forumPostService.getUserStats(db);
 }
 
 async function forumFetchModels() {
@@ -1667,9 +1609,7 @@ function forumSaveProfile() {
     const bioInput = document.getElementById('forum-bio-input');
     const username = usernameInput && usernameInput.value.trim();
     if (!username) { showToast('昵称不能为空'); return; }
-    forumInitUserProfile();
-    db.forumUserProfile.username = username;
-    db.forumUserProfile.bio = (bioInput && bioInput.value) || '';
+    forumProfileService.updateUserProfile(db, { username: username, bio: (bioInput && bioInput.value) || '' });
     saveData();
     showToast('资料已保存');
 }
@@ -1751,16 +1691,7 @@ function forumBindNewEvents() {
 }
 
 function forumGetDMUserList() {
-    const users = new Map();
-    (db.forumMessages || []).forEach(m => {
-        const other = m.fromUserId === 'user' ? m.toUserId : m.fromUserId;
-        if (other && other !== 'user') {
-            var profile = getForumStrangerProfile(other);
-            var displayName = (profile && profile.name) ? profile.name : other.replace(/^npc_/, '');
-            users.set(other, { id: other, name: displayName });
-        }
-    });
-    return Array.from(users.values());
+    return forumDmService.getDMUserList(db);
 }
 
 function forumToggleDMListDeleteMode() {
@@ -1784,11 +1715,7 @@ function forumDMSelectAll() {
 function forumDMDeleteSelected() {
     if (forumDMSelectedUserIds.size === 0) { showToast('请先选择要删除的对话'); return; }
     if (!confirm('确定要删除选中的 ' + forumDMSelectedUserIds.size + ' 个对话吗？该对话下的所有私信将被删除。')) return;
-    if (!db.forumMessages) db.forumMessages = [];
-    db.forumMessages = db.forumMessages.filter(function(m) {
-        var other = m.fromUserId === 'user' ? m.toUserId : m.fromUserId;
-        return !forumDMSelectedUserIds.has(other);
-    });
+    forumDmService.deleteConversations(db, Array.from(forumDMSelectedUserIds));
     saveData();
     forumDMSelectedUserIds.clear();
     forumDMListDeleteMode = false;
@@ -1822,9 +1749,9 @@ function forumRenderDMList() {
     const getRandomColor = () => npcColors[Math.floor(Math.random() * npcColors.length)];
     
     users.forEach(u => {
-        const conv = (db.forumMessages || []).filter(m => (m.fromUserId === 'user' && m.toUserId === u.id) || (m.fromUserId === u.id && m.toUserId === 'user'));
+        const conv = forumDmService.getConversationMessages(db, u.id);
         const last = conv[conv.length - 1];
-        const unread = (db.forumMessages || []).filter(m => m.toUserId === 'user' && m.fromUserId === u.id && !m.isRead).length;
+        const unread = forumDmService.countUnread(db, u.id);
         
         const firstChar = (u.name || '').charAt(0).toUpperCase() || '?';
         const avatarColor = getRandomColor();
@@ -1866,22 +1793,19 @@ var forumSelectedPostIds = new Set();
 var FORUM_DEFAULT_AVATAR = 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg';
 
 function forumHasPendingFriendRequestFromUser(npcUserId) {
-    if (!db.forumPendingRequestFromUser || typeof db.forumPendingRequestFromUser !== 'object') return false;
-    return !!db.forumPendingRequestFromUser[npcUserId];
+    return forumDmService.hasPendingFriendRequestFromUser(db, npcUserId);
 }
 function forumSetPendingFriendRequestFromUser(npcUserId, value) {
-    if (!db.forumPendingRequestFromUser || typeof db.forumPendingRequestFromUser !== 'object') db.forumPendingRequestFromUser = {};
-    if (value) db.forumPendingRequestFromUser[npcUserId] = true; else delete db.forumPendingRequestFromUser[npcUserId];
+    forumDmService.setPendingFriendRequestFromUser(db, npcUserId, value);
     saveData();
 }
 
 function getForumStrangerProfile(userId) {
-    if (!db.forumStrangerProfiles) return null;
-    return db.forumStrangerProfiles[userId] || null;
+    return forumDmService.getStrangerProfile(db, userId);
 }
 
 function forumIsFriend(userId) {
-    return (db.characters || []).some(function(c) { return c.source === 'forum' && c.forumUserId === userId; });
+    return forumDmService.isFriend(db, userId);
 }
 
 function forumOpenDMConversation(userId, userName, commentContext) {
@@ -1891,21 +1815,8 @@ function forumOpenDMConversation(userId, userName, commentContext) {
     document.getElementById('forum-dm-conversation-title').textContent = userName || userId || '私信';
     
     // 如果从评论进入且没有历史消息，注入评论上下文作为第一条系统消息
-    if (commentContext && commentContext.commentContent) {
-        const existingMsgs = (db.forumMessages || []).filter(m => (m.fromUserId === 'user' && m.toUserId === userId) || (m.fromUserId === userId && m.toUserId === 'user'));
-        if (existingMsgs.length === 0) {
-            if (!db.forumMessages) db.forumMessages = [];
-            db.forumMessages.push({
-                id: 'dm_ctx_' + Date.now(),
-                fromUserId: 'user',
-                toUserId: userId,
-                content: '（来自帖子「' + (commentContext.postTitle || '') + '」你的评论：' + commentContext.commentContent + '）',
-                timestamp: Date.now(),
-                isRead: true,
-                isCommentContext: true
-            });
-            saveData();
-        }
+    if (forumDmService.addCommentContextIfNeeded(db, userId, commentContext)) {
+        saveData();
     }
     
     forumRenderDMConversation(userId);
@@ -1999,16 +1910,14 @@ function forumDMRequestAddFriend() {
 }
 
 function forumMarkDMRead(userId) {
-    if (!db.forumMessages) return;
-    db.forumMessages.forEach(m => { if (m.toUserId === 'user' && m.fromUserId === userId) m.isRead = true; });
-    saveData();
+    if (forumDmService.markDMRead(db, userId)) saveData();
 }
 
 function forumRenderDMConversation(userId) {
     const area = document.getElementById('forum-dm-message-area');
     if (!area) return;
     
-    const messages = (db.forumMessages || []).filter(m => (m.fromUserId === 'user' && m.toUserId === userId) || (m.fromUserId === userId && m.toUserId === 'user')).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const messages = forumDmService.getConversationMessages(db, userId);
     
     area.innerHTML = '';
     
@@ -2144,8 +2053,7 @@ function forumSendDM() {
     const input = document.getElementById('forum-dm-input');
     const content = (input && input.value || '').trim();
     if (!content) return;
-    if (!db.forumMessages) db.forumMessages = [];
-    db.forumMessages.push({ id: 'dm_' + Date.now(), fromUserId: 'user', toUserId: forumCurrentDMUserId, content: content, timestamp: Date.now(), isRead: false });
+    forumDmService.addUserMessage(db, forumCurrentDMUserId, content);
     saveData();
     if (input) input.value = '';
     forumRenderDMConversation(forumCurrentDMUserId);
@@ -2154,7 +2062,7 @@ function forumSendDM() {
 function forumUpdateDMUnreadBadge() {
     const btn = document.getElementById('forum-dm-btn');
     if (!btn) return;
-    const n = (db.forumMessages || []).filter(m => m.toUserId === 'user' && !m.isRead).length;
+    const n = forumDmService.countUnread(db);
     let badge = btn.querySelector('.forum-dm-badge');
     if (n > 0) {
         if (!badge) { badge = document.createElement('span'); badge.className = 'forum-dm-badge'; badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#ff4757;color:#fff;font-size:10px;padding:2px 5px;border-radius:10px;'; btn.style.position = 'relative'; btn.appendChild(badge); }

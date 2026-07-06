@@ -1,110 +1,102 @@
 (function () {
-    const VECTOR_MEMORY_DEFAULT_INTERVAL = 200;
-    const VECTOR_MEMORY_DEFAULT_TOP_K = 5;
-    const VECTOR_MEMORY_DEFAULT_THRESHOLD = 0.28;
-    const VECTOR_MEMORY_DEFAULT_MAX_ENTRY_LENGTH = 1200;
     const uiState = {
         tab: 'entries',
         editingTemplateId: null
     };
 
-    function createVectorId(prefix) {
-        return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    }
 
-    function deepClone(value) {
-        return JSON.parse(JSON.stringify(value));
-    }
-
-    function createStarterVectorTemplate() {
-        return {
-            id: createVectorId('vector_tpl'),
-            name: '默认向量模板',
-            description: '用于把聊天提炼为可检索的长期记忆，支持自动总结、手动总结和三种记忆模式互转。',
-            topK: VECTOR_MEMORY_DEFAULT_TOP_K,
-            similarityThreshold: VECTOR_MEMORY_DEFAULT_THRESHOLD,
-            maxEntryLength: VECTOR_MEMORY_DEFAULT_MAX_ENTRY_LENGTH,
-            summaryTemperature: 0.35,
-            summaryPrompt: [
-                '请把下面这段聊天内容整理成一条适合“长期检索”的客观记忆，不要写成聊天口吻。',
-                '输出必须严格使用以下 XML：',
-                '<vector_memory>',
-                '  <title>简洁标题</title>',
-                '  <content>可被长期检索的客观记忆正文，突出事件、关系变化、关键事实。</content>',
-                '  <tags>标签1,标签2</tags>',
-                '</vector_memory>',
-                '',
-                '要求：',
-                '1. 不要编造。',
-                '2. 保留人物、事件、时间线和关系变化。',
-                '3. 内容尽量利于后续检索。',
-                '4. 如果没有值得记录的新信息，也要输出 XML，但 content 留空。',
-                '',
-                '角色名：{{charName}}',
-                '用户称呼：{{userName}}',
-                '消息范围：{{rangeLabel}}',
-                '',
-                '聊天内容：',
-                '{{history}}'
-            ].join('\n'),
-            injectPrompt: [
-                '【向量长期记忆】',
-                '以下是基于当前聊天语义检索出的高相关长期记忆，它们比普通历史消息更可靠。',
-                '如果这些记忆与当前对话无关，请不要强行引用；如果记忆未明确写出，请不要擅自脑补。',
-                '',
-                '当前检索线索：{{query}}',
-                '共命中 {{count}} 条：',
-                '{{memories}}'
-            ].join('\n')
-        };
-    }
+    // @compat canonical: OwoApp.features.vectorMemory.model
+    const vectorMemoryModel = window.OwoApp.features.vectorMemory.model;
+    // @compat canonical: OwoApp.features.vectorMemory.contextService
+    const vectorMemoryContextService = window.OwoApp.features.vectorMemory.contextService;
+    // @compat canonical: OwoApp.platform.ai.embeddingAdapter
+    const vectorEmbeddingAdapter = window.OwoApp.platform.ai.embeddingAdapter;
+    const VECTOR_MEMORY_DEFAULT_INTERVAL = vectorMemoryModel.DEFAULTS.interval;
+    const VECTOR_MEMORY_DEFAULT_TOP_K = vectorMemoryModel.DEFAULTS.topK;
+    const VECTOR_MEMORY_DEFAULT_THRESHOLD = vectorMemoryModel.DEFAULTS.threshold;
+    const VECTOR_MEMORY_DEFAULT_MAX_ENTRY_LENGTH = vectorMemoryModel.DEFAULTS.maxEntryLength;
+    const createVectorId = vectorMemoryModel.createVectorId;
+    const deepClone = vectorMemoryModel.deepClone;
+    const createStarterVectorTemplate = vectorMemoryModel.createStarterVectorTemplate;
+    const cosineSimilarity = vectorEmbeddingAdapter.cosineSimilarity;
+    const trimText = vectorMemoryContextService.trimText;
+    const readMessageText = vectorMemoryContextService.readMessageText;
+    const formatMessageForMemory = vectorMemoryContextService.formatMessageForMemory;
+    const buildHistoryText = vectorMemoryContextService.buildHistoryText;
+    const fillTemplateString = vectorMemoryContextService.fillTemplateString;
+    const buildVectorQueryText = vectorMemoryContextService.buildVectorQueryText;
+    const getEntryTags = vectorMemoryContextService.getEntryTags;
+    const buildMemoryListText = vectorMemoryContextService.buildMemoryListText;
+    const buildContextBlock = function buildContextBlock(chat, entries, queryText) {
+        return vectorMemoryContextService.buildContextBlock(chat, entries, queryText, {state: db});
+    };
+    const computeLexicalScore = vectorMemoryContextService.computeLexicalScore;
+    const selectFallbackEntries = function selectFallbackEntries(chat, queryText) {
+        return vectorMemoryContextService.selectFallbackEntries(chat, queryText, {state: db});
+    };
+    // @compat canonical: OwoApp.platform.ai.embeddingAdapter.fetchEmbeddings
+    const fetchEmbeddings = function legacyFetchEmbeddings(texts) {
+        return vectorMemoryContextService.fetchEmbeddings(texts, {state: db});
+    };
+    const embedEntriesIfNeeded = function embedEntriesIfNeeded(entries) {
+        return vectorMemoryContextService.embedEntriesIfNeeded(entries, {state: db});
+    };
 
     function ensureVectorTemplateStore() {
-        if (!Array.isArray(db.vectorMemoryTemplates)) {
-            db.vectorMemoryTemplates = [];
-        }
-        if (db.vectorMemoryTemplates.length === 0) {
-            db.vectorMemoryTemplates.push(createStarterVectorTemplate());
-        }
+        return vectorMemoryModel.ensureVectorTemplateStore(db);
     }
 
-    function ensureVectorMemoryState(chat) {
-        if (!chat) return;
-        ensureVectorTemplateStore();
-        if (!chat.vectorMemory || typeof chat.vectorMemory !== 'object') {
-            chat.vectorMemory = {};
-        }
-        const state = chat.vectorMemory;
-        if (state.enabled === undefined) state.enabled = true;
-        if (!Array.isArray(state.entries)) state.entries = [];
-        if (!Array.isArray(state.history)) state.history = [];
-        if (state.boundTemplateId === undefined) state.boundTemplateId = null;
-        if (!Number.isFinite(parseInt(state.topK, 10))) state.topK = VECTOR_MEMORY_DEFAULT_TOP_K;
-        if (!Number.isFinite(parseFloat(state.threshold))) state.threshold = VECTOR_MEMORY_DEFAULT_THRESHOLD;
-        if (state.autoSummaryEnabled === undefined) state.autoSummaryEnabled = false;
-        if (!Number.isFinite(parseInt(state.autoSummaryInterval, 10))) state.autoSummaryInterval = VECTOR_MEMORY_DEFAULT_INTERVAL;
-        if (!state.autoSummaryState) state.autoSummaryState = 'idle';
-        if (state.autoSummaryPending === undefined) state.autoSummaryPending = false;
-        if (state.lastSummarizedMsgId === undefined) state.lastSummarizedMsgId = null;
-        if (state.lastSummarizedMsgTimestamp === undefined) state.lastSummarizedMsgTimestamp = null;
-        if (state.lastContextBlock === undefined) state.lastContextBlock = '';
-        if (!Array.isArray(state.lastRetrievedEntryIds)) state.lastRetrievedEntryIds = [];
-        if (state.lastQueryText === undefined) state.lastQueryText = '';
-        if (state.lastPreparedAt === undefined) state.lastPreparedAt = null;
-        if (!state.boundTemplateId || !db.vectorMemoryTemplates.some(item => item.id === state.boundTemplateId)) {
-            state.boundTemplateId = db.vectorMemoryTemplates[0] ? db.vectorMemoryTemplates[0].id : null;
-        }
-        state.entries.forEach(entry => {
-            if (!entry.id) entry.id = createVectorId('vector_entry');
-            if (!entry.title) entry.title = `向量记忆 ${new Date(entry.createdAt || Date.now()).toLocaleDateString()}`;
-            if (!Array.isArray(entry.vector)) entry.vector = [];
-            if (!Array.isArray(entry.tags)) entry.tags = [];
-            if (entry.pinned === undefined) entry.pinned = false;
-            if (!Number.isFinite(parseFloat(entry.weight))) entry.weight = 1;
-            if (entry.createdAt === undefined) entry.createdAt = Date.now();
-            if (entry.updatedAt === undefined) entry.updatedAt = entry.createdAt;
-        });
+    // @compat canonical: OwoApp.features.vectorMemory.model.ensureVectorMemoryState
+    const ensureVectorMemoryState = function legacyEnsureVectorMemoryState(chat) {
+        return vectorMemoryModel.ensureVectorMemoryState(chat, {state: db});
+    };
+
+    function getActiveVectorTemplate(chat) {
+        return vectorMemoryModel.getActiveVectorTemplate(chat, {state: db});
     }
+
+    function clearVectorContextCache(chat) {
+        return vectorMemoryModel.clearVectorContextCache(chat, {state: db});
+    }
+
+    // @compat canonical: OwoApp.features.vectorMemory.contextService.getVectorMemoryContextBlock
+    const getVectorMemoryContextBlock = function legacyGetVectorMemoryContextBlock(chat, options = {}) {
+        return vectorMemoryContextService.getVectorMemoryContextBlock(chat, {...options, state: db});
+    };
+
+    // @compat canonical: OwoApp.features.vectorMemory.contextService.prepareVectorMemoryContext
+    const prepareVectorMemoryContext = function legacyPrepareVectorMemoryContext(chat, options = {}) {
+        return vectorMemoryContextService.prepareVectorMemoryContext(chat, {...options, state: db});
+    };
+
+    function pushVectorHistory(chat, action, summary) {
+        return vectorMemoryModel.pushVectorHistory(chat, action, summary, {state: db});
+    }
+
+    function inferEntryTitle(text) {
+        return vectorMemoryModel.inferEntryTitle(text);
+    }
+
+    function addVectorEntry(chat, payload) {
+        return vectorMemoryContextService.addVectorEntry(chat, payload, {state: db});
+    }
+
+    function getAutoVectorCursorInfo(chat) {
+        return vectorMemoryModel.getAutoVectorCursorInfo(chat, {state: db});
+    }
+
+    function getNextAutoVectorRange(chat) {
+        return vectorMemoryModel.getNextAutoVectorRange(chat, {state: db});
+    }
+
+    function setVectorCursorByEndIndex(chat, endIndex) {
+        return vectorMemoryModel.setVectorCursorByEndIndex(chat, endIndex, {state: db});
+    }
+
+    // @compat canonical: OwoApp.features.vectorMemory.model.resetVectorCursorToLatest
+    const resetVectorCursorToLatest = function legacyResetVectorCursorToLatest(chat) {
+        return vectorMemoryModel.resetVectorCursorToLatest(chat, {state: db});
+    };
 
     function getCurrentVectorChat() {
         if (!currentChatId || currentChatType !== 'private') return null;
@@ -113,31 +105,12 @@
         return chat || null;
     }
 
-    function getActiveVectorTemplate(chat) {
-        ensureVectorTemplateStore();
-        ensureVectorMemoryState(chat);
-        const state = chat && chat.vectorMemory;
-        return db.vectorMemoryTemplates.find(item => item.id === state.boundTemplateId) || db.vectorMemoryTemplates[0] || null;
-    }
-
     function getSummaryApiConfig() {
         const apiConfig = (db.summaryApiSettings && db.summaryApiSettings.url && db.summaryApiSettings.key && db.summaryApiSettings.model)
             ? db.summaryApiSettings
             : db.apiSettings;
         if (!apiConfig || !apiConfig.url || !apiConfig.key || !apiConfig.model) {
             throw new Error('请先配置总结 API');
-        }
-        return apiConfig;
-    }
-
-    function getVectorApiConfig() {
-        const apiConfig = (db.vectorApiSettings && db.vectorApiSettings.url && db.vectorApiSettings.key && db.vectorApiSettings.model)
-            ? db.vectorApiSettings
-            : ((db.summaryApiSettings && db.summaryApiSettings.url && db.summaryApiSettings.key && db.summaryApiSettings.model)
-                ? db.summaryApiSettings
-                : db.apiSettings);
-        if (!apiConfig || !apiConfig.url || !apiConfig.key || !apiConfig.model) {
-            throw new Error('请先配置向量 API');
         }
         return apiConfig;
     }
@@ -169,90 +142,7 @@
         return fetchAiResponse(apiConfig, requestBody, headers, endpoint);
     }
 
-    async function fetchEmbeddingBatch(texts) {
-        const apiConfig = getVectorApiConfig();
-        let { url, key, model } = apiConfig;
-        const provider = apiConfig.provider || 'newapi';
-        url = (url || '').replace(/\/$/, '');
-        if (provider === 'gemini') {
-            const outputs = [];
-            for (const text of texts) {
-                const endpoint = `${url}/v1beta/models/${model}:embedContent?key=${getRandomValue(key)}`;
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        content: {
-                            parts: [{ text }]
-                        }
-                    })
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Embedding API Error: ${response.status} ${errorText}`);
-                }
-                const data = await response.json();
-                outputs.push(data.embedding?.values || []);
-            }
-            return outputs;
-        }
-
-        const endpoint = `${url}/v1/embeddings`;
-        const headers = {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${key}`
-        };
-        const body = {
-            model,
-            input: texts.length === 1 ? texts[0] : texts
-        };
-        if (Number.isFinite(parseInt(apiConfig.dimensions, 10))) {
-            body.dimensions = parseInt(apiConfig.dimensions, 10);
-        }
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body)
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Embedding API Error: ${response.status} ${errorText}`);
-        }
-        const data = await response.json();
-        const list = Array.isArray(data.data) ? data.data : [];
-        return list.map(item => item.embedding || []);
-    }
-
-    async function fetchEmbeddings(texts) {
-        const list = (Array.isArray(texts) ? texts : [texts]).map(item => (item || '').trim()).filter(Boolean);
-        if (list.length === 0) return [];
-        const batchSize = Math.max(1, parseInt((db.vectorApiSettings && db.vectorApiSettings.batchSize) || 8, 10) || 8);
-        const outputs = [];
-        for (let index = 0; index < list.length; index += batchSize) {
-            const batch = list.slice(index, index + batchSize);
-            const vectors = await fetchEmbeddingBatch(batch);
-            outputs.push(...vectors);
-        }
-        return outputs;
-    }
-
-    function cosineSimilarity(a, b) {
-        if (!Array.isArray(a) || !Array.isArray(b) || a.length === 0 || b.length === 0 || a.length !== b.length) return 0;
-        let dot = 0;
-        let normA = 0;
-        let normB = 0;
-        for (let index = 0; index < a.length; index++) {
-            const av = Number(a[index]) || 0;
-            const bv = Number(b[index]) || 0;
-            dot += av * bv;
-            normA += av * av;
-            normB += bv * bv;
-        }
-        if (!normA || !normB) return 0;
-        return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-    }
-
-    function escapeHtml(text) {
+function escapeHtml(text) {
         return String(text || '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -261,266 +151,7 @@
             .replace(/'/g, '&#39;');
     }
 
-    function trimText(text, limit) {
-        const value = String(text || '').trim();
-        if (value.length <= limit) return value;
-        return `${value.slice(0, Math.max(0, limit - 1)).trim()}…`;
-    }
-
-    function readMessageText(message) {
-        if (!message) return '';
-        if (Array.isArray(message.parts) && message.parts.length > 0) {
-            return message.parts.map(part => part.text || '[图片]').join('');
-        }
-        return message.content || '';
-    }
-
-    function formatMessageForMemory(chat, message) {
-        const speaker = message.role === 'user' ? (chat.myName || '用户') : (chat.realName || '角色');
-        return `${speaker}: ${readMessageText(message)}`;
-    }
-
-    function buildHistoryText(chat, startIndex, endIndex) {
-        const history = Array.isArray(chat && chat.history) ? chat.history : [];
-        return history
-            .slice(startIndex, endIndex)
-            .filter(item => item && !item.isContextDisabled && !item.isThinking)
-            .map(item => formatMessageForMemory(chat, item))
-            .join('\n');
-    }
-
-    function fillTemplateString(template, values) {
-        let output = String(template || '');
-        Object.keys(values).forEach(key => {
-            const pattern = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-            output = output.replace(pattern, values[key] == null ? '' : String(values[key]));
-        });
-        return output;
-    }
-
-    function buildVectorQueryText(chat) {
-        const history = Array.isArray(chat && chat.history) ? chat.history : [];
-        const usable = history.filter(item => item && !item.isContextDisabled && !item.isThinking);
-        const recent = usable.slice(-8);
-        const queryText = recent.map(item => formatMessageForMemory(chat, item)).join('\n');
-        if (queryText.trim()) return queryText.trim();
-        return `${chat.myName || '用户'} 与 ${chat.realName || '角色'} 的当前聊天语境`;
-    }
-
-    function getEntryTags(entry) {
-        if (!entry || !Array.isArray(entry.tags)) return '';
-        return entry.tags.filter(Boolean).join(', ');
-    }
-
-    function buildMemoryListText(entries) {
-        return entries.map((entry, index) => {
-            const parts = [
-                `${index + 1}. 标题：${entry.title || '未命名记忆'}`,
-                `来源：${entry.source || 'manual'}`
-            ];
-            if (entry._score !== undefined) {
-                parts.push(`相似度：${entry._score.toFixed(3)}`);
-            }
-            if (entry.rangeLabel) {
-                parts.push(`范围：${entry.rangeLabel}`);
-            }
-            const tags = getEntryTags(entry);
-            if (tags) {
-                parts.push(`标签：${tags}`);
-            }
-            parts.push(`内容：${entry.text || ''}`);
-            return `- ${parts.join('\n  ')}`;
-        }).join('\n\n');
-    }
-
-    function buildContextBlock(chat, entries, queryText) {
-        if (!entries || entries.length === 0) return '';
-        const template = getActiveVectorTemplate(chat);
-        const text = buildMemoryListText(entries);
-        if (template && template.injectPrompt) {
-            return fillTemplateString(template.injectPrompt, {
-                query: queryText,
-                count: entries.length,
-                memories: text
-            }).trim();
-        }
-        return `【向量长期记忆】\n当前检索线索：${queryText}\n${text}`;
-    }
-
-    function computeLexicalScore(entry, queryText) {
-        const haystack = `${entry.title || ''}\n${entry.text || ''}\n${getEntryTags(entry)}`.toLowerCase();
-        const tokens = String(queryText || '')
-            .toLowerCase()
-            .split(/[\s,，。！？!?:：、;；\n]+/)
-            .filter(token => token && token.length >= 2);
-        if (tokens.length === 0) return entry.pinned ? 1 : 0;
-        let hits = 0;
-        tokens.forEach(token => {
-            if (haystack.includes(token)) hits += 1;
-        });
-        const base = hits / tokens.length;
-        return base + (entry.pinned ? 0.35 : 0) + ((Number(entry.weight) || 1) - 1) * 0.08;
-    }
-
-    function selectFallbackEntries(chat, queryText) {
-        ensureVectorMemoryState(chat);
-        const template = getActiveVectorTemplate(chat);
-        const topK = Math.max(1, parseInt(template?.topK || chat.vectorMemory.topK, 10) || VECTOR_MEMORY_DEFAULT_TOP_K);
-        const threshold = Number.isFinite(parseFloat(template?.similarityThreshold))
-            ? parseFloat(template.similarityThreshold)
-            : parseFloat(chat.vectorMemory.threshold || VECTOR_MEMORY_DEFAULT_THRESHOLD);
-        return [...chat.vectorMemory.entries]
-            .map(entry => ({
-                ...entry,
-                _score: computeLexicalScore(entry, queryText),
-                rangeLabel: entry.range ? `${entry.range.start}-${entry.range.end}` : ''
-            }))
-            .filter(entry => entry.pinned || entry._score >= Math.max(0.05, threshold * 0.45))
-            .sort((a, b) => {
-                if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-                if (b._score !== a._score) return b._score - a._score;
-                return (b.updatedAt || 0) - (a.updatedAt || 0);
-            })
-            .slice(0, topK);
-    }
-
-    function clearVectorContextCache(chat) {
-        ensureVectorMemoryState(chat);
-        chat.vectorMemory.lastContextBlock = '';
-        chat.vectorMemory.lastRetrievedEntryIds = [];
-        chat.vectorMemory.lastQueryText = '';
-        chat.vectorMemory.lastPreparedAt = null;
-    }
-
-    function getVectorMemoryContextBlock(chat, options = {}) {
-        ensureVectorMemoryState(chat);
-        if (chat.memoryMode !== 'vector' && !options.force) return '';
-        if (chat.vectorMemory.lastContextBlock) {
-            return chat.vectorMemory.lastContextBlock;
-        }
-        const queryText = options.queryText || buildVectorQueryText(chat);
-        const entries = selectFallbackEntries(chat, queryText);
-        const block = buildContextBlock(chat, entries, queryText);
-        chat.vectorMemory.lastContextBlock = block;
-        chat.vectorMemory.lastRetrievedEntryIds = entries.map(item => item.id);
-        chat.vectorMemory.lastQueryText = queryText;
-        chat.vectorMemory.lastPreparedAt = Date.now();
-        return block;
-    }
-
-    async function prepareVectorMemoryContext(chat, options = {}) {
-        ensureVectorMemoryState(chat);
-        const queryText = options.queryText || buildVectorQueryText(chat);
-        if (!chat.vectorMemory.entries.length) {
-            clearVectorContextCache(chat);
-            return '';
-        }
-        if (chat.vectorMemory.lastContextBlock && chat.vectorMemory.lastQueryText === queryText) {
-            return chat.vectorMemory.lastContextBlock;
-        }
-
-        const template = getActiveVectorTemplate(chat);
-        const topK = Math.max(1, parseInt(template?.topK || chat.vectorMemory.topK, 10) || VECTOR_MEMORY_DEFAULT_TOP_K);
-        const threshold = Number.isFinite(parseFloat(template?.similarityThreshold))
-            ? parseFloat(template.similarityThreshold)
-            : parseFloat(chat.vectorMemory.threshold || VECTOR_MEMORY_DEFAULT_THRESHOLD);
-
-        let selectedEntries = [];
-        try {
-            const vectors = await fetchEmbeddings([queryText]);
-            const queryVector = vectors[0];
-            if (Array.isArray(queryVector) && queryVector.length > 0) {
-                selectedEntries = chat.vectorMemory.entries
-                    .map(entry => {
-                        const similarity = cosineSimilarity(queryVector, entry.vector);
-                        const score = similarity + (entry.pinned ? 0.35 : 0) + ((Number(entry.weight) || 1) - 1) * 0.08;
-                        return {
-                            ...entry,
-                            _score: score,
-                            rangeLabel: entry.range ? `${entry.range.start}-${entry.range.end}` : ''
-                        };
-                    })
-                    .filter(entry => entry.pinned || entry._score >= threshold)
-                    .sort((a, b) => {
-                        if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-                        if (b._score !== a._score) return b._score - a._score;
-                        return (b.updatedAt || 0) - (a.updatedAt || 0);
-                    })
-                    .slice(0, topK);
-            }
-        } catch (error) {
-            console.warn('[VectorMemory] prepare context fallback:', error);
-        }
-
-        if (selectedEntries.length === 0) {
-            selectedEntries = selectFallbackEntries(chat, queryText);
-        }
-        const block = buildContextBlock(chat, selectedEntries, queryText);
-        chat.vectorMemory.lastContextBlock = block;
-        chat.vectorMemory.lastRetrievedEntryIds = selectedEntries.map(item => item.id);
-        chat.vectorMemory.lastQueryText = queryText;
-        chat.vectorMemory.lastPreparedAt = Date.now();
-        return block;
-    }
-
-    async function embedEntriesIfNeeded(entries) {
-        const targets = entries.filter(item => !Array.isArray(item.vector) || item.vector.length === 0);
-        if (targets.length === 0) return;
-        const texts = targets.map(item => item.text || '');
-        const vectors = await fetchEmbeddings(texts);
-        targets.forEach((item, index) => {
-            item.vector = Array.isArray(vectors[index]) ? vectors[index] : [];
-        });
-    }
-
-    function pushVectorHistory(chat, action, summary) {
-        ensureVectorMemoryState(chat);
-        chat.vectorMemory.history.unshift({
-            id: createVectorId('vector_history'),
-            action,
-            summary,
-            createdAt: Date.now()
-        });
-        chat.vectorMemory.history = chat.vectorMemory.history.slice(0, 80);
-    }
-
-    function inferEntryTitle(text) {
-        const compact = String(text || '').replace(/\s+/g, ' ').trim();
-        if (!compact) return '未命名记忆';
-        return compact.length > 18 ? `${compact.slice(0, 18)}…` : compact;
-    }
-
-    async function addVectorEntry(chat, payload) {
-        ensureVectorMemoryState(chat);
-        const text = String(payload && payload.text || '').trim();
-        if (!text) {
-            throw new Error('记忆内容不能为空');
-        }
-        const entry = {
-            id: createVectorId('vector_entry'),
-            title: String(payload.title || '').trim() || inferEntryTitle(text),
-            text,
-            vector: Array.isArray(payload.vector) ? payload.vector : [],
-            tags: Array.isArray(payload.tags) ? payload.tags.filter(Boolean) : [],
-            source: payload.source || 'manual',
-            pinned: !!payload.pinned,
-            weight: Number.isFinite(parseFloat(payload.weight)) ? parseFloat(payload.weight) : 1,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            range: payload.range || null,
-            meta: payload.meta || {}
-        };
-        if (!entry.vector.length) {
-            const vectors = await fetchEmbeddings([entry.text]);
-            entry.vector = Array.isArray(vectors[0]) ? vectors[0] : [];
-        }
-        chat.vectorMemory.entries.unshift(entry);
-        pushVectorHistory(chat, 'create', `新增记忆：${entry.title}`);
-        clearVectorContextCache(chat);
-        return entry;
-    }
-
-    function parseVectorSummaryXml(rawContent) {
+function parseVectorSummaryXml(rawContent) {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(`<root>${rawContent || ''}</root>`, 'text/xml');
         if (xmlDoc.querySelector('parsererror')) {
@@ -573,53 +204,7 @@
         return entry;
     }
 
-    function getAutoVectorCursorInfo(chat) {
-        ensureVectorMemoryState(chat);
-        const history = Array.isArray(chat && chat.history) ? chat.history : [];
-        const interval = Math.max(10, parseInt(chat.vectorMemory.autoSummaryInterval, 10) || VECTOR_MEMORY_DEFAULT_INTERVAL);
-        const cursorIndex = chat.vectorMemory.lastSummarizedMsgId
-            ? history.findIndex(message => message.id === chat.vectorMemory.lastSummarizedMsgId)
-            : -1;
-        const nextStartIndex = cursorIndex + 1;
-        const unsummarizedCount = Math.max(0, history.length - nextStartIndex);
-        const completedBatchCount = Math.floor(unsummarizedCount / interval);
-        return {
-            history,
-            interval,
-            cursorIndex,
-            nextStartIndex,
-            unsummarizedCount,
-            completedBatchCount
-        };
-    }
-
-    function getNextAutoVectorRange(chat) {
-        const info = getAutoVectorCursorInfo(chat);
-        if (info.completedBatchCount <= 0) return null;
-        return {
-            start: info.nextStartIndex + 1,
-            end: info.nextStartIndex + info.interval,
-            info
-        };
-    }
-
-    function setVectorCursorByEndIndex(chat, endIndex) {
-        ensureVectorMemoryState(chat);
-        const history = Array.isArray(chat && chat.history) ? chat.history : [];
-        const message = history[endIndex - 1] || null;
-        chat.vectorMemory.lastSummarizedMsgId = message ? message.id : null;
-        chat.vectorMemory.lastSummarizedMsgTimestamp = message ? (message.timestamp || null) : null;
-        chat.vectorMemory.autoSummaryState = 'idle';
-    }
-
-    function resetVectorCursorToLatest(chat) {
-        ensureVectorMemoryState(chat);
-        const history = Array.isArray(chat && chat.history) ? chat.history : [];
-        setVectorCursorByEndIndex(chat, history.length);
-        chat.vectorMemory.autoSummaryPending = false;
-    }
-
-    async function runVectorAutoSummary(chat, options = {}) {
+async function runVectorAutoSummary(chat, options = {}) {
         ensureVectorMemoryState(chat);
         if (!chat.vectorMemory.autoSummaryEnabled && !options.force) return 0;
         if (chat.vectorMemory.autoSummaryState === 'running') return 0;
@@ -1480,9 +1065,25 @@
 
     window.setupVectorMemoryScreen = setupVectorMemoryScreen;
     window.renderVectorMemoryScreen = renderVectorMemoryScreen;
-    window.ensureVectorMemoryState = ensureVectorMemoryState;
-    window.getVectorMemoryContextBlock = getVectorMemoryContextBlock;
-    window.prepareVectorMemoryContext = prepareVectorMemoryContext;
+    window.OwoApp.compat.expose('ensureVectorMemoryState', ensureVectorMemoryState, {
+        state: 'canonical',
+        owner: 'OwoApp.features.vectorMemory.model.ensureVectorMemoryState',
+        note: 'V24: legacy window.ensureVectorMemoryState 只保留兼容出口'
+    });
+    window.OwoApp.compat.expose('getVectorMemoryContextBlock', getVectorMemoryContextBlock, {
+        state: 'canonical',
+        owner: 'OwoApp.features.vectorMemory.contextService.getVectorMemoryContextBlock',
+        note: 'V24: legacy window.getVectorMemoryContextBlock 只保留兼容出口'
+    });
+    window.OwoApp.compat.expose('prepareVectorMemoryContext', prepareVectorMemoryContext, {
+        state: 'canonical',
+        owner: 'OwoApp.features.vectorMemory.contextService.prepareVectorMemoryContext',
+        note: 'V24: legacy window.prepareVectorMemoryContext 只保留兼容出口'
+    });
     window.checkAndTriggerVectorMemory = checkAndTriggerVectorMemory;
-    window.resetVectorCursorToLatest = resetVectorCursorToLatest;
+    window.OwoApp.compat.expose('resetVectorCursorToLatest', resetVectorCursorToLatest, {
+        state: 'canonical',
+        owner: 'OwoApp.features.vectorMemory.model.resetVectorCursorToLatest',
+        note: 'V24: legacy window.resetVectorCursorToLatest 只保留兼容出口'
+    });
 })();

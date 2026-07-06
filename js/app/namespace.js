@@ -1,22 +1,136 @@
 // --- OwoApp namespace bootstrap ---
-// V1/V2/V3/V4 架构过渡期使用的唯一新命名空间。
-// 当前项目仍是 script 顺序加载，不在 V4 强行引入 ESM/import。
+// V1/V2/V3/V4/V5/V6/V7/V8/V9/V10/V11/V12/V13/V14/V15/V16/V17/V19/V20/V21/V22/V23/V24/V25/V26/V27/V28/V29/V30/V31/V33/V34/V35/V36/V37/V38 架构过渡期使用的唯一新命名空间。
+// 当前项目仍是 script 顺序加载，不在 V38 强行引入 ESM/import；V38 只标记旧全局 deprecated，不删除兼容入口。
 (function bootstrapOwoNamespace(global) {
     const app = global.OwoApp || {};
 
     app.app = app.app || {};
     app.app.state = app.app.state || {};
+    app.app.state.staticConfig = app.app.state.staticConfig || {};
+    app.app.state.runtimeGlobals = app.app.state.runtimeGlobals || {};
+    app.app.authGate = app.app.authGate || {};
+    app.app.screenManifest = app.app.screenManifest || {};
+    app.app.screenRegistry = app.app.screenRegistry || {};
+    app.app.screenTemplates = app.app.screenTemplates || {};
+    app.app.featureIntegration = app.app.featureIntegration || {};
+    app.app.legacyDeprecation = app.app.legacyDeprecation || {};
     app.core = app.core || {};
+    app.core.chat = app.core.chat || {};
+    app.core.chat.messageSemantics = app.core.chat.messageSemantics || {};
+    app.core.chat.promptContext = app.core.chat.promptContext || {};
+    app.core.chat.promptPieces = app.core.chat.promptPieces || {};
+    app.core.chat.promptSemantics = app.core.chat.promptSemantics || {};
+    app.core.forum = app.core.forum || {};
+    app.core.forum.forumSemantics = app.core.forum.forumSemantics || {};
+    app.core.theater = app.core.theater || {};
+    app.core.theater.sceneSemantics = app.core.theater.sceneSemantics || {};
+    app.core.theater.promptSemantics = app.core.theater.promptSemantics || {};
+    app.core.peek = app.core.peek || {};
+    app.core.peek.xmlSemantics = app.core.peek.xmlSemantics || {};
+    app.core.peek.conversationSemantics = app.core.peek.conversationSemantics || {};
+    app.core.wallet = app.core.wallet || {};
+    app.core.wallet.paymentSemantics = app.core.wallet.paymentSemantics || {};
+    app.core.memory = app.core.memory || {};
+    app.core.memory.tableSemantics = app.core.memory.tableSemantics || {};
+    app.core.memory.journalSemantics = app.core.memory.journalSemantics || {};
+    app.core.memory.worldBookSemantics = app.core.memory.worldBookSemantics || {};
     app.features = app.features || {};
+    app.features.chat = app.features.chat || {};
+    app.features.chat.messageViewModel = app.features.chat.messageViewModel || {};
+    app.features.chat.renderMessageBubble = app.features.chat.renderMessageBubble || {};
+    app.features.forum = app.features.forum || {};
+    app.features.forum.profileService = app.features.forum.profileService || {};
+    app.features.forum.postService = app.features.forum.postService || {};
+    app.features.forum.dmService = app.features.forum.dmService || {};
+    app.features.forum.publicApi = app.features.forum.publicApi || {};
+    app.features.theater = app.features.theater || {};
+    app.features.theater.model = app.features.theater.model || {};
+    app.features.theater.promptService = app.features.theater.promptService || {};
+    app.features.theater.publicApi = app.features.theater.publicApi || {};
+    app.features.peek = app.features.peek || {};
+    app.features.peek.phoneAppModel = app.features.peek.phoneAppModel || {};
+    app.features.peek.publicApi = app.features.peek.publicApi || {};
+    app.features.videoCall = app.features.videoCall || {};
+    app.features.videoCall.model = app.features.videoCall.model || {};
+    app.features.videoCall.publicApi = app.features.videoCall.publicApi || {};
+    app.features.wallet = app.features.wallet || {};
+    app.features.wallet.paymentCardViewModel = app.features.wallet.paymentCardViewModel || {};
+    app.features.wallet.publicApi = app.features.wallet.publicApi || {};
+    app.features.settings = app.features.settings || {};
+    app.features.memoryTable = app.features.memoryTable || {};
+    app.features.memoryTable.model = app.features.memoryTable.model || {};
+    app.features.memoryTable.service = app.features.memoryTable.service || {};
+    app.features.memoryTable.view = app.features.memoryTable.view || {};
+    app.features.memoryTable.publicApi = app.features.memoryTable.publicApi || {};
+    app.features.vectorMemory = app.features.vectorMemory || {};
+    app.features.vectorMemory.model = app.features.vectorMemory.model || {};
+    app.features.vectorMemory.contextService = app.features.vectorMemory.contextService || {};
+    app.features.vectorMemory.publicApi = app.features.vectorMemory.publicApi || {};
+    app.features.journal = app.features.journal || {};
+    app.features.journal.service = app.features.journal.service || {};
+    app.features.journal.publicApi = app.features.journal.publicApi || {};
+    app.features.worldBook = app.features.worldBook || {};
+    app.features.worldBook.contextService = app.features.worldBook.contextService || {};
+    app.features.worldBook.publicApi = app.features.worldBook.publicApi || {};
+    app.features.settings.presetEngine = app.features.settings.presetEngine || {};
+    app.features.settings.presetEngine.model = app.features.settings.presetEngine.model || {};
+    app.features.settings.presetEngine.presetEngineService = app.features.settings.presetEngine.presetEngineService || {};
+    app.features.settings.presetEngine.publicApi = app.features.settings.presetEngine.publicApi || {};
+    app.features.settings.apiSettings = app.features.settings.apiSettings || {};
+    app.features.settings.apiSettings.model = app.features.settings.apiSettings.model || {};
+    app.features.settings.apiSettings.apiPresetService = app.features.settings.apiSettings.apiPresetService || {};
+    app.features.settings.apiSettings.apiModelListService = app.features.settings.apiSettings.apiModelListService || {};
+    app.features.settings.apiSettings.mainApiSettingsView = app.features.settings.apiSettings.mainApiSettingsView || {};
+    app.features.settings.apiSettings.subApiSettingsView = app.features.settings.apiSettings.subApiSettingsView || {};
+    app.features.settings.apiSettings.weatherApiSettingsView = app.features.settings.apiSettings.weatherApiSettingsView || {};
+    app.features.settings.apiSettings.publicApi = app.features.settings.apiSettings.publicApi || {};
+    app.features.settings.appearance = app.features.settings.appearance || {};
+    app.features.settings.appearance.model = app.features.settings.appearance.model || {};
+    app.features.settings.appearance.runtime = app.features.settings.appearance.runtime || {};
+    app.features.settings.appearance.wallpaperSettingsView = app.features.settings.appearance.wallpaperSettingsView || {};
+    app.features.settings.appearance.fontPresetView = app.features.settings.appearance.fontPresetView || {};
+    app.features.settings.appearance.widgetWallpaperPresetView = app.features.settings.appearance.widgetWallpaperPresetView || {};
+    app.features.settings.appearance.themeStatusView = app.features.settings.appearance.themeStatusView || {};
+    app.features.settings.appearance.appearanceService = app.features.settings.appearance.appearanceService || {};
+    app.features.settings.appearance.publicApi = app.features.settings.appearance.publicApi || {};
+    app.features.settings.voiceCot = app.features.settings.voiceCot || {};
+    app.features.settings.voiceCot.runtime = app.features.settings.voiceCot.runtime || {};
+    app.features.settings.voiceCot.ttsPresetView = app.features.settings.voiceCot.ttsPresetView || {};
+    app.features.settings.voiceCot.voicePresetView = app.features.settings.voiceCot.voicePresetView || {};
+    app.features.settings.voiceCot.cotCharacterSettingsView = app.features.settings.voiceCot.cotCharacterSettingsView || {};
+    app.features.settings.voiceCot.cotSettingsEntry = app.features.settings.voiceCot.cotSettingsEntry || {};
+    app.features.settings.voiceCot.publicApi = app.features.settings.voiceCot.publicApi || {};
+    app.features.settings.settingsShell = app.features.settings.settingsShell || {};
+    app.features.settings.settingsService = app.features.settings.settingsService || {};
+    app.features.settings.publicApi = app.features.settings.publicApi || {};
     app.platform = app.platform || {};
+    app.platform.ai = app.platform.ai || {};
+    app.platform.ai.providerConfig = app.platform.ai.providerConfig || {};
+    app.platform.ai.providerRequestAdapter = app.platform.ai.providerRequestAdapter || {};
+    app.platform.ai.embeddingAdapter = app.platform.ai.embeddingAdapter || {};
     app.shared = app.shared || {};
     app.compat = app.compat || {};
 
     app.platform.browser = app.platform.browser || {};
+    app.platform.browser.fileAdapter = app.platform.browser.fileAdapter || {};
+    app.platform.browser.audioAdapter = app.platform.browser.audioAdapter || {};
+    app.platform.browser.mediaAdapter = app.platform.browser.mediaAdapter || {};
+    app.platform.browser.hapticAdapter = app.platform.browser.hapticAdapter || {};
+    app.platform.browser.batteryAdapter = app.platform.browser.batteryAdapter || {};
     app.platform.storage = app.platform.storage || {};
+    app.platform.storage.migrations = app.platform.storage.migrations || {};
+    app.platform.storage.dexieMigrations = app.platform.storage.dexieMigrations || {};
+    app.platform.storage.dexieAdapter = app.platform.storage.dexieAdapter || {};
+    app.platform.storage.dexieWriter = app.platform.storage.dexieWriter || {};
+    app.platform.storage.dexieReader = app.platform.storage.dexieReader || {};
+    app.platform.storage.loadRepair = app.platform.storage.loadRepair || {};
+    app.platform.storage.storageAnalysis = app.platform.storage.storageAnalysis || {};
+    app.platform.storage.backupAdapter = app.platform.storage.backupAdapter || {};
 
     app.shared.utils = app.shared.utils || {};
     app.shared.ui = app.shared.ui || {};
+    app.shared.ui.toast = app.shared.ui.toast || {};
+    app.shared.ui.errorModal = app.shared.ui.errorModal || {};
 
     app.compat.registry = app.compat.registry || {};
 
@@ -32,8 +146,13 @@
             state: meta.state || 'legacy-owner',
             owner: meta.owner,
             legacy: meta.legacy || ('window.' + name),
-            note: meta.note || ''
+            note: meta.note || '',
+            deprecated: meta.deprecated === undefined ? true : Boolean(meta.deprecated),
+            since: meta.since || 'V38'
         };
+        if (app.app && app.app.legacyDeprecation && typeof app.app.legacyDeprecation.markDeprecated === 'function') {
+            app.app.legacyDeprecation.markDeprecated(name, app.compat.registry[name]);
+        }
     };
 
     /**
@@ -44,7 +163,11 @@
         if (typeof fn !== 'function') {
             throw new Error('[OwoApp.compat] ' + name + ' 的 canonical 实现必须是函数');
         }
-        app.compat.register(name, Object.assign({ legacy: 'window.' + name }, meta || {}));
+        app.compat.register(name, Object.assign({
+            legacy: 'window.' + name,
+            deprecated: true,
+            since: 'V38'
+        }, meta || {}));
         global[name] = fn;
         return fn;
     };

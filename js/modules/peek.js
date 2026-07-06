@@ -1,76 +1,12 @@
 // --- 偷看手机功能 (js/modules/peek.js) ---
 
+const peekXmlSemantics = window.OwoApp.core.peek.xmlSemantics;
+const peekConversationSemantics = window.OwoApp.core.peek.conversationSemantics;
+const peekPhoneAppModel = window.OwoApp.features.peek.phoneAppModel;
+
+// @compat canonical: OwoApp.core.peek.xmlSemantics.parseXmlToJson
 function parseXmlToJson(xmlString) {
-    const match = xmlString.match(/<result>([\s\S]*?)<\/result>/i);
-    const xmlContent = match ? match[0] : xmlString;
-
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
-    
-    const parseError = xmlDoc.getElementsByTagName("parsererror");
-    if (parseError.length > 0) {
-        throw new Error("XML 解析错误: " + parseError[0].textContent);
-    }
-
-    function parseNode(node) {
-        if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) {
-            let text = node.textContent.trim();
-            if (text === 'true') return true;
-            if (text === 'false') return false;
-            if (!isNaN(text) && text !== '') return Number(text);
-            return text;
-        }
-
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            const children = Array.from(node.childNodes).filter(n => n.nodeType === Node.ELEMENT_NODE || ((n.nodeType === Node.TEXT_NODE || n.nodeType === Node.CDATA_SECTION_NODE) && n.textContent.trim() !== ''));
-            
-            if (children.length === 0) return "";
-            
-            if (children.length === 1 && (children[0].nodeType === Node.TEXT_NODE || children[0].nodeType === Node.CDATA_SECTION_NODE)) {
-                return parseNode(children[0]);
-            }
-
-            const obj = {};
-            const isArrayMap = {};
-
-            children.forEach(child => {
-                if (child.nodeType === Node.ELEMENT_NODE) {
-                    const name = child.nodeName;
-                    if (obj[name] !== undefined) {
-                        if (!isArrayMap[name]) {
-                            obj[name] = [obj[name]];
-                            isArrayMap[name] = true;
-                        }
-                        obj[name].push(parseNode(child));
-                    } else {
-                        obj[name] = parseNode(child);
-                    }
-                }
-            });
-
-            for (const key in obj) {
-                if (typeof obj[key] === 'object' && !Array.isArray(obj[key]) && obj[key] !== null) {
-                    const subKeys = Object.keys(obj[key]);
-                    if (subKeys.length === 1) {
-                        const subKey = subKeys[0];
-                        const listKeys = ['item', 'entry', 'photo', 'memo', 'thought', 'post', 'conversation', 'reply', 'message', 'comment'];
-                        if (key.endsWith('s') || listKeys.includes(subKey) || key === 'history' || key === 'trajectory') {
-                            if (Array.isArray(obj[key][subKey])) {
-                                obj[key] = obj[key][subKey];
-                            } else {
-                                obj[key] = [obj[key][subKey]];
-                            }
-                        }
-                    }
-                }
-            }
-            return obj;
-        }
-        return null;
-    }
-
-    const result = parseNode(xmlDoc.documentElement);
-    return xmlDoc.documentElement.nodeName === 'result' ? result : { [xmlDoc.documentElement.nodeName]: result };
+    return peekXmlSemantics.parseXmlToJson(xmlString);
 }
 
 /** 当前打开的偷看对话（代发消息时用于发送/API回复） */
@@ -78,16 +14,9 @@ let currentPeekConversation = null;
 /** NPC 主动发来的好友申请（弹窗用） */
 let peekPendingFriendRequestConversation = null;
 
+// @compat canonical: OwoApp.core.peek.conversationSemantics.normalizePeekConversation
 function normalizePeekConversation(conv, index) {
-    if (!conv) return;
-    if (!conv.partnerId) conv.partnerId = 'peek_npc_' + Date.now() + '_' + (index != null ? index : Math.random().toString(36).slice(2, 10));
-    if (typeof conv.suspicionLevel !== 'number') conv.suspicionLevel = 0;
-    if (typeof conv.isFriend !== 'boolean') conv.isFriend = false;
-    if (typeof conv.friendRequestPending !== 'boolean') conv.friendRequestPending = false;
-    if (conv.supplementPersona == null) conv.supplementPersona = '';
-    if (conv.partnerPersona == null) conv.partnerPersona = '';
-    if (conv.partnerRelation == null) conv.partnerRelation = '熟人';
-    if (!Array.isArray(conv.history)) conv.history = [];
+    return peekConversationSemantics.normalizePeekConversation(conv, index);
 }
 
 function peekEscapeHtml(str) {
@@ -217,53 +146,50 @@ function setupPeekFeature() {
             return;
         }
 
-        if (!character.peekScreenSettings) {
-            character.peekScreenSettings = { wallpaper: '', customIcons: {}, unlockAvatar: '', unlockCommentsEnabled: false, charAwarePeek: false, impersonateEnabled: false, refreshCounts: {}, browserDetailEnabled: false, browserDetailWords: { min: 200, max: 500 } };
-        }
-
-        character.peekScreenSettings.wallpaper = document.getElementById('peek-wallpaper-url-input').value.trim();
+        const peekSettings = peekPhoneAppModel.ensurePeekScreenSettings(character);
+        peekSettings.wallpaper = document.getElementById('peek-wallpaper-url-input').value.trim();
 
         const iconInputs = document.querySelectorAll('#peek-app-icons-settings input[type="url"]');
         iconInputs.forEach(input => {
             const appId = input.dataset.appId;
             const newUrl = input.value.trim();
             if (newUrl) {
-                if (!character.peekScreenSettings.customIcons) {
-                    character.peekScreenSettings.customIcons = {};
+                if (!peekSettings.customIcons) {
+                    peekSettings.customIcons = {};
                 }
-                character.peekScreenSettings.customIcons[appId] = newUrl;
+                peekSettings.customIcons[appId] = newUrl;
             } else {
-                if (character.peekScreenSettings.customIcons) {
-                    delete character.peekScreenSettings.customIcons[appId];
+                if (peekSettings.customIcons) {
+                    delete peekSettings.customIcons[appId];
                 }
             }
         });
         
-        character.peekScreenSettings.unlockAvatar = document.getElementById('peek-unlock-avatar-url').value.trim();
-        character.peekScreenSettings.unlockCommentsEnabled = document.getElementById('peek-unlock-comments-enabled').checked;
+        peekSettings.unlockAvatar = document.getElementById('peek-unlock-avatar-url').value.trim();
+        peekSettings.unlockCommentsEnabled = document.getElementById('peek-unlock-comments-enabled').checked;
         const charAwarePeekEl = document.getElementById('peek-char-aware-peek-enabled');
-        character.peekScreenSettings.charAwarePeek = charAwarePeekEl ? charAwarePeekEl.checked : false;
+        peekSettings.charAwarePeek = charAwarePeekEl ? charAwarePeekEl.checked : false;
         const impersonateEl = document.getElementById('peek-impersonate-enabled');
-        character.peekScreenSettings.impersonateEnabled = impersonateEl ? impersonateEl.checked : false;
+        peekSettings.impersonateEnabled = impersonateEl ? impersonateEl.checked : false;
 
         // 刷新条数：聊天、时光想说、备忘录
-        if (!character.peekScreenSettings.refreshCounts) character.peekScreenSettings.refreshCounts = {};
+        if (!peekSettings.refreshCounts) peekSettings.refreshCounts = {};
         const parseNum = (id, defaultVal) => {
             const v = parseInt(document.getElementById(id)?.value, 10);
             return Number.isFinite(v) ? v : defaultVal;
         };
-        character.peekScreenSettings.refreshCounts.messages = { min: parseNum('peek-refresh-min-messages', 3), max: parseNum('peek-refresh-max-messages', 5) };
-        character.peekScreenSettings.refreshCounts.timeThoughts = { min: parseNum('peek-refresh-min-timeThoughts', 3), max: parseNum('peek-refresh-max-timeThoughts', 5) };
-        character.peekScreenSettings.refreshCounts.memos = { min: parseNum('peek-refresh-min-memos', 3), max: parseNum('peek-refresh-max-memos', 4) };
+        peekSettings.refreshCounts.messages = { min: parseNum('peek-refresh-min-messages', 3), max: parseNum('peek-refresh-max-messages', 5) };
+        peekSettings.refreshCounts.timeThoughts = { min: parseNum('peek-refresh-min-timeThoughts', 3), max: parseNum('peek-refresh-max-timeThoughts', 5) };
+        peekSettings.refreshCounts.memos = { min: parseNum('peek-refresh-min-memos', 3), max: parseNum('peek-refresh-max-memos', 4) };
 
         // 浏览器详情开关与字数
         const bdCheckbox = document.getElementById('peek-browser-detail-enabled');
-        character.peekScreenSettings.browserDetailEnabled = bdCheckbox ? bdCheckbox.checked : false;
-        if (!character.peekScreenSettings.browserDetailWords) {
-            character.peekScreenSettings.browserDetailWords = { min: 200, max: 500 };
+        peekSettings.browserDetailEnabled = bdCheckbox ? bdCheckbox.checked : false;
+        if (!peekSettings.browserDetailWords) {
+            peekSettings.browserDetailWords = { min: 200, max: 500 };
         }
-        character.peekScreenSettings.browserDetailWords.min = parseNum('peek-browser-detail-min-words', 200);
-        character.peekScreenSettings.browserDetailWords.max = parseNum('peek-browser-detail-max-words', 500);
+        peekSettings.browserDetailWords.min = parseNum('peek-browser-detail-min-words', 200);
+        peekSettings.browserDetailWords.max = parseNum('peek-browser-detail-max-words', 500);
 
         await saveData();
         renderPeekScreen(); 
@@ -359,7 +285,7 @@ async function refreshAllPeekApps() {
         return;
     }
 
-    const allAppIds = Object.keys(peekScreenApps);
+    const allAppIds = peekPhoneAppModel.getPeekAppIds(peekScreenApps);
     const confirmMessage = `确定要刷新所有应用吗？\n\n这将消耗 ${allAppIds.length} 次 API 调用，请留意您的 API 额度。\n刷新过程可能需要 1～2 分钟，请耐心等待。`;
 
     if (!confirm(confirmMessage)) {
@@ -373,7 +299,7 @@ async function refreshAllPeekApps() {
 
     for (let i = 0; i < allAppIds.length; i++) {
         const appId = allAppIds[i];
-        const appName = peekScreenApps[appId].name;
+        const appName = peekPhoneAppModel.getPeekAppName(peekScreenApps, appId);
 
         showToast(`正在刷新 ${appName}… (${i + 1}/${allAppIds.length})`);
 
@@ -416,7 +342,7 @@ function renderPeekDataManagement() {
     `;
 
     Object.keys(char.peekData).forEach(appId => {
-        const appName = (peekScreenApps[appId] && peekScreenApps[appId].name) ? peekScreenApps[appId].name : appId;
+        const appName = peekPhoneAppModel.getPeekAppName(peekScreenApps, appId);
         html += `
             <label class="peek-data-item" style="display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; border-radius: 4px;">
                 <input type="checkbox" class="peek-data-checkbox" data-app-id="${peekEscapeHtml(appId)}" style="width: auto;">
@@ -453,7 +379,7 @@ async function deleteSelectedPeekData() {
 
     const appNames = Array.from(selectedCheckboxes).map(cb => {
         const appId = cb.dataset.appId;
-        return (peekScreenApps[appId] && peekScreenApps[appId].name) ? peekScreenApps[appId].name : appId;
+        return peekPhoneAppModel.getPeekAppName(peekScreenApps, appId);
     }).join('、');
 
     if (!confirm('确定要删除以下应用的数据吗？\n\n' + appNames + '\n\n删除后下次点击将重新生成。')) {
@@ -502,7 +428,7 @@ async function deleteAllPeekData() {
 
 function renderPeekSettings() {
     const character = db.characters.find(c => c.id === currentChatId);
-    const peekSettings = character?.peekScreenSettings || { wallpaper: '', customIcons: {}, unlockAvatar: '', unlockCommentsEnabled: false, charAwarePeek: false, impersonateEnabled: false, refreshCounts: {} };
+    const peekSettings = peekPhoneAppModel.getPeekScreenSettings(character);
 
     // 1. 设置壁纸输入框
     const wallpaperInput = document.getElementById('peek-wallpaper-url-input');
@@ -534,8 +460,8 @@ function renderPeekSettings() {
     const container = document.getElementById('peek-app-icons-settings');
     if (container) {
         container.innerHTML = '';
-        Object.keys(peekScreenApps).forEach(appId => {
-            const appData = peekScreenApps[appId];
+        peekPhoneAppModel.getPeekAppIds(peekScreenApps).forEach(appId => {
+            const appData = peekPhoneAppModel.getPeekAppMeta(peekScreenApps, appId);
             const currentIcon = peekSettings.customIcons?.[appId] || '';
             const safeValue = peekEscapeHtml(currentIcon);
 
@@ -554,11 +480,10 @@ function renderPeekSettings() {
     }
 
     // 4. 刷新条数：聊天、时光想说、备忘录
-    const defaults = { messages: { min: 3, max: 5 }, timeThoughts: { min: 3, max: 5 }, memos: { min: 3, max: 4 } };
-    const rc = peekSettings.refreshCounts || {};
+    const defaults = peekPhoneAppModel.DEFAULT_REFRESH_COUNTS;
     ['messages', 'timeThoughts', 'memos'].forEach(appType => {
         const d = defaults[appType];
-        const c = rc[appType] || d;
+        const c = peekPhoneAppModel.getRefreshRange(character, appType);
         const minEl = document.getElementById(`peek-refresh-min-${appType}`);
         const maxEl = document.getElementById(`peek-refresh-max-${appType}`);
         if (minEl) minEl.value = Number.isFinite(c.min) ? c.min : d.min;
@@ -576,17 +501,10 @@ function renderPeekSettings() {
 }
 
 /** 当角色开启「知晓用户窥屏」时，记录用户刚查看的应用及内容，并更新 lastPeekViewedAt */
+// @compat canonical: OwoApp.features.peek.phoneAppModel.recordPeekViewedByUser
 function recordPeekViewedByUser(char, appType) {
     if (!char || !char.peekScreenSettings?.charAwarePeek) return;
-    const content = char.peekData?.[appType];
-    if (!content) return;
-    const appName = (peekScreenApps[appType] && peekScreenApps[appType].name) ? peekScreenApps[appType].name : appType;
-    if (!char.peekViewedByUser) char.peekViewedByUser = [];
-    const idx = char.peekViewedByUser.findIndex(e => e.appId === appType);
-    const entry = { appId: appType, appName, content: JSON.parse(JSON.stringify(content)) };
-    if (idx >= 0) char.peekViewedByUser[idx] = entry;
-    else char.peekViewedByUser.push(entry);
-    char.lastPeekViewedAt = Date.now();
+    return peekPhoneAppModel.recordPeekViewedByUser(char, appType, peekScreenApps);
 }
 
 function renderPeekAlbum(photos) {
@@ -1215,7 +1133,7 @@ function renderPeekScreen() {
     `;
 
     const character = db.characters.find(c => c.id === currentChatId);
-    const peekSettings = character?.peekScreenSettings || { wallpaper: '', customIcons: {} };
+    const peekSettings = peekPhoneAppModel.getPeekScreenSettings(character);
 
     const wallpaper = peekSettings.wallpaper;
     if (wallpaper) {
@@ -1227,14 +1145,13 @@ function renderPeekScreen() {
     peekScreen.style.backgroundPosition = 'center';
 
     const appGrid = contentArea.querySelector('.app-grid');
-    Object.keys(peekScreenApps).forEach(id => {
-        const iconData = peekScreenApps[id];
+    peekPhoneAppModel.getPeekAppIds(peekScreenApps).forEach(id => {
+        const iconData = peekPhoneAppModel.getPeekAppMeta(peekScreenApps, id);
         const iconEl = document.createElement('a');
         iconEl.href = '#';
         iconEl.className = 'app-icon';
         iconEl.dataset.peekAppId = id;
-        const customIconUrl = peekSettings.customIcons?.[id];
-        const iconUrl = customIconUrl || iconData.url;
+        const iconUrl = peekPhoneAppModel.getPeekAppIconUrl(peekScreenApps, peekSettings, id);
         iconEl.innerHTML = `
             <img src="${iconUrl}" alt="${iconData.name}" class="icon-img">
             <span class="app-name">${iconData.name}</span>
@@ -1257,21 +1174,21 @@ function renderPeekChatList(conversations = []) {
         return;
     }
 
-    conversations.forEach((convo) => {
-        const history = convo.history || [];
-        const lastMessage = history.length > 0 ? history[history.length - 1] : null;
-        const lastMessageText = lastMessage ? (lastMessage.content || '').replace(/\[.*?的消息：([\s\S]+)\]/, '$1') : '...';
+    conversations.forEach((convo, index) => {
+        normalizePeekConversation(convo, index);
+        const partnerName = peekConversationSemantics.getPartnerDisplayName(convo, '...');
+        const lastMessageText = peekConversationSemantics.getLastMessageText(convo, '...');
         
         const li = document.createElement('li');
         li.className = 'list-item chat-item';
-        li.dataset.name = convo.partnerName;
+        li.dataset.name = partnerName;
 
         const avatarUrl = 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg';
 
         li.innerHTML = `
-            <img src="${avatarUrl}" alt="${convo.partnerName}" class="chat-avatar">
+            <img src="${avatarUrl}" alt="${partnerName}" class="chat-avatar">
             <div class="item-details">
-                <div class="item-details-row"><div class="item-name">${convo.partnerName}</div></div>
+                <div class="item-details-row"><div class="item-name">${partnerName}</div></div>
                 <div class="item-preview-wrapper">
                     <div class="item-preview">${lastMessageText}</div>
                 </div>
@@ -1773,15 +1690,7 @@ function extractTransfersFromHistory(history, realName, myName) {
 }
 
 function generatePeekContentPrompt(char, appType, mainChatContext) {
-    const appNameMapping = {
-        messages: "消息应用（模拟与他人的对话）",
-        memos: "备忘录应用",
-        cart: "电商平台的购物车",
-        transfer: "文件传输助手（用于记录临时想法、链接等）",
-        browser: "浏览器历史记录",
-        drafts: "邮件或消息的草稿箱"
-    };
-    const appName = appNameMapping[appType] || appType;
+    const appName = peekPhoneAppModel.getGenerationAppName(appType);
 
     let prompt = `你正在模拟一个名为 ${char.realName} 的角色的手机内部信息。`;
     prompt += `该角色的核心人设是：${char.persona}。\n`;
@@ -1818,12 +1727,7 @@ function generatePeekContentPrompt(char, appType, mainChatContext) {
     prompt += `现在，我正在偷看Ta手机上的“${appName}”。请你基于Ta的人设和我们最近的聊天内容，生成符合该应用场景的、高度相关且富有沉浸感的内容。\n`;
     prompt += `你的输出必须是 XML 标签格式，且只包含 XML 内容，不要有任何额外的解释或标记。根据应用类型，XML 结构如下：\n`;
 
-    const defaultRefreshCounts = { messages: { min: 3, max: 5 }, timeThoughts: { min: 3, max: 5 }, memos: { min: 3, max: 4 } };
-    const getRefreshRange = (type) => {
-        const d = defaultRefreshCounts[type];
-        const c = char.peekScreenSettings?.refreshCounts?.[type] || d;
-        return { min: Number.isFinite(c.min) ? c.min : d.min, max: Number.isFinite(c.max) ? c.max : d.max };
-    };
+    const getRefreshRange = (type) => peekPhoneAppModel.getRefreshRange(char, type);
 
     switch (appType) {
         case 'messages': {
@@ -2334,38 +2238,11 @@ async function generateAndRenderPeekContent(appType, options = {}) {
         
         const generatedData = parseXmlToJson(contentStr);
 
-        let isValid = false;
-        switch (appType) {
-            case 'messages': isValid = generatedData && Array.isArray(generatedData.conversations); break;
-            case 'memos': isValid = generatedData && Array.isArray(generatedData.memos); break;
-            case 'album': isValid = generatedData && Array.isArray(generatedData.photos); break;
-            case 'cart': isValid = generatedData && Array.isArray(generatedData.items); break;
-            case 'transfer': isValid = generatedData && Array.isArray(generatedData.entries); break;
-            case 'browser': isValid = generatedData && Array.isArray(generatedData.history); break;
-            case 'drafts': isValid = generatedData && generatedData.draft; break;
-            case 'steps': isValid = generatedData && generatedData.currentSteps !== undefined; break;
-            case 'timeThoughts': isValid = generatedData && Array.isArray(generatedData.thoughts); break;
-            case 'unlock': isValid = generatedData && generatedData.nickname && Array.isArray(generatedData.posts); break;
-            case 'wallet': isValid = generatedData && Array.isArray(generatedData.income) && Array.isArray(generatedData.expense) && generatedData.summary; break;
-            default: isValid = false;
-        }
-
-        if (!isValid) {
+        if (!peekPhoneAppModel.isGeneratedAppDataValid(appType, generatedData)) {
             throw new Error("AI返回的数据格式不符合应用要求。");
         }
 
-        if (appType === 'messages' && Array.isArray(generatedData.conversations)) {
-            generatedData.conversations.forEach((conv, idx) => {
-                if (!conv.partnerId) conv.partnerId = 'peek_npc_' + Date.now() + '_' + idx;
-                if (typeof conv.suspicionLevel !== 'number') conv.suspicionLevel = 0;
-                if (typeof conv.isFriend !== 'boolean') conv.isFriend = false;
-                if (typeof conv.friendRequestPending !== 'boolean') conv.friendRequestPending = false;
-                if (!conv.supplementPersona) conv.supplementPersona = '';
-                if (!conv.partnerPersona) conv.partnerPersona = '';
-                if (!conv.partnerRelation) conv.partnerRelation = '熟人';
-                conv.history = conv.history || [];
-            });
-        }
+        peekPhoneAppModel.normalizeGeneratedAppData(appType, generatedData);
 
         char.peekData[appType] = generatedData;
         recordPeekViewedByUser(char, appType);

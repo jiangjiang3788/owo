@@ -1,41 +1,8 @@
 // --- 工具函数库 (js/utils.js) ---
 
 // 电池状态更新
-async function updateBatteryStatus() {
-    if ('getBattery' in navigator) {
-        try {
-            const battery = await navigator.getBattery();
-            const batteryLevelText = document.getElementById('battery-level');
-            const batteryFillRect = document.getElementById('battery-fill-rect');
-
-            const updateDisplay = () => {
-                if (!batteryLevelText || !batteryFillRect) return;
-                const level = Math.floor(battery.level * 100);
-                batteryLevelText.textContent = `${level}%`;
-                batteryFillRect.setAttribute('width', 18 * battery.level);
-                let fillColor = "#666"; 
-                if (battery.charging) {
-                    fillColor = "#4CAF50"; 
-                } else if (level <= 20) {
-                    fillColor = "#f44336"; 
-                }
-                batteryFillRect.setAttribute('fill', fillColor);
-            };
-
-            updateDisplay();
-            battery.addEventListener('levelchange', updateDisplay);
-            battery.addEventListener('chargingchange', updateDisplay);
-
-        } catch (error) {
-            console.error('无法获取电池信息:', error);
-            const batteryWidget = document.querySelector('.widget-battery');
-            if (batteryWidget) batteryWidget.style.display = 'none';
-        }
-    } else {
-        const batteryWidget = document.querySelector('.widget-battery');
-        if (batteryWidget) batteryWidget.style.display = 'none';
-    }
-}
+// @compat canonical: OwoApp.platform.browser.updateBatteryStatus
+const updateBatteryStatus = window.OwoApp.platform.browser.updateBatteryStatus;
 
 // 随机获取 API Key
 // @compat canonical: OwoApp.shared.utils.getRandomValue
@@ -241,63 +208,9 @@ function readOvoPngMetadata(file) {
 const generateUUID = window.OwoApp.shared.utils.generateUUID;
 
 // Toast 通知系统
-let notificationQueue = [];
-let isToastVisible = false;
-
-function processToastQueue() {
-    if (isToastVisible || notificationQueue.length === 0) {
-        return;
-    }
-
-    isToastVisible = true;
-    const notification = notificationQueue.shift();
-
-    const toastElement = document.getElementById('toast-notification');
-    const avatarEl = toastElement.querySelector('.toast-avatar');
-    const nameEl = toastElement.querySelector('.toast-name');
-    const messageEl = toastElement.querySelector('.toast-message');
-
-    const isRichNotification = typeof notification === 'object' && notification !== null && notification.name;
-    const isMutedSimple = typeof notification === 'object' && notification !== null && notification.muted && notification.text != null;
-
-    if (isRichNotification) {
-        toastElement.classList.remove('simple', 'toast-muted');
-        avatarEl.style.display = 'block';
-        nameEl.style.display = 'block';
-        messageEl.style.textAlign = 'left';
-        avatarEl.src = notification.avatar || 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg';
-        nameEl.textContent = notification.name;
-        messageEl.textContent = notification.message;
-    } else if (isMutedSimple) {
-        toastElement.classList.add('simple', 'toast-muted');
-        avatarEl.style.display = 'none';
-        nameEl.style.display = 'none';
-        messageEl.style.textAlign = 'center';
-        messageEl.textContent = notification.text;
-    } else {
-        toastElement.classList.add('simple');
-        toastElement.classList.remove('toast-muted');
-        avatarEl.style.display = 'none';
-        nameEl.style.display = 'none';
-        messageEl.style.textAlign = 'center';
-        messageEl.textContent = typeof notification === 'string' ? notification : (notification && notification.text) || '';
-    }
-
-    toastElement.classList.add('show');
-
-    setTimeout(() => {
-        toastElement.classList.remove('show', 'toast-muted');
-        setTimeout(() => {
-            isToastVisible = false;
-            processToastQueue();
-        }, 500);
-    }, 3000);
-}
-
-const showToast = (notification) => {
-    notificationQueue.push(notification);
-    processToastQueue();
-};
+// Toast 提示
+// @compat canonical: OwoApp.shared.ui.showToast
+const showToast = window.OwoApp.shared.ui.showToast;
 
 // @compat canonical: OwoApp.shared.ui.showAppConfirmDialog
 const showAppConfirmDialog = window.OwoApp.shared.ui.showAppConfirmDialog;
@@ -307,134 +220,22 @@ const showAppConfirmDialog = window.OwoApp.shared.ui.showAppConfirmDialog;
 const showSystemNotification = window.OwoApp.platform.browser.showSystemNotification;
 
 // 触感反馈工具
-function triggerHapticFeedback(type = 'light') {
-    // 检查全局开关
-    if (!db.hapticEnabled) return;
-    if (!navigator.vibrate) return;
-
-    try {
-        switch (type) {
-            case 'light':
-                navigator.vibrate(5); // 极轻微震动
-                break;
-            case 'medium':
-                navigator.vibrate(15); // 中等震动
-                break;
-            case 'heavy':
-                navigator.vibrate(30); // 重度震动
-                break;
-            case 'success':
-                navigator.vibrate([10, 30, 10]); // 成功震动模式
-                break;
-            case 'error':
-                navigator.vibrate([50, 30, 50, 30, 50]); // 错误震动模式
-                break;
-            case 'selection':
-                navigator.vibrate(10); // 选择震动
-                break;
-            default:
-                navigator.vibrate(5);
-        }
-    } catch (e) {
-        // 忽略不支持或被禁用的情况
-    }
-}
+// @compat canonical: OwoApp.platform.browser.hapticAdapter.createHapticFeedback
+const triggerHapticFeedback = window.OwoApp.platform.browser.hapticAdapter.createHapticFeedback({
+    isEnabled: () => window.OwoApp.platform.browser.hapticAdapter.isHapticEnabled(typeof db !== 'undefined' && db ? db.hapticEnabled : true)
+});
 
 // 错误处理翻译
-function getFriendlyErrorMessage(error) {
-    if (error.name === 'AbortError') return '请求超时了，请检查您的网络或稍后再试。';
-    if (error instanceof SyntaxError) return '服务器返回的数据格式不对，建议您重试一次。';
-    
-    if (error.response) {
-        const status = error.response.status;
-        switch (status) {
-            case 400: return '请求参数有误 (400)，通常是模型版本不对或发送内容过长。';
-            case 401: return 'API密钥无效 (401)，请检查API设置中的Key是否正确。';
-            case 403: return '访问被拒绝 (403)，可能是密钥权限不足或账号被封禁。';
-            case 404: return 'API地址错误 (404)，找不到请求的接口，请检查Base URL。';
-            case 429: return '请求太频繁啦 (429)，触发了速率限制，请稍等一会再试。';
-            case 500: return '服务器内部错误 (500)，服务商那边出问题了。';
-            case 502: return '网关错误 (502)，服务商网络异常。';
-            case 503: return '服务暂时不可用 (503)，服务器可能正在维护或过载。';
-            case 504: return '网关超时 (504)，服务器响应太慢了，请检查网络。';
-            default: return `服务器返回了一个错误 (状态码: ${status})，请稍后再试。`;
-        }
-    }
-
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        return '无法连接到服务器，请检查您的网络连接或API地址是否正确。';
-    }
-
-    return `发生了一个未知错误：${error.message}`;
-}
+// @compat canonical: OwoApp.shared.ui.getFriendlyErrorMessage
+const getFriendlyErrorMessage = window.OwoApp.shared.ui.getFriendlyErrorMessage;
 
 // 显示错误弹窗
-function showErrorModal(friendlyMessage, fullError) {
-    const oldModal = document.getElementById('error-modal-overlay');
-    if (oldModal) oldModal.remove();
+// @compat canonical: OwoApp.shared.ui.showErrorModal
+const showErrorModal = window.OwoApp.shared.ui.showErrorModal;
 
-    let logContent = `Error: ${fullError.name}: ${fullError.message}\n`;
-    if (fullError.stack) logContent += `\nStack:\n${fullError.stack}\n`;
-    if (fullError.response) {
-        logContent += `\nResponse Status: ${fullError.response.status}\n`;
-    }
-
-    const modalHtml = `
-    <div id="error-modal-overlay" class="modal-overlay visible" style="z-index: 30000; align-items: center; justify-content: center; display: flex;">
-        <div class="modal-window" style="max-width: 90%; width: 380px; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; border-radius: 16px; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-            <div style="padding: 25px 20px 15px; text-align: center; flex-shrink: 0;">
-                <div style="width: 56px; height: 56px; background: #ffebee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                    <svg style="width: 32px; height: 32px; color: #d32f2f;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </div>
-                <h3 style="margin: 0; color: #333; font-size: 18px; font-weight: 700;">出错了</h3>
-                <p style="margin: 10px 0 0; color: #666; font-size: 15px; line-height: 1.5;">${friendlyMessage}</p>
-            </div>
-            <div style="flex-grow: 1; overflow-y: auto; padding: 0 20px 10px;">
-                <div class="collapsible-section" style="border: 1px solid #eee; background: #f9f9f9; margin: 0; border-radius: 8px;">
-                    <div class="collapsible-header" style="padding: 12px; background: #f5f5f5; border-bottom: 1px solid #eee;" onclick="this.parentElement.classList.toggle('open')">
-                        <span style="font-size: 13px; color: #666; font-weight: 600; display: flex; align-items: center; gap: 5px;">
-                            <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                            查看详细日志
-                        </span>
-                        <span class="collapsible-arrow" style="color: #999;">▼</span>
-                    </div>
-                    <div class="collapsible-content" style="padding: 0 12px;">
-                        <pre id="error-log-content" style="font-family: 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 11px; color: #444; white-space: pre-wrap; word-break: break-all; margin: 10px 0; background: #fff; padding: 10px; border: 1px solid #eee; border-radius: 4px; max-height: 200px; overflow-y: auto; line-height: 1.4;">${logContent}</pre>
-                        <button id="copy-error-btn" class="btn btn-small btn-neutral" style="margin-bottom: 10px; font-size: 12px; padding: 6px 12px; width: 100%; display: flex; justify-content: center; background: #eee; color: #555; border: none;">
-                            <svg style="width: 14px; height: 14px; margin-right: 5px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                            复制完整日志
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div style="padding: 15px 20px 20px; border-top: none; text-align: center; background: #fff; flex-shrink: 0;">
-                <button class="btn btn-primary" style="width: 100%; border-radius: 12px; font-weight: 600; font-size: 16px; padding: 12px;" onclick="document.getElementById('error-modal-overlay').remove()">知道了</button>
-            </div>
-        </div>
-    </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-    document.getElementById('copy-error-btn').addEventListener('click', function() {
-        navigator.clipboard.writeText(logContent).then(() => {
-            this.innerHTML = `<svg style="width: 14px; height: 14px; margin-right: 5px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>已复制`;
-            this.style.background = '#e8f5e9';
-            this.style.color = '#2e7d32';
-            setTimeout(() => {
-                this.innerHTML = `<svg style="width: 14px; height: 14px; margin-right: 5px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>复制完整日志`;
-                this.style.background = '#eee';
-                this.style.color = '#555';
-            }, 2000);
-        });
-    });
-}
-
-function showApiError(error) {
-    console.error("API Error Detected:", error);
-    const friendlyMessage = getFriendlyErrorMessage(error);
-    showErrorModal(friendlyMessage, error);
-}
+// API 错误弹窗
+// @compat canonical: OwoApp.shared.ui.showApiError
+const showApiError = window.OwoApp.shared.ui.showApiError;
 
 // 格式化时间分割线
 // @compat canonical: OwoApp.shared.utils.formatTimeDivider
@@ -447,6 +248,16 @@ const getFormattedTimestamp = window.OwoApp.shared.utils.getFormattedTimestamp;
 // 格式化时间差
 // @compat canonical: OwoApp.shared.utils.formatTimeGap
 const formatTimeGap = window.OwoApp.shared.utils.formatTimeGap;
+
+// Chat message role/content/parts 归一化
+// @compat canonical: OwoApp.core.chat.messageSemantics.aiMessageContentToText
+const aiMessageContentToText = window.OwoApp.core.chat.messageSemantics.aiMessageContentToText;
+// @compat canonical: OwoApp.core.chat.messageSemantics.wrapSystemMessageForCompat
+const wrapSystemMessageForCompat = window.OwoApp.core.chat.messageSemantics.wrapSystemMessageForCompat;
+// @compat canonical: OwoApp.core.chat.messageSemantics.mergeAdjacentCompatMessages
+const mergeAdjacentCompatMessages = window.OwoApp.core.chat.messageSemantics.mergeAdjacentCompatMessages;
+// @compat canonical: OwoApp.core.chat.messageSemantics.normalizeMessagesForProvider
+const normalizeMessagesForProvider = window.OwoApp.core.chat.messageSemantics.normalizeMessagesForProvider;
 
 function calculateVoiceDuration(text) {
     return Math.max(1, Math.min(60, Math.ceil(text.length / 3.5)));
@@ -824,72 +635,6 @@ function filterHistoryForAI(chat, historySlice, ignoreContextDisabled = false) {
     }
 
     return filteredHistory;
-}
-
-function aiMessageContentToText(content) {
-    if (typeof content === 'string') return content;
-    if (Array.isArray(content)) {
-        return content.map(part => {
-            if (!part) return '';
-            if (part.type === 'text' || part.type === 'html') return part.text || part.content || '';
-            if (part.type === 'image_url' || part.type === 'image') return '[图片]';
-            return '';
-        }).filter(Boolean).join('\n');
-    }
-    if (content == null) return '';
-    return String(content);
-}
-
-function wrapSystemMessageForCompat(content) {
-    const text = aiMessageContentToText(content).trim();
-    return text ? `[System Instruction]\n${text}` : '[System Instruction]';
-}
-
-function mergeAdjacentCompatMessages(messages) {
-    const merged = [];
-    messages.forEach(msg => {
-        if (!msg) return;
-        const prev = merged[merged.length - 1];
-        const canMerge = prev &&
-            prev.role === msg.role &&
-            typeof prev.content === 'string' &&
-            typeof msg.content === 'string';
-        if (canMerge) {
-            prev.content += `\n\n${msg.content}`;
-        } else {
-            merged.push({ ...msg });
-        }
-    });
-    return merged;
-}
-
-function normalizeMessagesForProvider(messages, provider) {
-    const list = Array.isArray(messages) ? messages : [];
-    const mapped = list.map(msg => {
-        if (!msg) return null;
-        const originalRole = msg.role === 'char' ? 'assistant' : msg.role;
-        let nextRole = originalRole;
-        let nextContent = msg.content;
-
-        if (provider === 'claude') {
-            if (originalRole === 'assistant' || originalRole === 'user') {
-                nextRole = originalRole;
-            } else if (originalRole === 'system') {
-                nextRole = 'user';
-                nextContent = wrapSystemMessageForCompat(msg.content);
-            } else {
-                nextRole = 'user';
-            }
-        }
-
-        return {
-            ...msg,
-            role: nextRole,
-            content: nextContent
-        };
-    }).filter(Boolean);
-
-    return provider === 'claude' ? mergeAdjacentCompatMessages(mapped) : mapped;
 }
 
 // 通用 AI 响应获取函数 (支持流式和非流式自动切换)
@@ -1735,7 +1480,21 @@ async function novelAiGenerate(prompt) {
 }
 
 // 暴露给全局
-window.showErrorModal = showErrorModal;
+window.OwoApp.compat.expose('updateBatteryStatus', updateBatteryStatus, {
+    state: 'canonical',
+    owner: 'OwoApp.platform.browser.updateBatteryStatus',
+    note: 'V11: 旧 window.updateBatteryStatus 只保留兼容出口'
+});
+window.OwoApp.compat.expose('getFriendlyErrorMessage', getFriendlyErrorMessage, {
+    state: 'canonical',
+    owner: 'OwoApp.shared.ui.getFriendlyErrorMessage',
+    note: 'V11: 旧 window.getFriendlyErrorMessage 只保留兼容出口'
+});
+window.OwoApp.compat.expose('showErrorModal', showErrorModal, {
+    state: 'canonical',
+    owner: 'OwoApp.shared.ui.showErrorModal',
+    note: 'V11: 旧 window.showErrorModal 只保留兼容出口'
+});
 window.openImageViewer = openImageViewer;
 window.OwoApp.compat.expose('compressImage', compressImage, {
     state: 'canonical',
@@ -1783,7 +1542,41 @@ window.OwoApp.compat.expose('getLocalTimeInTimezone', getLocalTimeInTimezone, {
     note: 'V2: 旧 window.getLocalTimeInTimezone 只保留兼容出口'
 });
 window.filterHistoryForAI = filterHistoryForAI;
-window.showToast = showToast;
+window.OwoApp.compat.expose('aiMessageContentToText', aiMessageContentToText, {
+    state: 'canonical',
+    owner: 'OwoApp.core.chat.messageSemantics.aiMessageContentToText',
+    note: 'V14: 旧 window.aiMessageContentToText 只保留兼容出口'
+});
+window.OwoApp.compat.expose('wrapSystemMessageForCompat', wrapSystemMessageForCompat, {
+    state: 'canonical',
+    owner: 'OwoApp.core.chat.messageSemantics.wrapSystemMessageForCompat',
+    note: 'V14: 旧 window.wrapSystemMessageForCompat 只保留兼容出口'
+});
+window.OwoApp.compat.expose('mergeAdjacentCompatMessages', mergeAdjacentCompatMessages, {
+    state: 'canonical',
+    owner: 'OwoApp.core.chat.messageSemantics.mergeAdjacentCompatMessages',
+    note: 'V14: 旧 window.mergeAdjacentCompatMessages 只保留兼容出口'
+});
+window.OwoApp.compat.expose('normalizeMessagesForProvider', normalizeMessagesForProvider, {
+    state: 'canonical',
+    owner: 'OwoApp.core.chat.messageSemantics.normalizeMessagesForProvider',
+    note: 'V14: 旧 window.normalizeMessagesForProvider 只保留兼容出口'
+});
+window.OwoApp.compat.expose('showToast', showToast, {
+    state: 'canonical',
+    owner: 'OwoApp.shared.ui.showToast',
+    note: 'V11: 旧 window.showToast 只保留兼容出口'
+});
+window.OwoApp.compat.expose('showApiError', showApiError, {
+    state: 'canonical',
+    owner: 'OwoApp.shared.ui.showApiError',
+    note: 'V11: 旧 window.showApiError 只保留兼容出口'
+});
+window.OwoApp.compat.expose('triggerHapticFeedback', triggerHapticFeedback, {
+    state: 'canonical',
+    owner: 'OwoApp.platform.browser.hapticAdapter.createHapticFeedback',
+    note: 'V11: 旧 window.triggerHapticFeedback 只保留兼容出口，业务开关通过 db.hapticEnabled 注入'
+});
 window.OwoApp.compat.expose('showAppConfirmDialog', showAppConfirmDialog, {
     state: 'canonical',
     owner: 'OwoApp.shared.ui.showAppConfirmDialog',

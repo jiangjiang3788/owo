@@ -1,0 +1,297 @@
+{
+  "version": "V37",
+  "description": "CSS ownership map. V37 只建立归属、公共 token 和 gate，不大改选择器。",
+  "publicTokens": {
+    "ownerFile": "css/shared/theme-tokens.css",
+    "allowedOverrideFiles": [
+      "css/layout.css"
+    ],
+    "tokens": [
+      "--bg-color",
+      "--primary-color",
+      "--secondary-color",
+      "--accent-color",
+      "--text-color",
+      "--white-color",
+      "--border-radius",
+      "--phone-corner-radius",
+      "--font-family",
+      "--top-pinned-bg",
+      "--online-status-color",
+      "--kkt-icon-color",
+      "--chat-avatar-radius",
+      "--app-font-scale",
+      "--nav-icon-color",
+      "--nav-active-icon-color",
+      "--chat-bottom-bar-bg",
+      "--func-icon-color",
+      "--folder-pill-bg",
+      "--folder-pill-text",
+      "--folder-pill-active-bg",
+      "--folder-pill-active-text",
+      "--global-title-color"
+    ]
+  },
+  "rules": {
+    "newCssSoftLines": 600,
+    "newCssHardLines": 900,
+    "legacyCssHardLines": 3200,
+    "noBusinessSelectorsInShared": true,
+    "loadedCssMustHaveOwner": true,
+    "cssFilesMustHaveOwner": true
+  },
+  "files": [
+    {
+      "path": "css/shared/theme-tokens.css",
+      "owner": "shared/theme",
+      "role": "tokens",
+      "status": "canonical",
+      "maxLines": 120
+    },
+    {
+      "path": "css/base.css",
+      "owner": "shared/base",
+      "role": "base-components",
+      "status": "legacy-owned",
+      "maxLines": 650
+    },
+    {
+      "path": "css/layout.css",
+      "owner": "app/layout",
+      "role": "app-shell-layout",
+      "status": "legacy-owned",
+      "maxLines": 1100
+    },
+    {
+      "path": "css/chat.css",
+      "owner": "features/chat",
+      "role": "chat-screen",
+      "status": "legacy-heavy",
+      "maxLines": 3100
+    },
+    {
+      "path": "css/settings.css",
+      "owner": "features/settings",
+      "role": "settings-shell",
+      "status": "legacy-heavy",
+      "maxLines": 1200
+    },
+    {
+      "path": "contacts.css",
+      "owner": "features/contacts",
+      "role": "contacts-screen",
+      "status": "legacy-owned",
+      "maxLines": 1000
+    },
+    {
+      "path": "more_menu.css",
+      "owner": "features/moreMenu",
+      "role": "more-menu",
+      "status": "legacy-owned",
+      "maxLines": 360
+    },
+    {
+      "path": "style.css",
+      "owner": "legacy/deprecated",
+      "role": "deprecated-style",
+      "status": "deprecated-unloaded",
+      "maxLines": 80
+    },
+    {
+      "path": "css/modules/appearance_settings.css",
+      "owner": "features/settings/appearance",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 420
+    },
+    {
+      "path": "css/modules/archive.css",
+      "owner": "features/archive",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 320
+    },
+    {
+      "path": "css/modules/avatar_recognition.css",
+      "owner": "features/avatarRecognition",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 600
+    },
+    {
+      "path": "css/modules/block_system.css",
+      "owner": "features/blockSystem",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 120
+    },
+    {
+      "path": "css/modules/character_import.css",
+      "owner": "features/characterImport",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 120
+    },
+    {
+      "path": "css/modules/cot_settings.css",
+      "owner": "features/settings/voiceCot",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 280
+    },
+    {
+      "path": "css/modules/favorites.css",
+      "owner": "features/favorites",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 420
+    },
+    {
+      "path": "css/modules/forum.css",
+      "owner": "features/forum",
+      "role": "feature-module",
+      "status": "legacy-heavy",
+      "maxLines": 1300
+    },
+    {
+      "path": "css/modules/journal.css",
+      "owner": "features/journal",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 420
+    },
+    {
+      "path": "css/modules/keep_alive.css",
+      "owner": "platform/browser/keepAlive",
+      "role": "platform-module",
+      "status": "legacy-owned",
+      "maxLines": 120
+    },
+    {
+      "path": "css/modules/live.css",
+      "owner": "features/live",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 360
+    },
+    {
+      "path": "css/modules/monitor.css",
+      "owner": "features/monitor",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 500
+    },
+    {
+      "path": "css/modules/more.css",
+      "owner": "features/more",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 260
+    },
+    {
+      "path": "css/modules/msg_version.css",
+      "owner": "features/chat/messageVersion",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 180
+    },
+    {
+      "path": "css/modules/node_system.css",
+      "owner": "features/nodeSystem",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 650
+    },
+    {
+      "path": "css/modules/peek.css",
+      "owner": "features/peek",
+      "role": "feature-module",
+      "status": "legacy-heavy",
+      "maxLines": 1700
+    },
+    {
+      "path": "css/modules/piggy_bank.css",
+      "owner": "features/wallet/piggyBank",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 650
+    },
+    {
+      "path": "css/modules/pomodoro.css",
+      "owner": "features/pomodoro",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 540
+    },
+    {
+      "path": "css/modules/reminder.css",
+      "owner": "features/reminder",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 650
+    },
+    {
+      "path": "css/modules/search.css",
+      "owner": "features/search",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 520
+    },
+    {
+      "path": "css/modules/shop.css",
+      "owner": "features/shop",
+      "role": "feature-module",
+      "status": "legacy-heavy",
+      "maxLines": 1200
+    },
+    {
+      "path": "css/modules/steps.css",
+      "owner": "features/steps",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/theater.css",
+      "owner": "features/theater",
+      "role": "feature-module",
+      "status": "legacy-heavy",
+      "maxLines": 1700
+    },
+    {
+      "path": "css/modules/tutorial.css",
+      "owner": "features/tutorial",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 900
+    },
+    {
+      "path": "css/modules/vector_memory.css",
+      "owner": "features/vectorMemory",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 180
+    },
+    {
+      "path": "css/modules/video_call.css",
+      "owner": "features/videoCall",
+      "role": "feature-module",
+      "status": "legacy-heavy",
+      "maxLines": 1250
+    },
+    {
+      "path": "css/modules/voice_selector.css",
+      "owner": "features/settings/voiceCot",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 120
+    },
+    {
+      "path": "css/modules/worldbook.css",
+      "owner": "features/worldBook",
+      "role": "feature-module",
+      "status": "legacy-owned",
+      "maxLines": 360
+    }
+  ]
+}

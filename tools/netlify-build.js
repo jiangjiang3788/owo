@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /*
- * Minimal static deploy build for Netlify.
- * It does not bundle or transform source files; it copies the browser app into dist/.
+ * Optional static deploy build for Netlify dist mode.
+ * 当前默认部署路径是 netlify.toml publish = "."，不会运行本脚本。
+ * 如果未来切回 publish = "dist"，本脚本只复制静态资源，不打包、不改运行时代码。
  */
 const fs = require('fs');
 const path = require('path');
@@ -37,11 +38,22 @@ function copyDir(srcDir, destDir) {
   }
 }
 
-function ensureRequiredDeployFiles() {
-  const required = ['index.html', 'manifest.json', 'sw.js', '_redirects'];
-  for (const name of required) {
+function ensureDeployShape() {
+  const requiredFiles = ['index.html'];
+  const requiredDirs = ['js', 'css'];
+  for (const name of requiredFiles) {
     if (!fs.existsSync(path.join(outDir, name))) {
       throw new Error(`[netlify-build] dist 缺少必要文件：${name}`);
+    }
+  }
+  for (const name of requiredDirs) {
+    if (!fs.existsSync(path.join(outDir, name))) {
+      throw new Error(`[netlify-build] dist 缺少必要目录：${name}`);
+    }
+  }
+  for (const optional of ['_redirects', 'manifest.json', 'sw.js']) {
+    if (!fs.existsSync(path.join(outDir, optional))) {
+      console.warn(`[netlify-build] 可选文件未发布：${optional}`);
     }
   }
 }
@@ -57,5 +69,5 @@ for (const dir of rootDirs) {
   copyDir(path.join(root, dir), path.join(outDir, dir));
 }
 
-ensureRequiredDeployFiles();
-console.log('✅ Netlify static build complete: dist/');
+ensureDeployShape();
+console.log('✅ Optional Netlify dist build complete: dist/');

@@ -64,7 +64,7 @@ const globalSettingKeys = [
     'apiSettings', 'summaryApiSettings', 'backgroundApiSettings', 'supplementPersonaApiSettings', 'peekApiSettings', 'vectorApiSettings', 'imageRecognitionEnabled', 'imageRecognitionApiSettings', 'stickerRecognitionApiSettings', 'wallpaper', 'globalChatWallpaper', 'globalCallWallpaper', 'homeScreenMode', 'fontUrl', 'localFontName', 'customIcons', 'customAppNames', 'namePresets',
     'apiPresets', 'summaryApiPresets', 'backgroundApiPresets', 'supplementPersonaApiPresets', 'peekApiPresets', 'vectorApiPresets', 'imageRecognitionApiPresets', 'stickerRecognitionApiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
     'globalCssPresets', 'fontPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'forumUserProfile', 'forumSettings', 'forumApiSettings', 'forumMessages', 'forumStrangerProfiles', 'forumFriendRequests', 'forumPendingRequestFromUser', 'forumAltAccounts', 'forumActiveAccountId', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings',
-    'chatFolders', 'fontSizeScale', 'activePersonaId', 'moreProfileCardBg', 'statusBarPresets', 'regexFilterPresets', 'themeSettings', 'themePresets', 'savedKeyboardHeight',
+    'chatFolders', 'hapticEnabled', 'fontSizeScale', 'activePersonaId', 'moreProfileCardBg', 'statusBarPresets', 'regexFilterPresets', 'themeSettings', 'themePresets', 'savedKeyboardHeight',
     'globalSendSound', 'globalReceiveSound', 'globalMessageSentSound', 'globalIncomingCallSound', 'multiMsgSoundEnabled', 'soundPresets', 'galleryPresets', 'iconPresets', 'homeWidgetPresets', 'widgetWallpaperPresets', 'voicePresets', 'fontBuffer',
     'cotSettings', 'cotPresets', 'hasSeenVideoCallDisclaimer', 'hasSeenVideoCallAvatarHint',
     'favorites', 'piggyBank',

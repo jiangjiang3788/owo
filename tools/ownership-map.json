@@ -111,6 +111,850 @@
       "legacyFile": "js/db.js",
       "legacyAlias": "window.saveGlobalSettings",
       "state": "canonical"
+    },
+    {
+      "symbol": "initDatabase",
+      "owner": "OwoApp.platform.storage.dexieAdapter.initDatabase",
+      "ownerFile": "js/platform/storage/dexieAdapter.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "window.initDatabase",
+      "state": "canonical"
+    },
+    {
+      "symbol": "dataStorage",
+      "owner": "OwoApp.platform.storage.storageAnalysis.dataStorage",
+      "ownerFile": "js/platform/storage/storageAnalysis.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "global lexical dataStorage",
+      "state": "canonical"
+    },
+    {
+      "symbol": "createFullBackupData",
+      "owner": "OwoApp.platform.storage.backupAdapter.legacyBackupApi.createFullBackupData",
+      "ownerFile": "js/platform/storage/backupAdapter.js",
+      "legacyFile": "js/modules/tutorial.js",
+      "legacyAlias": "window.createFullBackupData",
+      "state": "canonical",
+      "note": "教程页完整备份导出数据格式"
+    },
+    {
+      "symbol": "createPartialBackupData",
+      "owner": "OwoApp.platform.storage.backupAdapter.legacyBackupApi.createPartialBackupData",
+      "ownerFile": "js/platform/storage/backupAdapter.js",
+      "legacyFile": "js/modules/tutorial.js",
+      "legacyAlias": "window.createPartialBackupData",
+      "state": "canonical",
+      "note": "教程页分类备份导出数据格式"
+    },
+    {
+      "symbol": "importPartialBackupData",
+      "owner": "OwoApp.platform.storage.backupAdapter.legacyBackupApi.importPartialBackupData",
+      "ownerFile": "js/platform/storage/backupAdapter.js",
+      "legacyFile": "js/modules/tutorial.js",
+      "legacyAlias": "window.importPartialBackupData",
+      "state": "canonical",
+      "note": "教程页分类备份导入编排"
+    },
+    {
+      "symbol": "importBackupData",
+      "owner": "OwoApp.platform.storage.backupAdapter.legacyBackupApi.importBackupData",
+      "ownerFile": "js/platform/storage/backupAdapter.js",
+      "legacyFile": "js/modules/tutorial.js",
+      "legacyAlias": "window.importBackupData",
+      "state": "canonical",
+      "note": "教程页完整备份恢复编排"
+    },
+    {
+      "symbol": "loadData",
+      "owner": "OwoApp.platform.storage.dexieReader.loadData",
+      "ownerFile": "js/platform/storage/dexieReader.js",
+      "legacyFile": "js/db.js",
+      "legacyAlias": "global lexical loadData",
+      "state": "canonical",
+      "note": "V10: IndexedDB 读取编排归 dexieReader；db.js 只保留兼容 lexical alias"
+    },
+    {
+      "symbol": "updateBatteryStatus",
+      "owner": "OwoApp.platform.browser.updateBatteryStatus",
+      "ownerFile": "js/platform/browser/batteryAdapter.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.updateBatteryStatus",
+      "state": "canonical",
+      "note": "V11: Battery Status API + 旧电池 widget DOM 更新"
+    },
+    {
+      "symbol": "showToast",
+      "owner": "OwoApp.shared.ui.showToast",
+      "ownerFile": "js/shared/ui/toast.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.showToast",
+      "state": "canonical",
+      "note": "V11: 通用 Toast 队列和展示"
+    },
+    {
+      "symbol": "getFriendlyErrorMessage",
+      "owner": "OwoApp.shared.ui.getFriendlyErrorMessage",
+      "ownerFile": "js/shared/ui/errorModal.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.getFriendlyErrorMessage",
+      "state": "canonical",
+      "note": "V11: 通用错误文案映射"
+    },
+    {
+      "symbol": "showErrorModal",
+      "owner": "OwoApp.shared.ui.showErrorModal",
+      "ownerFile": "js/shared/ui/errorModal.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.showErrorModal",
+      "state": "canonical",
+      "note": "V11: 通用错误弹窗"
+    },
+    {
+      "symbol": "showApiError",
+      "owner": "OwoApp.shared.ui.showApiError",
+      "ownerFile": "js/shared/ui/errorModal.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.showApiError",
+      "state": "canonical",
+      "note": "V11: API 错误展示兼容入口"
+    },
+    {
+      "symbol": "triggerHapticFeedback",
+      "owner": "OwoApp.platform.browser.hapticAdapter.createHapticFeedback",
+      "ownerFile": "js/platform/browser/hapticAdapter.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.triggerHapticFeedback",
+      "state": "canonical",
+      "note": "V11: navigator.vibrate 适配，db.hapticEnabled 通过 utils 兼容层注入"
+    },
+    {
+      "symbol": "aiMessageContentToText",
+      "owner": "OwoApp.core.chat.messageSemantics.aiMessageContentToText",
+      "ownerFile": "js/core/chat/messageSemantics.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.aiMessageContentToText",
+      "state": "canonical",
+      "note": "V14: message content to text 纯语义"
+    },
+    {
+      "symbol": "wrapSystemMessageForCompat",
+      "owner": "OwoApp.core.chat.messageSemantics.wrapSystemMessageForCompat",
+      "ownerFile": "js/core/chat/messageSemantics.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.wrapSystemMessageForCompat",
+      "state": "canonical",
+      "note": "V14: system message compat 包装"
+    },
+    {
+      "symbol": "mergeAdjacentCompatMessages",
+      "owner": "OwoApp.core.chat.messageSemantics.mergeAdjacentCompatMessages",
+      "ownerFile": "js/core/chat/messageSemantics.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.mergeAdjacentCompatMessages",
+      "state": "canonical",
+      "note": "V14: provider compat 相邻消息合并"
+    },
+    {
+      "symbol": "normalizeMessagesForProvider",
+      "owner": "OwoApp.core.chat.messageSemantics.normalizeMessagesForProvider",
+      "ownerFile": "js/core/chat/messageSemantics.js",
+      "legacyFile": "js/utils.js",
+      "legacyAlias": "window.normalizeMessagesForProvider",
+      "state": "canonical",
+      "note": "V14: provider message role/content 归一化"
+    },
+    {
+      "symbol": "createMessageViewModel",
+      "owner": "OwoApp.features.chat.messageViewModel.createMessageViewModel",
+      "ownerFile": "js/features/chat/messageViewModel.js",
+      "legacyFile": "js/modules/chat_render.js",
+      "legacyAlias": "chat_render.js view model call site",
+      "state": "canonical-entry",
+      "note": "V16: 消息渲染 view model 归一化 owner；不触碰保存/AI/stream"
+    },
+    {
+      "symbol": "renderMessageBubble",
+      "owner": "OwoApp.features.chat.renderMessageBubble.renderMessageBubble",
+      "ownerFile": "js/features/chat/renderMessageBubble.js",
+      "legacyFile": "js/modules/chat_render.js",
+      "legacyAlias": "chat_render.js renderMessageBubble lexical wrapper",
+      "state": "canonical-entry",
+      "note": "V16: 统一消息气泡渲染入口，legacy DOM renderer 通过 setLegacyRenderer 注册"
+    },
+    {
+      "symbol": "createMessageBubbleElement",
+      "owner": "OwoApp.features.chat.renderMessageBubble.renderMessageBubble",
+      "ownerFile": "js/features/chat/renderMessageBubble.js",
+      "legacyFile": "js/modules/chat_render.js",
+      "legacyAlias": "global lexical createMessageBubbleElement",
+      "state": "compat-wrapper",
+      "note": "V16: 旧入口只转发到 renderMessageBubble；外部 theater 等 legacy 调用继续可用"
+    },
+    {
+      "symbol": "setupChatSettings",
+      "owner": "OwoApp.features.settings.publicApi.setupChatSettings",
+      "ownerFile": "js/features/settings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupChatSettings",
+      "state": "canonical-entry",
+      "note": "V17: settings public facade 入口；具体实现仍由 settings.js 注册到 settingsShell，后续 V18+ 分模块迁移"
+    },
+    {
+      "symbol": "loadSettingsToSidebar",
+      "owner": "OwoApp.features.settings.publicApi.loadSettingsToSidebar",
+      "ownerFile": "js/features/settings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.loadSettingsToSidebar",
+      "state": "canonical-entry",
+      "note": "V17: settings public facade 入口；具体实现仍由 settings.js 注册到 settingsShell，后续 V18+ 分模块迁移"
+    },
+    {
+      "symbol": "setupMagicRoomApp",
+      "owner": "OwoApp.features.settings.publicApi.setupMagicRoomApp",
+      "ownerFile": "js/features/settings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupMagicRoomApp",
+      "state": "canonical-entry",
+      "note": "V17: settings public facade 入口；具体实现仍由 settings.js 注册到 settingsShell，后续 V18+ 分模块迁移"
+    },
+    {
+      "symbol": "setupApiSettingsApp",
+      "owner": "OwoApp.features.settings.apiSettings.publicApi.setupApiSettingsApp",
+      "ownerFile": "js/features/settings/apiSettings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupApiSettingsApp",
+      "state": "canonical-entry",
+      "note": "V22: API 设置 setup 入口走 apiSettings public facade；不再允许注册到 settingsShell legacyApi"
+    },
+    {
+      "symbol": "setupWallpaperApp",
+      "owner": "OwoApp.features.settings.appearance.publicApi.setupWallpaperApp",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupWallpaperApp",
+      "state": "canonical-entry",
+      "note": "V22: 壁纸设置入口走 appearance public facade；不再允许注册到 settingsShell legacyApi"
+    },
+    {
+      "symbol": "setupPresetFeatures",
+      "owner": "OwoApp.features.settings.publicApi.setupPresetFeatures",
+      "ownerFile": "js/features/settings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupPresetFeatures",
+      "state": "canonical-entry",
+      "note": "V17: settings public facade 入口；具体实现仍由 settings.js 注册到 settingsShell，后续 V18+ 分模块迁移"
+    },
+    {
+      "symbol": "setupCustomizeApp",
+      "owner": "OwoApp.features.settings.publicApi.setupCustomizeApp",
+      "ownerFile": "js/features/settings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupCustomizeApp",
+      "state": "canonical-entry",
+      "note": "V17: settings public facade 入口；具体实现仍由 settings.js 注册到 settingsShell，后续 V18+ 分模块迁移"
+    },
+    {
+      "symbol": "setupNightModeBindings",
+      "owner": "OwoApp.features.settings.appearance.publicApi.setupNightModeBindings",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupNightModeBindings",
+      "state": "canonical-entry",
+      "note": "V22: 夜间模式绑定入口走 appearance public facade；不再允许注册到 settingsShell legacyApi"
+    },
+    {
+      "symbol": "setupStatusBarBindings",
+      "owner": "OwoApp.features.settings.appearance.publicApi.setupStatusBarBindings",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.setupStatusBarBindings",
+      "state": "canonical-entry",
+      "note": "V22: 顶栏状态栏绑定入口走 appearance public facade；不再允许注册到 settingsShell legacyApi"
+    },
+    {
+      "symbol": "populateApiSelect",
+      "owner": "OwoApp.features.settings.apiSettings.publicApi.populateApiSelect",
+      "ownerFile": "js/features/settings/apiSettings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical populateApiSelect",
+      "state": "compat-wrapper",
+      "note": "V18: 主 API 预设下拉填充归 apiSettings 子模块"
+    },
+    {
+      "symbol": "saveCurrentApiAsPreset",
+      "owner": "OwoApp.features.settings.apiSettings.publicApi.saveCurrentApiAsPreset",
+      "ownerFile": "js/features/settings/apiSettings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical saveCurrentApiAsPreset",
+      "state": "compat-wrapper",
+      "note": "V18: 主 API 预设保存归 apiSettings 子模块"
+    },
+    {
+      "symbol": "applyApiPreset",
+      "owner": "OwoApp.features.settings.apiSettings.publicApi.applyApiPreset",
+      "ownerFile": "js/features/settings/apiSettings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical applyApiPreset",
+      "state": "compat-wrapper",
+      "note": "V18: 主 API 预设应用归 apiSettings 子模块"
+    },
+    {
+      "symbol": "setupSubApiSettings",
+      "owner": "OwoApp.features.settings.apiSettings.publicApi.setupSubApiSettings",
+      "ownerFile": "js/features/settings/apiSettings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical setupSubApiSettings",
+      "state": "compat-wrapper",
+      "note": "V18: 副 API 设置 UI 绑定归 apiSettings 子模块"
+    },
+    {
+      "symbol": "setupSubApiPresets",
+      "owner": "OwoApp.features.settings.apiSettings.publicApi.setupSubApiPresets",
+      "ownerFile": "js/features/settings/apiSettings/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical setupSubApiPresets",
+      "state": "compat-wrapper",
+      "note": "V18: 副 API 预设管理归 apiSettings 子模块"
+    },
+    {
+      "symbol": "populateFontPresetSelect",
+      "owner": "OwoApp.features.settings.appearance.publicApi.populateFontPresetSelect",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical populateFontPresetSelect",
+      "state": "compat-wrapper",
+      "note": "V19: 字体预设下拉归 appearance 子模块"
+    },
+    {
+      "symbol": "saveCurrentFontAsPreset",
+      "owner": "OwoApp.features.settings.appearance.publicApi.saveCurrentFontAsPreset",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical saveCurrentFontAsPreset",
+      "state": "compat-wrapper",
+      "note": "V19: 字体预设保存归 appearance 子模块"
+    },
+    {
+      "symbol": "applyFontPreset",
+      "owner": "OwoApp.features.settings.appearance.publicApi.applyFontPreset",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical applyFontPreset",
+      "state": "compat-wrapper",
+      "note": "V19: 字体预设应用归 appearance 子模块"
+    },
+    {
+      "symbol": "openFontManageModal",
+      "owner": "OwoApp.features.settings.appearance.publicApi.openFontManageModal",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical openFontManageModal",
+      "state": "compat-wrapper",
+      "note": "V19: 字体预设管理归 appearance 子模块"
+    },
+    {
+      "symbol": "populateWidgetWallpaperPresetSelect",
+      "owner": "OwoApp.features.settings.appearance.publicApi.populateWidgetWallpaperPresetSelect",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical populateWidgetWallpaperPresetSelect",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案下拉归 appearance 子模块"
+    },
+    {
+      "symbol": "saveCurrentWidgetWallpaperAsPreset",
+      "owner": "OwoApp.features.settings.appearance.publicApi.saveCurrentWidgetWallpaperAsPreset",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical saveCurrentWidgetWallpaperAsPreset",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案保存归 appearance 子模块"
+    },
+    {
+      "symbol": "applyWidgetWallpaperPreset",
+      "owner": "OwoApp.features.settings.appearance.publicApi.applyWidgetWallpaperPreset",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical applyWidgetWallpaperPreset",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案应用归 appearance 子模块"
+    },
+    {
+      "symbol": "openWidgetWallpaperManageModal",
+      "owner": "OwoApp.features.settings.appearance.publicApi.openWidgetWallpaperManageModal",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical openWidgetWallpaperManageModal",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案管理归 appearance 子模块"
+    },
+    {
+      "symbol": "exportWidgetWallpaperScheme",
+      "owner": "OwoApp.features.settings.appearance.publicApi.exportWidgetWallpaperScheme",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical exportWidgetWallpaperScheme",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案导出归 appearance 子模块"
+    },
+    {
+      "symbol": "importWidgetWallpaperScheme",
+      "owner": "OwoApp.features.settings.appearance.publicApi.importWidgetWallpaperScheme",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical importWidgetWallpaperScheme",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案导入归 appearance 子模块"
+    },
+    {
+      "symbol": "resetWidgetWallpaperToDefault",
+      "owner": "OwoApp.features.settings.appearance.publicApi.resetWidgetWallpaperToDefault",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical resetWidgetWallpaperToDefault",
+      "state": "compat-wrapper",
+      "note": "V19: 主屏幕壁纸方案重置归 appearance 子模块"
+    },
+    {
+      "symbol": "applyNightMode",
+      "owner": "OwoApp.features.settings.appearance.publicApi.applyNightMode",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.applyNightMode",
+      "state": "compat-wrapper",
+      "note": "V19: 夜间模式应用归 appearance 子模块"
+    },
+    {
+      "symbol": "applyHomeStatusBar",
+      "owner": "OwoApp.features.settings.appearance.publicApi.applyHomeStatusBar",
+      "ownerFile": "js/features/settings/appearance/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "window.applyHomeStatusBar",
+      "state": "compat-wrapper",
+      "note": "V19: 顶栏状态栏应用归 appearance 子模块"
+    },
+    {
+      "symbol": "saveCurrentTTSAsPreset",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.saveCurrentTTSAsPreset",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical saveCurrentTTSAsPreset",
+      "state": "compat-wrapper",
+      "note": "V21: TTS 预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "applyTTSPreset",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.applyTTSPreset",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical applyTTSPreset",
+      "state": "compat-wrapper",
+      "note": "V21: TTS 预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "populateTTSPresetSelect",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.populateTTSPresetSelect",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical populateTTSPresetSelect",
+      "state": "compat-wrapper",
+      "note": "V21: TTS 预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "openTTSManageModal",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.openTTSManageModal",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical openTTSManageModal",
+      "state": "compat-wrapper",
+      "note": "V21: TTS 预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "importTTSPresets",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.importTTSPresets",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical importTTSPresets",
+      "state": "compat-wrapper",
+      "note": "V21: TTS 预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "exportTTSPresets",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.exportTTSPresets",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical exportTTSPresets",
+      "state": "compat-wrapper",
+      "note": "V21: TTS 预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "populateVoicePresetSelect",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.populateVoicePresetSelect",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical populateVoicePresetSelect",
+      "state": "compat-wrapper",
+      "note": "V21: 音色预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "saveCurrentVoiceAsPreset",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.saveCurrentVoiceAsPreset",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical saveCurrentVoiceAsPreset",
+      "state": "compat-wrapper",
+      "note": "V21: 音色预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "applyVoicePreset",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.applyVoicePreset",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical applyVoicePreset",
+      "state": "compat-wrapper",
+      "note": "V21: 音色预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "openVoicePresetManageModal",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.openVoicePresetManageModal",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/settings.js",
+      "legacyAlias": "global lexical openVoicePresetManageModal",
+      "state": "compat-wrapper",
+      "note": "V21: 音色预设 UI 迁入 features/settings/voiceCot；settings.js 只保留 wrapper"
+    },
+    {
+      "symbol": "initCotSettings",
+      "owner": "OwoApp.features.settings.voiceCot.publicApi.initCotSettings",
+      "ownerFile": "js/features/settings/voiceCot/public.js",
+      "legacyFile": "js/modules/cot_settings.js",
+      "legacyAlias": "window.initCotSettings",
+      "state": "canonical-entry",
+      "note": "V22: CoT 设置页 init 入口走 voiceCot public facade；不允许由 settingsShell 注册"
+    },
+    {
+      "symbol": "fetchEmbeddings",
+      "owner": "OwoApp.platform.ai.embeddingAdapter.fetchEmbeddings",
+      "ownerFile": "js/platform/ai/embeddingAdapter.js",
+      "legacyFile": "js/modules/vector_memory.js",
+      "legacyAlias": "global lexical fetchEmbeddings",
+      "state": "canonical",
+      "note": "V24: embedding 请求归 platform/ai；vector_memory.js 只保留 runtime wrapper"
+    },
+    {
+      "symbol": "ensureVectorMemoryState",
+      "owner": "OwoApp.features.vectorMemory.model.ensureVectorMemoryState",
+      "ownerFile": "js/features/vectorMemory/model.js",
+      "legacyFile": "js/modules/vector_memory.js",
+      "legacyAlias": "window.ensureVectorMemoryState",
+      "state": "canonical",
+      "note": "V24: chat.vectorMemory 状态模型归 features/vectorMemory/model"
+    },
+    {
+      "symbol": "getVectorMemoryContextBlock",
+      "owner": "OwoApp.features.vectorMemory.contextService.getVectorMemoryContextBlock",
+      "ownerFile": "js/features/vectorMemory/contextService.js",
+      "legacyFile": "js/modules/vector_memory.js",
+      "legacyAlias": "window.getVectorMemoryContextBlock",
+      "state": "canonical",
+      "note": "V24: 向量记忆 prompt context block 归 context service；chat_ai 主 prompt 编排不改"
+    },
+    {
+      "symbol": "prepareVectorMemoryContext",
+      "owner": "OwoApp.features.vectorMemory.contextService.prepareVectorMemoryContext",
+      "ownerFile": "js/features/vectorMemory/contextService.js",
+      "legacyFile": "js/modules/vector_memory.js",
+      "legacyAlias": "window.prepareVectorMemoryContext",
+      "state": "canonical",
+      "note": "V24: 向量检索准备归 context service；legacy 全局只转发"
+    },
+    {
+      "symbol": "resetVectorCursorToLatest",
+      "owner": "OwoApp.features.vectorMemory.model.resetVectorCursorToLatest",
+      "ownerFile": "js/features/vectorMemory/model.js",
+      "legacyFile": "js/modules/vector_memory.js",
+      "legacyAlias": "window.resetVectorCursorToLatest",
+      "state": "canonical",
+      "note": "V24: 自动总结游标模型归 features/vectorMemory/model"
+    },
+    {
+      "symbol": "journalSemantics",
+      "owner": "OwoApp.core.memory.journalSemantics",
+      "ownerFile": "js/core/memory/journalSemantics.js",
+      "legacyFile": "js/modules/journal.js",
+      "legacyAlias": "global lexical journalSemantics alias",
+      "state": "canonical-entry",
+      "note": "V25: 回忆日记纯语义迁入 core/memory；journal.js 只保留 alias 和 DOM/AI 编排 shell"
+    },
+    {
+      "symbol": "journalService",
+      "owner": "OwoApp.features.journal.service",
+      "ownerFile": "js/features/journal/service.js",
+      "legacyFile": "js/modules/journal.js",
+      "legacyAlias": "global lexical journalService alias",
+      "state": "canonical-entry",
+      "note": "V25: 回忆日记状态服务和自动总结游标迁入 features/journal/service"
+    },
+    {
+      "symbol": "archiveModule",
+      "owner": "js/modules/archive.js",
+      "ownerFile": "js/modules/archive.js",
+      "legacyFile": "js/modules/archive.js",
+      "legacyAlias": "archive screen functions",
+      "state": "legacy-owner",
+      "note": "V25: archive 只登记为 memory 周边 legacy-owner，暂不拆"
+    },
+    {
+      "symbol": "favoritesModule",
+      "owner": "js/modules/favorites.js",
+      "ownerFile": "js/modules/favorites.js",
+      "legacyFile": "js/modules/favorites.js",
+      "legacyAlias": "favorites screen functions",
+      "state": "legacy-owner",
+      "note": "V25: favorites 只登记为 memory 周边 legacy-owner，暂不拆"
+    },
+    {
+      "symbol": "worldBookSemantics",
+      "owner": "OwoApp.core.memory.worldBookSemantics",
+      "ownerFile": "js/core/memory/worldBookSemantics.js",
+      "legacyFile": "js/core/chat/promptContext.js",
+      "legacyAlias": "promptContext worldbook helper wrappers",
+      "state": "canonical-entry",
+      "note": "V26: 世界书触发/注入纯语义迁入 core/memory；promptContext 只保留 wrapper，chat_ai prompt 输出顺序不改"
+    },
+    {
+      "symbol": "getActiveWorldBooksContents",
+      "owner": "OwoApp.features.worldBook.contextService.getActiveWorldBooksContents",
+      "ownerFile": "js/features/worldBook/contextService.js",
+      "legacyFile": "js/core/chat/promptContext.js",
+      "legacyAlias": "OwoApp.core.chat.promptContext.getActiveWorldBooksContents",
+      "state": "canonical-entry",
+      "note": "V26: 世界书 before/middle/after context builder 归 features/worldBook/contextService；promptContext 只转发"
+    },
+    {
+      "symbol": "forumSemantics",
+      "owner": "OwoApp.core.forum.forumSemantics",
+      "ownerFile": "js/core/forum/forumSemantics.js",
+      "legacyFile": "js/modules/forum.js",
+      "legacyAlias": "global lexical forumSemantics alias",
+      "state": "canonical-entry",
+      "note": "V28: 论坛 profile/post/dm 纯语义迁入 core/forum；forum.js 只保留 alias、DOM 和 AI 编排 shell"
+    },
+    {
+      "symbol": "forumProfileService",
+      "owner": "OwoApp.features.forum.profileService",
+      "ownerFile": "js/features/forum/profileService.js",
+      "legacyFile": "js/modules/forum.js",
+      "legacyAlias": "forumGetActiveAccount / forumCreateAltAccount compatibility wrappers",
+      "state": "canonical-entry",
+      "note": "V28: 论坛大号/小号 profile 状态服务迁入 features/forum/profileService"
+    },
+    {
+      "symbol": "forumPostService",
+      "owner": "OwoApp.features.forum.postService",
+      "ownerFile": "js/features/forum/postService.js",
+      "legacyFile": "js/modules/forum.js",
+      "legacyAlias": "forumPublishPost / forumPublishComment / forumTogglePostLike wrappers",
+      "state": "canonical-entry",
+      "note": "V28: 论坛帖子和评论状态服务迁入 features/forum/postService；不改消息发送和 AI 回复生成"
+    },
+    {
+      "symbol": "forumDmService",
+      "owner": "OwoApp.features.forum.dmService",
+      "ownerFile": "js/features/forum/dmService.js",
+      "legacyFile": "js/modules/forum.js",
+      "legacyAlias": "forumGetDMUserList / forumSendDM / forumMarkDMRead wrappers",
+      "state": "canonical-entry",
+      "note": "V28: 论坛私信列表、会话、未读、好友申请状态服务迁入 features/forum/dmService"
+    },
+    {
+      "symbol": "theaterSceneSemantics",
+      "owner": "OwoApp.core.theater.sceneSemantics",
+      "ownerFile": "js/core/theater/sceneSemantics.js",
+      "legacyFile": "js/modules/theater.js",
+      "legacyAlias": "theaterSceneSemantics alias / getTheaterScenarios wrappers",
+      "state": "canonical-entry",
+      "note": "V29: 小剧场模式、列表 key、场景归一化、排序和生成内容清理迁入 core/theater/sceneSemantics"
+    },
+    {
+      "symbol": "theaterPromptSemantics",
+      "owner": "OwoApp.core.theater.promptSemantics",
+      "ownerFile": "js/core/theater/promptSemantics.js",
+      "legacyFile": "js/modules/theater.js",
+      "legacyAlias": "manual / character theater prompt wrappers",
+      "state": "canonical-entry",
+      "note": "V29: 小剧场 prompt pieces 和上下文文本组装迁入 core/theater/promptSemantics；不改 chat_ai 主 prompt"
+    },
+    {
+      "symbol": "theaterModel",
+      "owner": "OwoApp.features.theater.model",
+      "ownerFile": "js/features/theater/model.js",
+      "legacyFile": "js/modules/theater.js",
+      "legacyAlias": "getTheaterScenarios / setTheaterScenarios wrappers",
+      "state": "canonical-entry",
+      "note": "V29: 小剧场 scene list、prompt preset list 和场景增删改查迁入 features/theater/model"
+    },
+    {
+      "symbol": "theaterPromptService",
+      "owner": "OwoApp.features.theater.promptService",
+      "ownerFile": "js/features/theater/promptService.js",
+      "legacyFile": "js/modules/theater.js",
+      "legacyAlias": "generateTheaterScenario / generateCharTheater prompt request bridge",
+      "state": "canonical-entry",
+      "note": "V29: 小剧场 prompt context service 绑定运行时 state；不发请求、不保存、不处理 stream"
+    },
+    {
+      "symbol": "parseXmlToJson",
+      "owner": "OwoApp.core.peek.xmlSemantics.parseXmlToJson",
+      "ownerFile": "js/core/peek/xmlSemantics.js",
+      "legacyFile": "js/modules/peek.js",
+      "legacyAlias": "global lexical parseXmlToJson wrapper",
+      "state": "canonical-entry",
+      "note": "V30: 偷看 XML parse 迁入 core/peek/xmlSemantics；peek.js 只保留兼容 wrapper"
+    },
+    {
+      "symbol": "normalizePeekConversation",
+      "owner": "OwoApp.core.peek.conversationSemantics.normalizePeekConversation",
+      "ownerFile": "js/core/peek/conversationSemantics.js",
+      "legacyFile": "js/modules/peek.js",
+      "legacyAlias": "global lexical normalizePeekConversation wrapper",
+      "state": "canonical-entry",
+      "note": "V30: 偷看会话 ID/状态/history 归一化迁入 core/peek/conversationSemantics"
+    },
+    {
+      "symbol": "peekPhoneAppModel",
+      "owner": "OwoApp.features.peek.phoneAppModel",
+      "ownerFile": "js/features/peek/phoneAppModel.js",
+      "legacyFile": "js/modules/peek.js",
+      "legacyAlias": "peek.js phone app model alias",
+      "state": "canonical-entry",
+      "note": "V30: 偷看手机应用列表、设置默认值、刷新范围和生成结果校验迁入 features/peek/phoneAppModel"
+    },
+    {
+      "symbol": "formatDuration",
+      "owner": "OwoApp.features.videoCall.model.formatDuration",
+      "ownerFile": "js/features/videoCall/model.js",
+      "legacyFile": "js/modules/video_call.js",
+      "legacyAlias": "VideoCallModule.formatDuration",
+      "state": "canonical",
+      "note": "V31: video call media/audio/model owner; legacy video_call.js only routes compatibility entry."
+    },
+    {
+      "symbol": "walletPaymentSemantics",
+      "owner": "OwoApp.core.wallet.paymentSemantics",
+      "ownerFile": "js/core/wallet/paymentSemantics.js",
+      "legacyFile": "js/modules/chat_render.js / js/modules/shop.js",
+      "legacyAlias": "shop/pay/transfer/family-card parsing and content builders",
+      "state": "canonical-entry",
+      "note": "V32: 钱包、商城、代付、转账、亲属卡卡片解析和消息格式构建迁入 core/wallet/paymentSemantics；不改消息保存、AI 请求和 chat_render 主入口"
+    },
+    {
+      "symbol": "walletPaymentCardViewModel",
+      "owner": "OwoApp.features.wallet.paymentCardViewModel",
+      "ownerFile": "js/features/wallet/paymentCardViewModel.js",
+      "legacyFile": "js/modules/chat_render.js",
+      "legacyAlias": "receipt / pay request / transfer / family-card card render data",
+      "state": "canonical-entry",
+      "note": "V32: 聊天内钱包/商城支付卡片 view model 迁入 features/wallet/paymentCardViewModel；chat_render.js 保留 DOM renderer"
+    },
+    {
+      "symbol": "screenManifest",
+      "owner": "OwoApp.app.screenManifest",
+      "ownerFile": "js/app/screenManifest.js",
+      "legacyFile": "index.html",
+      "legacyAlias": "existing .screen DOM ids",
+      "state": "canonical-entry",
+      "note": "V34: 69 个现有 screen 的 id/owner/group/lifecycle hook 名称登记，不拆 DOM"
+    },
+    {
+      "symbol": "screenRegistry",
+      "owner": "OwoApp.app.screenRegistry",
+      "ownerFile": "js/app/screenRegistry.js",
+      "legacyFile": "js/ui.js / js/main.js",
+      "legacyAlias": "switchScreen + legacy main init calls",
+      "state": "canonical-entry",
+      "note": "V34: screen init/mount/unmount lifecycle registry，switchScreen 触发 transition，main.js 做 DOM/manifest 验收"
+    },
+    {
+      "symbol": "screenTemplateRegistry",
+      "owner": "OwoApp.app.screenTemplates",
+      "ownerFile": "js/app/screenTemplateRegistry.js",
+      "legacyFile": "index.html",
+      "legacyAlias": "data-screen-template placeholders",
+      "state": "canonical-entry",
+      "note": "V35: 低风险 screen 静态模板 hydration registry；不接管 switchScreen，不写业务逻辑"
+    },
+    {
+      "symbol": "archiveScreenTemplate",
+      "owner": "OwoApp.app.screenTemplates:archive-screen",
+      "ownerFile": "js/features/archive/archiveScreenTemplate.js",
+      "legacyFile": "index.html#archive-screen",
+      "legacyAlias": "archive-screen DOM placeholder",
+      "state": "canonical-template",
+      "note": "V35: archive-screen 静态 HTML 从 index.html 拆出，DOM id 保持不变"
+    },
+    {
+      "symbol": "favoritesScreenTemplate",
+      "owner": "OwoApp.app.screenTemplates:favorites-screen",
+      "ownerFile": "js/features/favorites/favoritesScreenTemplate.js",
+      "legacyFile": "index.html#favorites-screen",
+      "legacyAlias": "favorites-screen DOM placeholder",
+      "state": "canonical-template",
+      "note": "V35: favorites-screen 静态 HTML 从 index.html 拆出，DOM id 保持不变"
+    },
+    {
+      "symbol": "storageAnalysisScreenTemplate",
+      "owner": "OwoApp.app.screenTemplates:storage-analysis-screen",
+      "ownerFile": "js/platform/storage/storageAnalysisScreenTemplate.js",
+      "legacyFile": "index.html#storage-analysis-screen",
+      "legacyAlias": "storage-analysis-screen DOM placeholder",
+      "state": "canonical-template",
+      "note": "V35: storage-analysis-screen 静态 HTML 从 index.html 拆出，DOM id 保持不变"
+    },
+    {
+      "symbol": "chatRoomScreenTemplate",
+      "owner": "OwoApp.app.screenTemplates:chat-room-screen",
+      "ownerFile": "js/features/chat/chatRoomScreenTemplate.js",
+      "legacyFile": "index.html#chat-room-screen",
+      "legacyAlias": "data-screen-template placeholder hydrated by OwoApp.app.screenTemplates",
+      "state": "canonical-template",
+      "note": "V36: chat-room-screen 静态 HTML 从 index.html 拆出，DOM id 保持不变，不改聊天业务"
+    },
+    {
+      "symbol": "settingsScreenTemplates",
+      "owner": "OwoApp.app.screenTemplates:api-settings-screen/chat-settings-screen",
+      "ownerFile": "js/features/settings/settingsScreenTemplates.js",
+      "legacyFile": "index.html#api-settings-screen / index.html#chat-settings-screen",
+      "legacyAlias": "data-screen-template placeholder hydrated by OwoApp.app.screenTemplates",
+      "state": "canonical-template",
+      "note": "V36: API 设置和聊天设置两个高风险 screen 静态 HTML 从 index.html 拆出，不改设置业务"
+    },
+    {
+      "symbol": "forumScreenTemplates",
+      "owner": "OwoApp.app.screenTemplates:forum-*",
+      "ownerFile": "js/features/forum/forumScreenTemplates.js",
+      "legacyFile": "index.html#forum-* screens",
+      "legacyAlias": "data-screen-template placeholder hydrated by OwoApp.app.screenTemplates",
+      "state": "canonical-template",
+      "note": "V36: forum 相关 screen 静态 HTML 从 index.html 拆出，不改论坛业务、AI 或消息发送"
+    },
+    {
+      "symbol": "legacyDeprecationRegistry",
+      "owner": "OwoApp.app.legacyDeprecation",
+      "ownerFile": "js/app/legacyDeprecation.js",
+      "legacyFile": "window.* compatibility globals",
+      "legacyAlias": "OwoApp.compat.expose deprecated metadata",
+      "state": "canonical-registry",
+      "note": "V38: 已迁移旧 window.* 入口保留兼容但标记 deprecated，新代码必须走 canonical owner"
+    },
+    {
+      "symbol": "legacyGlobalsGate",
+      "owner": "tools/legacy-globals-gate.js",
+      "ownerFile": "tools/legacy-globals-gate.js",
+      "legacyFile": "new structure direct legacy global references",
+      "legacyAlias": "window.* / global.* deprecated calls",
+      "state": "canonical-gate",
+      "note": "V38: 阻断 js/app/core/features/platform 中直接引用已迁移旧全局"
     }
   ]
 }

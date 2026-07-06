@@ -15,6 +15,23 @@ if ('serviceWorker' in navigator) {
 
 const init = async () => {
     await loadData();
+    const settingsFeature = window.OwoApp.features.settings.publicApi;
+    const screenRegistry = window.OwoApp && window.OwoApp.app && window.OwoApp.app.screenRegistry;
+    const screenTemplates = window.OwoApp && window.OwoApp.app && window.OwoApp.app.screenTemplates;
+    if (screenTemplates && typeof screenTemplates.assertHydrated === 'function') {
+        try {
+            screenTemplates.assertHydrated(['archive-screen', 'favorites-screen', 'storage-analysis-screen', 'chat-room-screen', 'api-settings-screen', 'chat-settings-screen', 'forum-screen', 'forum-post-detail-screen', 'forum-profile-screen', 'forum-alt-accounts-screen', 'forum-settings-screen', 'forum-dm-list-screen', 'forum-dm-conversation-screen'], { warnOnly: true });
+        } catch (e) {
+            console.warn('[main] screen template hydration check failed:', e);
+        }
+    }
+    if (screenRegistry && typeof screenRegistry.assertDomScreens === 'function') {
+        try {
+            screenRegistry.assertDomScreens({ warnOnly: true });
+        } catch (e) {
+            console.warn('[main] screen registry DOM check failed:', e);
+        }
+    }
     if (!db.homeWidgetSettings || !db.homeWidgetSettings.topLeft) {
         db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
     }
@@ -50,10 +67,6 @@ const init = async () => {
         if (navLink) {
             e.preventDefault();
             const target = navLink.getAttribute('data-target');
-            if (target === 'music-screen' || target === 'diary-screen' || target === 'piggy-bank-screen') {
-                showToast('该应用正在开发中，敬请期待！');
-                return;
-            }
             switchScreen(target);
         }
     });
@@ -82,12 +95,12 @@ const init = async () => {
     setupBottomNavigation();
     setupAddCharModal();
     setupChatRoom();
-    setupChatSettings();
+    settingsFeature.setupChatSettings();
     setupArchiveApp();
-    setupApiSettingsApp();
-    setupWallpaperApp();
+    settingsFeature.setupApiSettingsApp();
+    settingsFeature.setupWallpaperApp();
     await setupStickerSystem();
-    setupPresetFeatures();
+    settingsFeature.setupPresetFeatures();
     setupVoiceMessageSystem();
     setupPhotoVideoSystem();
     setupImageRecognition();
@@ -99,7 +112,7 @@ const init = async () => {
     // 错误处理包裹的模块初始化
     try { setupWorldBookApp(); } catch(e) { console.error("setupWorldBookApp failed:", e); }
     try { setupGroupChatSystem(); } catch(e) { console.error("setupGroupChatSystem failed:", e); }
-    try { setupCustomizeApp(); } catch(e) { console.error("setupCustomizeApp failed:", e); }
+    try { settingsFeature.setupCustomizeApp(); } catch(e) { console.error("setupCustomizeApp failed:", e); }
     try { setupTutorialApp(); } catch(e) { console.error("setupTutorialApp failed:", e); }
     
     checkForUpdates();
@@ -123,10 +136,14 @@ const init = async () => {
     if (window.BatteryInteraction) window.BatteryInteraction.init();
     if (typeof initMoreMenu === 'function') initMoreMenu();
     if (typeof setupPhoneScreen === 'function') setupPhoneScreen();
-    if (typeof initCotSettings === 'function') initCotSettings();
+    if (settingsFeature && typeof settingsFeature.initCotSettings === 'function') settingsFeature.initCotSettings();
+    else if (typeof initCotSettings === 'function') initCotSettings();
     if (window.VideoCallModule) window.VideoCallModule.init();
     if (typeof NodeSystem !== 'undefined') NodeSystem.init();
     if (typeof KeepAliveModule !== 'undefined') KeepAliveModule.init();
+    if (screenRegistry && typeof screenRegistry.markLegacyInitComplete === 'function') {
+        screenRegistry.markLegacyInitComplete('V35: legacy main.js init calls retained; screen registry/template owners provide lifecycle and static-template metadata');
+    }
 
     // 全局事件绑定
     const delWBBtn = document.getElementById('delete-selected-world-books-btn');
@@ -578,6 +595,12 @@ function renderLoginOverlay() {
 }
 
 async function tryLogin() {
+    const authGate = window.OwoApp && window.OwoApp.app && window.OwoApp.app.authGate;
+    if (authGate && typeof authGate.isPaused === 'function' && authGate.isPaused()) {
+        console.info('[AuthGate] 登录验证已暂停，跳过账号密码校验。');
+        return authGate.start({ initDatabase, init, renderLoginOverlay });
+    }
+
     // 获取元素
     const uidEl = document.getElementById('login-uid');
     const pwdEl = document.getElementById('login-pwd');
@@ -621,7 +644,11 @@ async function tryLogin() {
             msgEl.textContent = "验证通过，正在进入...";
 
             // 保存登录状态
-            localStorage.setItem('ephone_auth', 'true');
+            if (authGate && typeof authGate.markAuthenticated === 'function') {
+                authGate.markAuthenticated();
+            } else {
+                localStorage.setItem('ephone_auth', 'true');
+            }
 
             // 初始化数据库 (无参数，使用默认库名)
             initDatabase();
@@ -655,22 +682,25 @@ async function tryLogin() {
 
 // === 主入口 ===
 document.addEventListener('DOMContentLoaded', () => {
-    // 检查本地是否已登录
-    const isAuth = localStorage.getItem('ephone_auth');
+    const authGate = window.OwoApp && window.OwoApp.app && window.OwoApp.app.authGate;
+    if (authGate && typeof authGate.start === 'function') {
+        authGate.start({ initDatabase, init, renderLoginOverlay });
+        return;
+    }
 
+    // 兼容兜底：如果 authGate 未加载，保留旧登录判断。
+    const isAuth = localStorage.getItem('ephone_auth');
     if (isAuth === 'true') {
         console.log(`[Auto Login] 检测到已授权状态`);
         try {
-            // 已登录：直接初始化数据库并启动
             initDatabase();
-            init(); 
+            init();
         } catch (e) {
             console.error("自动登录出错，重置状态:", e);
             localStorage.removeItem('ephone_auth');
             renderLoginOverlay();
         }
     } else {
-        // 未登录：显示登录框
         renderLoginOverlay();
     }
 });

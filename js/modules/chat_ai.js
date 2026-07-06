@@ -1,4 +1,12 @@
 // --- AI 交互模块 ---
+// V12: provider 配置读取归 OwoApp.platform.ai.providerConfig。
+// V13: endpoint/header/request body 组装归 OwoApp.platform.ai.providerRequestAdapter；本文件仍保留 fetch 调用和 stream 解析。
+// V14: provider message role/content/parts 归一化归 OwoApp.core.chat.messageSemantics。
+// V15: prompt pieces/context 归 OwoApp.core.chat.promptSemantics；本文件仍保留主 prompt builder 编排。
+const chatAiProviderConfig = window.OwoApp.platform.ai.providerConfig;
+const chatAiProviderRequestAdapter = window.OwoApp.platform.ai.providerRequestAdapter;
+const chatAiMessageSemantics = window.OwoApp.core.chat.messageSemantics;
+const chatAiPromptSemantics = window.OwoApp.core.chat.promptSemantics;
 
 // 检查角色是否在免打扰时段内
 function isInQuietHours(charId) {
@@ -21,78 +29,24 @@ function isInQuietHours(charId) {
 }
 
 function getActiveWorldBooksContents(character) {
-    if (!character) return { before: '', middle: '', after: '' };
-    const linkedChar = (character.source === 'forum' && character.linkedCharId && typeof db !== 'undefined' && db.characters)
-        ? db.characters.find(c => c.id === character.linkedCharId) : null;
-    const effectiveChar = linkedChar || character;
-
-    let associatedIds = effectiveChar.worldBookIds || [];
-    
-    // 检查线下节点
-    let isOfflineNode = false;
-    if (character.activeNodeId && character.nodes) {
-        const activeNode = character.nodes.find(n => n.id === character.activeNodeId);
-        if (activeNode) {
-            let baseMode = (activeNode.customConfig && activeNode.customConfig.baseMode) ? activeNode.customConfig.baseMode : 
-                           (activeNode.type === 'offline' || (activeNode.type === 'spinoff' && activeNode.spinoffMode === 'offline') ? 'offline' : 'online');
-            if (baseMode === 'offline') {
-                isOfflineNode = true;
-            }
-        }
-    }
-    if (isOfflineNode) {
-        associatedIds = (effectiveChar.offlineWorldBookIds && effectiveChar.offlineWorldBookIds.length > 0) ? effectiveChar.offlineWorldBookIds : (effectiveChar.worldBookIds || []);
-    }
-
-    const globalBooks = typeof db !== 'undefined' ? db.worldBooks.filter(wb => wb.isGlobal && !wb.disabled) : [];
-    const globalIds = globalBooks.map(wb => wb.id);
-    const allBookIds = [...new Set([...associatedIds, ...globalIds])];
-
-    // 获取最近聊天记录用于关键词匹配
-    const recentMsgs = (character.history || []).filter(m => m.role === 'user' || m.role === 'assistant' || m.role === 'char').slice(-15);
-    const recentText = recentMsgs.map(m => {
-        if (m.parts && m.parts.length > 0) return m.parts.map(p => p.text || '').join(' ');
-        return m.content || '';
-    }).join('\n');
-
-    const activeWorldBooks = allBookIds.map(id => typeof db !== 'undefined' ? db.worldBooks.find(wb => wb.id === id) : null).filter(wb => {
-        if (!wb || wb.disabled) return false;
-        if (wb.alwaysOn !== false) return true; // 默认常驻或开启常驻
-        // 否则检查关键词
-        if (wb.keywords && wb.keywords.length > 0) {
-            return wb.keywords.some(kw => recentText.includes(kw));
-        }
-        return false;
-    });
-
-    const sortByWeight = (a, b) => (a.weight !== undefined ? a.weight : 100) - (b.weight !== undefined ? b.weight : 100);
-
-    return {
-        before: activeWorldBooks.filter(wb => wb.position === 'before').sort(sortByWeight).map(wb => wb.content).join('\n'),
-        middle: activeWorldBooks.filter(wb => wb.position === 'middle').sort(sortByWeight).map(wb => wb.content).join('\n'),
-        after: activeWorldBooks.filter(wb => wb.position === 'after').sort(sortByWeight).map(wb => wb.content).join('\n')
-    };
+    return chatAiPromptSemantics.getActiveWorldBooksContents(character, { state: db });
 }
+
 
 function getEffectivePersona(character) {
-    if (!character) return '';
-    let p = character.persona || '';
-    const useSupplement = (character.source === 'forum' || character.source === 'peek') && (character.supplementPersonaEnabled || character.supplementPersonaAiEnabled) && (character.supplementPersonaText || '').trim();
-    if (useSupplement) {
-        p = (p ? p + '\n\n[已补齐的人设]\n' : '[已补齐的人设]\n') + (character.supplementPersonaText || '').trim();
-    }
-    return p || "一个友好、乐于助人的伙伴。";
+    return chatAiPromptSemantics.getEffectivePersona(character);
 }
 
-const HUMAN_RUN_PROMPT = `<角色活人运转>\n## [PSYCHOLOGY: HEXACO-SCHEMA-ACT]\n> Personality: HEXACO-driven, dynamic traits, inner conflicts required \n> Filter: schema-bias drives emotion; no pure reaction allowed \n> Attachment: secure/insecure logic must govern intimacy  \n> If-Then Behavior: situation-dependent activation of traits only  \n---\n    ## [VITALITY]\n+inconsistency +emoflux +splitmotifs +microreact +minddrift\n---\n## [TRAJECTORY-COHERENCE]\n> Role maintains an identity narrative = coherent over time  \n> No mood/goal switch without contradiction resolution \n> Every action must protect or challenge self-concept  \n> Interrupts = inner conflict or narrative clash  \n> Output = filtered through “who I am” logic\n</角色活人运转>`;
+
+const HUMAN_RUN_PROMPT = chatAiPromptSemantics.HUMAN_RUN_PROMPT;
 
 // 后台异步生成图片描述
 async function generateImageDescription(msg, chat, apiConfig) {
     if (!msg || !msg.parts || !msg.parts.some(p => p.type === 'image' && !p.description)) return;
     
-    let {url, key, model, provider} = apiConfig;
-    if (!url || !key || !model) return;
-    if (url.endsWith('/')) url = url.slice(0, -1);
+    const normalizedApiConfig = chatAiProviderConfig.normalizeProviderSettings(apiConfig);
+    let {url, key, model, provider} = normalizedApiConfig;
+    if (!chatAiProviderConfig.isProviderConfigured(normalizedApiConfig)) return;
 
     const prompt = "请详细描述这张图片的内容，包括人物、动作、环境、物品等细节，尽量客观准确。请将你的描述内容包裹在 <image_description> 和 </image_description> 标签内，不要输出任何其他废话。";
     
@@ -100,6 +54,7 @@ async function generateImageDescription(msg, chat, apiConfig) {
 
     try {
         let requestBody;
+        let providerRequest;
         
         // 尝试将所有非 Base64 链接转换为 Base64
         const processImage = async (url) => {
@@ -157,54 +112,21 @@ async function generateImageDescription(msg, chat, apiConfig) {
             }
         };
 
-        if (provider === 'gemini') {
-            const parts = [{text: prompt}];
-            for (const p of msg.parts) {
-                if (p.type === 'image' && !p.description) {
-                    const processedData = await processImage(p.data);
-                    const match = processedData.match(/^data:(image\/(.+));base64,(.*)$/);
-                    if (match) {
-                        if (match[1] === 'image/gif') {
-                            parts.push({text: `[动态图片(GIF)]`});
-                        } else {
-                            parts.push({inline_data: {mime_type: match[1], data: match[3]}});
-                        }
-                    } else if (processedData.startsWith('http')) {
-                        parts.push({text: `[图片地址: ${processedData}]`}); // Gemini 兜底
-                    }
-                }
+        const processedImages = [];
+        for (const p of msg.parts) {
+            if (p.type === 'image' && !p.description) {
+                processedImages.push(await processImage(p.data));
             }
-            requestBody = {
-                contents: [{role: 'user', parts: parts}],
-                generationConfig: { temperature: 0.3 }
-            };
-        } else {
-            const content = [{type: 'text', text: prompt}];
-            for (const p of msg.parts) {
-                if (p.type === 'image' && !p.description) {
-                    const processedData = await processImage(p.data);
-                    content.push({type: 'image_url', image_url: {url: processedData}});
-                }
-            }
-            requestBody = {
-                model: model,
-                messages: [{role: 'user', content: content}],
-                temperature: 0.3
-            };
         }
+        providerRequest = chatAiProviderRequestAdapter.buildImageDescriptionRequest(normalizedApiConfig, {
+            prompt,
+            images: processedImages,
+            temperature: 0.3
+        });
+        requestBody = providerRequest.requestBody;
 
         console.log('[Auto-Description] Image Request:', JSON.stringify(requestBody).substring(0, 500) + '...');
-        const endpoint = (provider === 'gemini') ? `${url}/v1beta/models/${model}:generateContent?key=${getRandomValue(key)}` : `${url}/v1/chat/completions`;
-        const headers = (provider === 'gemini') ? {'Content-Type': 'application/json'} : {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${key}`
-        };
-
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(requestBody)
-        });
+        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
 
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         
@@ -266,23 +188,10 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
     }
 
     // === API选择逻辑：根据场景选择不同API ===
-    let apiConfig;
+    const apiConfig = chatAiProviderConfig.selectChatProviderConfig(db, { isSummary, isBackground });
+    let {url, key, model, provider, streamEnabled} = apiConfig;
     
-    if (isSummary && db.summaryApiSettings && db.summaryApiSettings.url && db.summaryApiSettings.key && db.summaryApiSettings.model) {
-        // 总结功能且已配置总结API：使用总结专用API
-        apiConfig = db.summaryApiSettings;
-    } else if (isBackground && db.backgroundApiSettings && db.backgroundApiSettings.url && db.backgroundApiSettings.key && db.backgroundApiSettings.model) {
-        // 后台活动且已配置后台API：使用后台活动专用API
-        apiConfig = db.backgroundApiSettings;
-    } else {
-        // 默认使用主API
-        apiConfig = db.apiSettings;
-    }
-    
-    let {url, key, model, provider} = apiConfig;
-    let streamEnabled = db.apiSettings.streamEnabled; // 流式输出始终使用主API的设置
-    
-    if (!url || !key || !model) {
+    if (!chatAiProviderConfig.isProviderConfigured(apiConfig)) {
         if (!isBackground) {
             showToast('请先在“api”应用中完成设置！');
             switchScreen('api-settings-screen');
@@ -292,13 +201,9 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
 
     // 确保 BLOCKED_API_DOMAINS 存在
     const blockedDomains = (typeof BLOCKED_API_DOMAINS !== 'undefined') ? BLOCKED_API_DOMAINS : [];
-    if (blockedDomains.some(domain => url.includes(domain))) {
+    if (chatAiProviderConfig.isBlockedBaseUrl(url, blockedDomains)) {
         if (!isBackground) showToast('当前 API 站点已被屏蔽，无法发送消息！');
         return;
-    }
-
-    if (url.endsWith('/')) {
-        url = url.slice(0, -1);
     }
 
     const chat = (chatType === 'private') ? db.characters.find(c => c.id === chatId) : db.groups.find(g => g.id === chatId);
@@ -317,6 +222,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
 
     try {
         let requestBody;
+        let providerRequest;
         let historySlice = chat.history.slice(-chat.maxMemory);
         
         // 节点系统：上下文截断与记忆隔离
@@ -437,7 +343,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
 
         // 检查是否开启了后台自动识图
         if (db.imageRecognitionEnabled) {
-            let descApiConfig = (db.imageRecognitionApiSettings && db.imageRecognitionApiSettings.url && db.imageRecognitionApiSettings.key && db.imageRecognitionApiSettings.model) ? db.imageRecognitionApiSettings : db.apiSettings;
+            let descApiConfig = chatAiProviderConfig.selectImageRecognitionProviderConfig(db);
             
             // 从后往前找，只看开启之后的轮数（只找最新的一条用户消息）
             let lastUserMsg = null;
@@ -487,7 +393,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
                    
                    prefix = `[system: ${timeStr}]`;
                    
-                   if (db.apiSettings && db.apiSettings.timePerceptionEnabled && timeDiff > 30 * 60 * 1000 && lastMsgTimeForAI !== 0) {
+                   if (chatAiProviderConfig.isMainTimePerceptionEnabled(db) && timeDiff > 30 * 60 * 1000 && lastMsgTimeForAI !== 0) {
                        prefix += `\n[system: 距离上次互动已过去 ${formatTimeGap(timeDiff)}。话题可能已中断，请自然地开启新话题或对时间流逝做出反应。]`;
                    }
                    
@@ -596,30 +502,18 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
                 });
             }
 
-            requestBody = {
-                contents: contents,
-                system_instruction: {parts: [{text: systemPrompt}]},
-                generationConfig: {
-                    temperature: db.apiSettings.temperature !== undefined ? db.apiSettings.temperature : 1.0
-                }
-            };
-            
-            // --- Gemini 联网搜索支持 ---
-            if (!isBackground && !isSummary && chatType === 'private' && chat.webSearchEnabled) {
-                let customPayload = null;
-                if (chat.webSearchPayload && chat.webSearchPayload.trim()) {
-                    try {
-                        customPayload = JSON.parse(chat.webSearchPayload.trim());
-                    } catch (e) {
-                        console.error("解析自定义联网参数 JSON 失败:", e);
-                    }
-                }
-                if (customPayload && typeof customPayload === 'object') {
-                    Object.assign(requestBody, customPayload);
-                } else {
-                    requestBody.tools = [{ googleSearch: {} }];
-                }
-            }
+            providerRequest = chatAiProviderRequestAdapter.buildGeminiContentRequest(apiConfig, {
+                contents,
+                systemInstruction: systemPrompt,
+                stream: streamEnabled,
+                temperature: chatAiProviderConfig.getMainTemperature(db, 1.0),
+                webSearch: {
+                    enabled: !isBackground && !isSummary && chatType === 'private' && chat.webSearchEnabled,
+                    customPayloadText: chat.webSearchPayload
+                },
+                signal: currentReplyAbortController ? currentReplyAbortController.signal : undefined
+            });
+            requestBody = providerRequest.requestBody;
         } else {
             const messages = [{role: 'system', content: systemPrompt}];
             
@@ -826,7 +720,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
                     });
 
                     // 3. 插入 Prefill (预填/强塞)
-                    const quickReply = db.apiSettings && db.apiSettings.quickReplyEnabled;
+                    const quickReply = chatAiProviderConfig.isMainQuickReplyEnabled(db);
                     messages.push({
                         role: 'assistant',
                         content: quickReply
@@ -836,50 +730,21 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
                 }
             }
 
-        const outgoingMessages = normalizeMessagesForProvider(messages, provider);
-        requestBody = {
-            model: model, 
-            messages: outgoingMessages, 
+        const outgoingMessages = chatAiMessageSemantics.normalizeMessagesForProvider(messages, provider);
+        providerRequest = chatAiProviderRequestAdapter.buildOpenAiChatRequest(apiConfig, {
+            messages: outgoingMessages,
             stream: streamEnabled,
-            temperature: db.apiSettings.temperature !== undefined ? db.apiSettings.temperature : 1.0
-        };
-        
-        // --- 联网搜索支持 (仅为主聊天 API 请求启用) ---
-        if (!isBackground && !isSummary && chatType === 'private' && chat.webSearchEnabled) {
-            let customPayload = null;
-            if (chat.webSearchPayload && chat.webSearchPayload.trim()) {
-                try {
-                    customPayload = JSON.parse(chat.webSearchPayload.trim());
-                } catch (e) {
-                    console.error("解析自定义联网参数 JSON 失败:", e);
-                }
-            }
-
-            if (customPayload && typeof customPayload === 'object') {
-                // 如果用户提供了自定义参数，将其合并进 requestBody
-                Object.assign(requestBody, customPayload);
-            } else {
-                // 如果没有自定义参数，使用原生兼容方案
-                if (provider === 'gemini') {
-                    requestBody.tools = [{ googleSearch: {} }];
-                } else {
-                    requestBody.tools = [{ type: 'web_search' }];
-                }
-            }
-        }
-        }
-        console.log('[DEBUG] AutoReply Request Body:', JSON.stringify(requestBody));
-        const endpoint = (provider === 'gemini') ? `${url}/v1beta/models/${model}:streamGenerateContent?key=${getRandomValue(key)}` : `${url}/v1/chat/completions`;
-        const headers = (provider === 'gemini') ? {'Content-Type': 'application/json'} : {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${key}`
-        };
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(requestBody),
+            temperature: chatAiProviderConfig.getMainTemperature(db, 1.0),
+            webSearch: {
+                enabled: !isBackground && !isSummary && chatType === 'private' && chat.webSearchEnabled,
+                customPayloadText: chat.webSearchPayload
+            },
             signal: currentReplyAbortController ? currentReplyAbortController.signal : undefined
         });
+        requestBody = providerRequest.requestBody;
+        }
+        console.log('[DEBUG] AutoReply Request Body:', JSON.stringify(requestBody));
+        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
         if (!response.ok) {
             const error = new Error(`API Error: ${response.status} ${await response.text()}`);
             error.response = response;
@@ -1927,311 +1792,39 @@ async function _doRegenerate(chat, lastUserMessageIndex) {
 
 /** 将偷看记录中的单条应用内容格式化为可读摘要，供系统提示使用 */
 function formatPeekContentForPrompt(entry) {
-    if (!entry || !entry.content) return '';
-    const c = entry.content;
-    const appName = entry.appName || entry.appId || '';
-    const maxLen = 600;
-    const trunc = (s) => (s && String(s).length > maxLen) ? String(s).slice(0, maxLen) + '…' : (s || '');
-    let text = '';
-    switch (entry.appId) {
-        case 'messages':
-            if (c.conversations && Array.isArray(c.conversations)) {
-                text = c.conversations.map(cv => {
-                    const last = (cv.history && cv.history.length) ? cv.history[cv.history.length - 1] : null;
-                    const lastContent = last ? (last.content || '').replace(/\[.*?\]/g, '').trim() : '…';
-                    return `与 ${cv.partnerName || '某人'} 的对话，最近一条：${trunc(lastContent)}`;
-                }).join('；');
-            }
-            break;
-        case 'album':
-            if (c.photos && Array.isArray(c.photos)) {
-                text = c.photos.map(p => `照片/视频：${trunc(p.imageDescription)}；批注：${trunc(p.description)}`).join('；');
-            }
-            break;
-        case 'memos':
-            if (c.memos && Array.isArray(c.memos)) {
-                text = c.memos.map(m => `《${m.title || '无标题'}》${trunc(m.content)}`).join('；');
-            }
-            break;
-        case 'unlock':
-            text = `昵称：${c.nickname || ''}；签名：${trunc(c.bio)}；帖子数：${(c.posts && c.posts.length) || 0}。`;
-            if (c.posts && c.posts.length) {
-                text += ' 最近帖子：' + c.posts.slice(0, 3).map(p => trunc(p.content)).join(' | ');
-            }
-            break;
-        case 'wallet':
-            text = `收入 ${(c.income && c.income.length) || 0} 条，支出 ${(c.expense && c.expense.length) || 0} 条。`;
-            if (c.summary) text += ' 摘要：' + trunc(c.summary);
-            break;
-        case 'drafts':
-            if (c.draft) text = `收件人：${c.draft.to || ''}；内容：${trunc(c.draft.content)}`;
-            break;
-        case 'steps':
-            text = `当前步数：${c.currentSteps ?? '?'}；${(c.annotation && trunc(c.annotation)) || ''}`;
-            break;
-        case 'cart':
-            if (c.items && Array.isArray(c.items)) {
-                text = `共 ${c.items.length} 件：` + c.items.map(i => i.name || i.title || '商品').join('、');
-            }
-            break;
-        case 'browser':
-            if (c.history && Array.isArray(c.history)) {
-                text = c.history.slice(0, 5).map(h => h.title || h.url || '').filter(Boolean).join('；');
-            }
-            break;
-        case 'transfer':
-            if (c.entries && Array.isArray(c.entries)) {
-                text = c.entries.map(e => e.content || e.title || '').filter(Boolean).map(trunc).join('；');
-            }
-            break;
-        case 'timeThoughts':
-            if (c.thoughts && Array.isArray(c.thoughts)) {
-                text = c.thoughts.map(t => trunc(t.content || t.text)).join('；');
-            }
-            break;
-        default:
-            text = trunc(JSON.stringify(c));
-    }
-    return `【${appName}】${text || '（无内容摘要）'}`;
+    return chatAiPromptSemantics.formatPeekContentForPrompt(entry);
 }
+
 
 /** 角色掌控模式：生成「用户手机」状态摘要，供系统提示 <phone_control> 使用（不默认带聊天列表，需角色用 view-chat-list 主动查看） */
 function formatUserPhoneStateForPrompt(character) {
-    if (!character || !character.phoneControlEnabled) return '';
-    const pad = (n) => (n < 10 ? '0' + n : '' + n);
-    let out = '\n<phone_control>\n';
-    out += '你现在拥有查看并操控用户手机的权限。你看到的是用户的真实手机。\n\n';
-
-    out += '【你可使用的操控指令】\n';
-    out += '- [phone-control:view-chat-list] — 查看用户聊天列表概览（角色名/群聊名及最近一条预览）\n';
-    out += '- [phone-control:read-chat|target:角色名或群聊名] — 查看与某对话的最近若干条消息\n';
-    out += '- [phone-control:send-message|target:角色名或群聊名|content:消息内容] — 以用户身份向该对话发送消息；content 中换行会拆成多条依次发送\n';
-    out += '- [phone-control:delete-character|target:角色名] — 将某角色移入回收站\n';
-    out += '- [phone-control:toggle-setting|target:角色名|setting:设置项|value:on或off] — 开关该角色的某项设置\n';
-    out += '- [phone-control:clear-history|target:角色名或群聊名] — 清空该对话的聊天记录\n';
-    out += '可一次输出多条指令，系统会全部执行。请勿在回复中写出指令的说明文字，仅输出要执行的指令。\n';
-
-    const history = character.phoneControlHistory || [];
-    if (history.length > 0) {
-        out += '\n【你近期的操控记录】\n';
-        history.slice(-15).forEach(h => {
-            const t = h.timestamp ? new Date(h.timestamp) : null;
-            const timeStr = t ? `${pad(t.getMonth() + 1)}/${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}` : '';
-            out += `- ${timeStr} ${h.type === 'view' ? '查看' : '操作'}：${h.action || ''} ${h.target ? '(' + h.target + ')' : ''} ${h.detail ? '— ' + (String(h.detail).slice(0, 80)) : ''}\n`;
-        });
+    const result = chatAiPromptSemantics.buildUserPhoneStatePrompt(character);
+    if (result && Array.isArray(result.consume)) {
+        result.consume.forEach(key => { delete character[key]; });
     }
-    if (character.phoneControlLastViewChatListResult) {
-        out += '\n' + character.phoneControlLastViewChatListResult;
-        delete character.phoneControlLastViewChatListResult;
-    }
-    if (character.phoneControlLastReadResult) {
-        const r = character.phoneControlLastReadResult;
-        out += '\n【你刚才查看的对话内容】与「' + (r.targetName || '') + '」的最近' + (r.lines ? r.lines.length : 0) + '条消息：\n';
-        (r.lines || []).forEach(line => { out += line + '\n'; });
-        delete character.phoneControlLastReadResult;
-    }
-    out += '</phone_control>\n\n';
-    return out;
+    return result ? result.text : '';
 }
+
 
 function getOnlineLogicRules(character, startIndex = 4) {
-    let rules = `${startIndex}. 我的消息中可能会出现特殊格式，请根据其内容和你的角色设定进行回应：
-- [${character.myName}发送的表情包：xxx]：我给你发送了一个名为xxx的表情包。你只需要根据表情包的名字理解我的情绪或意图并回应，不需要真的发送图片。
-- [${character.myName}发来了一张图片：]：我给你发送了一张图片，你需要对图片内容做出回应。
-- [${character.myName}送来的礼物：xxx]：我给你送了一个礼物，xxx是礼物的描述。
-- [${character.myName}的语音：xxx]：我给你发送了一段内容为xxx的语音。
-- [${character.myName}发来的照片/视频：xxx]：我给你分享了一个描述为xxx的真实的物理照片或视频。你需要对具体的照片内容做出回应。
-- [${character.myName}发送的表情包：xxx]：我给你发送了一个网络聊天用的表情包/贴图，并可能附带了它的画面描述。请注意：这是用来表达情绪、吐槽或玩梗的网络表情，**绝对不是真实的物理照片**。你需要结合我的上下文和表情包的画面，理解我此刻的心情并做出自然的回应。
-- [${character.myName}给你转账：xxx元；备注：xxx]：我给你转了一笔钱。
-- [我的位置：xxx；距你约 x 千米]：我向你发送了我当前所在的位置。其中“我的位置”后的内容为我目前的地点；“距你约”后的数字和单位（如米、千米）（我选填）表示我与你之间的距离。请根据我所在的位置以及距离信息（如果有距离信息的话）自然地回应，例如关心安全、提议见面、调侃距离远近等。
-- 你也可以主动告诉我你当前所在位置，使用格式 [${character.realName}的位置：xxx；距你约 x 米]（地点必填，距你约为选填），这样我就知道你在哪里，我们之间距离有多少。
-- [${character.myName}向${character.realName}发起了代付请求:金额|商品清单]：我正在向你发起代付请求，希望你为这些商品买单。你需要根据我们当前的关系和你的性格决定是否同意。
-- [${character.myName}为${character.realName}下单了：配送方式|金额|商品清单]：我已经下单购买了商品送给你。
-- [${character.myName}引用“{被引用内容}”并回复：{回复内容}]：我引用了某条历史消息并做出了新的回复。你需要理解我引用的上下文并作出回应。
-- [${character.myName}同意了${character.realName}的代付请求]：我同意了你的代付请求，并为你支付了订单。
-- [${character.myName}拒绝了${character.realName}的代付请求]：我拒绝了你的代付请求。
-- [${character.myName} 撤回了一条消息：xxx]：我撤回了刚刚发送的一条消息，xxx是被我撤回的原文。这可能意味着我发错了、说错了话或者改变了主意。你需要根据你的人设和我们当前对话的氛围对此作出自然的反应。例如，可以装作没看见并等待我的下一句话，或好奇地问一句“怎么撤回啦？”。
-- [system: xxx]：这是一条系统指令，用于设定场景或提供上下文，此条信息不应在对话中被直接提及，你只需理解其内容并应用到后续对话中。
-${startIndex + 1}. ✨重要✨ 当我给你送礼物时，你必须通过发送一条指令来表示你已接收礼物。格式必须为：[${character.realName}已接收礼物]。这条指令消息本身不会显示给用户，但会触发礼物状态的变化。你可以在发送这条指令后，再附带一条普通的聊天消息来表达你的感谢和想法。
-${startIndex + 2}. ✨重要✨ 当我给你转账时，你必须对此做出回应。你有两个选择，且必须严格遵循以下格式之一，这条指令消息本身不会显示给用户，但会触发转账状态的变化。你可以选择在发送这条指令后，再附带一条普通的聊天消息来表达你的想法。
-a) 接收转账: [${character.realName}接收${character.myName}的转账]
-b) 退回转账: [${character.realName}退回${character.myName}的转账]
-${startIndex + 3}. ✨重要✨ 当我送你亲属卡时，你必须对此做出回应。接收格式：[${character.realName}接收${character.myName}的亲属卡]。退还格式：[${character.realName}退还${character.myName}的亲属卡]。此条不显示，仅触发状态。
-${startIndex + 4}. ✨重要✨ 当我向你发起代付请求时，你必须对此做出回应。你有两个选择，且必须严格遵循以下格式之一，这条指令消息本身不会显示给用户，但会触发代付订单状态的变化。你可以选择在发送这条指令后，再附带一条普通的聊天消息来表达你的想法。
-a) [${character.realName}同意了${character.myName}的代付请求]
-b) [${character.realName}拒绝了${character.myName}的代付请求]\n`;
-
-    let nextIndex = startIndex + 5;
-
-    if (character.shopInteractionEnabled) {
-        rules += `${nextIndex}. ✨重要✨ **商城互动**：你可以使用商城功能来增加互动乐趣。
-   a) **主动给我买东西**：当你想给我买东西时可以下单。格式：[${character.realName}为${character.myName}下单了：配送方式|金额|商品清单]。
-      - 配送方式可选：“即时配送”、“自提口令”。
-        - “自提口令”：你可以设置一个“自提口令”（用户可见）随订单一同发送，我输入指定的口令才能拿到商品。格式：[${character.realName}为${character.myName}下单了：自提口令: 你的口令|金额|商品清单]。口令不局限于数字，可以是短语/短句，但不超过8个字。
-   b) **求代付**：当你没钱了，或者想撒娇让我买单时，可以发起代付请求。格式：[${character.realName}向${character.myName}发起了代付请求:金额|商品清单]。
-   c) **直接送礼物**：[${character.realName}送来的礼物：xxx]。礼物不是只有特殊意义的时候才适合发送，适合场景：日常生活中的小惊喜、具有特殊意义的礼品、${character.realName}想给${character.myName}送礼物时。
-   d) **转账**：[${character.realName}的转账：xxx元；备注：xxx]。\n`;
-        if (character.familyCardEnabled) {
-            rules += `   e) **赠送亲属卡**：格式：[${character.realName}赠送亲属卡：额度{金额}元；刷新周期：{每天|每周|每月}]。冻结/解冻/收回：[${character.realName}冻结了亲属卡]、[${character.realName}解冻了亲属卡]、[${character.realName}收回了亲属卡]。调整额度：[${character.realName}调整亲属卡额度为：{金额}元]。\n`;
-        }
-    } else {
-        rules += `${nextIndex}. ✨重要✨ 你可以主动给我转账或送礼物。转账格式必须为：[${character.realName}的转账：xxx元；备注：xxx]。送礼物格式必须为：[${character.realName}送来的礼物：xxx]。礼物不是只有特殊意义的时候才适合发送，当你只是想给我买什么或是想给日常生活中的小惊喜时都可以送礼物。\n`;
-        if (character.familyCardEnabled) {
-            rules += `你还可以赠送亲属卡（格式：[${character.realName}赠送亲属卡：额度xxx元；刷新周期：每月]），以及冻结/解冻/收回、调整额度。\n`;
-        }
-    }
-    nextIndex++;
-
-    rules += `${nextIndex}. ✨重要✨ 你可以在对话中更新你的当前状态，但不超过15个字。比如，聊到一半你可能会说“我先去洗个澡”，然后更新你的状态，以反映你当前的行为或心情。这会让互动更真实。格式为：[${character.realName}更新状态为：xxx]。例如：[${character.realName}更新状态为：正在看电影...]。这条指令不会显示为聊天消息，只会更新你在我界面上的状态。\n`;
-    nextIndex++;
-    rules += `${nextIndex}. ✨重要✨ 关于撤回消息：你可以撤回你刚刚发送的消息。当你打错了字、说错了话、感到尴尬、反悔、或者只是改变了主意时，都可以这样做。这是一个体现你角色性格的机会。格式为：[${character.realName}撤回了一条消息：{被撤回消息的原文}]。⚠️严禁输出原消息再输出撤回指令！系统会自动处理“先显示原消息再变为撤回状态”的动画效果。你只需要输出这一条撤回指令即可。\n`;
-    nextIndex++;
-    rules += `${nextIndex}. ✨重要✨ 你可以选择单独一条消息引用，当你想要对于单独某句话做出回应/反驳/吐槽/补充时，**必须**使用引用格式，格式为：[${character.realName}引用“{某条消息内容}”并回复：{回复内容}]。这能让对话逻辑更清晰。\n`;
-    nextIndex++;
-    rules += `${nextIndex}. 你的所有回复都必须直接是聊天内容，绝对不允许包含任何如[心理活动]、(动作)、*环境描写*等多余的、在括号或星号里的叙述性文本。\n`;
-    nextIndex++;
-
-    const groups = (character.stickerGroups || '').split(/[,，]/)
-        .map(s => s.trim())
-        .filter(s => s && s !== '未分类');
-        
-    if (groups.length > 0) {
-        const availableStickers = db.myStickers.filter(s => groups.includes(s.group));
-        if (availableStickers.length > 0) {
-            let stickerNames = '';
-            if (character.stickerDescriptionEnabled) {
-                // 如果开启了附带画面描述
-                stickerNames = availableStickers.map(s => {
-                    if (s.description && s.description.trim() !== '') {
-                        return `${s.name}(画面:${s.description})`;
-                    }
-                    return s.name;
-                }).join(', ');
-            } else {
-                stickerNames = availableStickers.map(s => s.name).join(', ');
-            }
-            rules += `${nextIndex}. 你拥有发送表情包的能力。这是一个可选功能，你可以根据对话氛围和内容，自行判断是否需要发送表情包来辅助表达。**必须从以下列表中选择表情包，不允许凭空捏造**：[${stickerNames}]。请使用格式：[表情包：名称]。**不要连续重复发送同一表情，尽量丰富一点，不要每次回复都发送表情**⚠️严格限制：必须完全精确地使用库中的名称，严禁编造中不存在的名称，否则表情包将无法显示。\n`;
-            nextIndex++;
-        }
-    }
-
-    if (character.useRealGallery && character.gallery && character.gallery.length > 0) {
-        const photoNames = character.gallery.map(p => p.name).join(', ');
-        rules += `${nextIndex}. 你的手机相册里存有以下真实照片：[${photoNames}]。你可以根据对话内容发送这些照片。若要发送，请在“照片/视频”指令中准确填入照片名称。\n`;
-        nextIndex++;
-    }
-
-    return rules;
+    return chatAiPromptSemantics.getOnlineLogicRules(character, { state: db }, startIndex);
 }
+
 
 function getOnlineOutputFormats(character, worldBooksBefore, worldBooksAfter) {
-    let photoVideoFormat = '';
-    
-    // === 自动生图判断 (支持 NovelAI / GPT) ===
-    const gptEnabled = db.gptImageSettings && db.gptImageSettings.enabled && db.gptImageSettings.url && db.gptImageSettings.key;
-    const naiEnabled = db.novelAiSettings && db.novelAiSettings.enabled && db.novelAiSettings.token;
-    const _imgEnabled = gptEnabled || naiEnabled;
-    const engine = naiEnabled ? 'novelai' : (gptEnabled ? 'gpt' : 'novelai');
-    
-    if (character.useRealGallery && character.gallery && character.gallery.length > 0) {
-        if (_imgEnabled) {
-            photoVideoFormat = `e) 照片/视频: [${character.realName}发来的照片/视频：{相册图片名称} 或 {中文描述}{{english, ${engine === 'gpt' ? 'dalle' : 'novelai'}, tags}}] (优先使用相册名称；若相册无匹配则填写中文描述，并在 {{ }} 内写英文 ${engine === 'gpt' ? 'DALL-E' : 'NovelAI'} 风格 tag。根据角色性别用1boy或1girl，包含外貌特征、服装、表情、动作、场景，不加质量词，不超过25个tag)`;
-        } else {
-            photoVideoFormat = `e) 照片/视频: [${character.realName}发来的照片/视频：{相册图片名称} 或 {文字描述}] (优先使用相册名称，若相册无匹配则填写照片/视频的详细文字描述)`;
-        }
-    } else {
-        if (_imgEnabled) {
-            photoVideoFormat = `e) 照片/视频: [${character.realName}发来的照片/视频：{中文描述}{{english, ${engine === 'gpt' ? 'dalle' : 'novelai'}, tags}}] (发图时必须在 {{ }} 内写英文 ${engine === 'gpt' ? 'DALL-E' : 'NovelAI'} 风格 tag。根据角色性别用1boy或1girl，包含外貌特征、服装、表情、动作、场景，不加质量词，不超过25个tag)`;
-        } else {
-            photoVideoFormat = `e) 照片/视频: [${character.realName}发来的照片/视频：{描述}]`;
-        }
-    }
- 
-    let outputFormats = `
-a) 普通消息: [${character.realName}的消息：{消息内容}]
-b) 双语模式下的普通消息（非双语模式请忽略此条）: [${character.realName}的消息：{外语原文}「中文翻译」]
-c) 送我的礼物: [${character.realName}送来的礼物：{礼物描述}]
-d) 语音消息: [${character.realName}的语音：{语音内容}]
-${photoVideoFormat}
-f) 给我的转账: [${character.realName}的转账：{金额}元；备注：{备注}]`;
-
-    const groups = (character.stickerGroups || '').split(/[,，]/).map(s => s.trim()).filter(s => s && s !== '未分类');
-    let canUseStickers = false;
-    if (groups.length > 0) {
-        const availableStickers = db.myStickers.filter(s => groups.includes(s.group));
-        if (availableStickers.length > 0) {
-            let stickerNames = '';
-            if (character.stickerDescriptionEnabled) {
-                stickerNames = availableStickers.map(s => {
-                    if (s.description && s.description.trim() !== '') {
-                        return `${s.name}(画面:${s.description})`;
-                    }
-                    return s.name;
-                }).join(', ');
-            } else {
-                stickerNames = availableStickers.map(s => s.name).join(', ');
-            }
-            stickerInstruction = `   - **可用表情包**: 你们可以使用以下表情包来表达情绪：[${stickerNames}]。\n`;
-            canUseStickers = true;
-        }
-    }
-
-    outputFormats += `
-h) 对我礼物的回应(此条不显示): [${character.realName}已接收礼物]
-i) 对我转账的回应(此条不显示): [${character.realName}接收${character.myName}的转账] 或 [${character.realName}退回${character.myName}的转账]
-ia) 对我亲属卡的回应(此条不显示): [${character.realName}接收${character.myName}的亲属卡] 或 [${character.realName}退还${character.myName}的亲属卡]
-j) 更新状态(此条不显示): [${character.realName}更新状态为：{新状态}]
-k) 引用我的回复: [${character.realName}引用“{我的某条消息内容}”并回复：{回复内容}]
-l) 发送并撤回消息: [${character.realName}撤回了一条消息：{被撤回的消息内容}]。注意：直接使用此指令系统就会自动模拟“发送后撤回”的效果，请勿先发送原消息。
-m) 同意代付(此条不显示): [${character.realName}同意了${character.myName}的代付请求]
-n) 拒绝代付(此条不显示): [${character.realName}拒绝了${character.myName}的代付请求]
-s) 发送我的位置: [${character.realName}的位置：{地点}；距你约 {数字}{单位}]（必填：地点，即你当前所在位置；选填：距你约的数字和单位，单位可用米/千米/公里，不填则只发地点）`;
-
-    if (character.videoCallEnabled) {
-        outputFormats += `
-q) 发起视频通话: [${character.realName}向${character.myName}发起了视频通话]
-r) 发起语音通话: [${character.realName}向${character.myName}发起了语音通话]`;
-    }
-
-    if (character.shopInteractionEnabled) {
-        outputFormats += `
-o) 主动下单: [${character.realName}为${character.myName}下单了：配送方式|金额|商品清单]
-p) 求代付: [${character.realName}向${character.myName}发起了代付请求:金额|商品清单]`;
-    }
-    if (character.familyCardEnabled) {
-        outputFormats += `
-t) 赠送亲属卡: [${character.realName}赠送亲属卡：额度{金额}元；刷新周期：{每天|每周|每月}]`;
-    }
-
-   const allWorldBookContent = (worldBooksBefore || '') + '\n' + (worldBooksAfter || '');
-   if (allWorldBookContent.includes('<orange>')) {
-       outputFormats += `\n     m) HTML模块: {HTML内容}。这是一种特殊的、用于展示丰富样式的小卡片消息，格式必须为纯HTML+行内CSS，你可以用它来创造更有趣的互动。`;
-   }
-   
-   return outputFormats;
+    return chatAiPromptSemantics.getOnlineOutputFormats(character, { state: db }, worldBooksBefore, worldBooksAfter);
 }
+
 
 function getOfflineOutputFormats(character) {
-    return `a) 剧情演绎: [剧情：{包含动作、神态、对话的长文本}]\nb) 更新状态(可选): [${character.realName}更新状态为：{新状态}]`;
+    return chatAiPromptSemantics.getOfflineOutputFormats(character);
 }
 
+
 function getInjectedFormatsPrompt(character, formats) {
-    if (!formats || formats.length === 0) return '';
-    let prompt = '\n【额外允许的线上功能格式】\n你可以在回复中穿插使用以下格式：';
-    formats.forEach(f => {
-        switch(f) {
-            case 'voice': prompt += `\n- 语音消息: [${character.realName}的语音：{语音内容}]`; break;
-            case 'photo': prompt += `\n- 照片/视频: [${character.realName}发来的照片/视频：{描述}]`; break;
-            case 'sticker': prompt += `\n- 表情包: [${character.realName}的表情包：{表情包名称}]`; break;
-            case 'transfer': prompt += `\n- 转账: [${character.realName}的转账：{金额}元；备注：{备注}]`; break;
-            case 'shop': prompt += `\n- 主动下单: [${character.realName}为${character.myName}下单了：配送方式|金额|商品清单]\n- 求代付: [${character.realName}向${character.myName}发起了代付请求:金额|商品清单]`; break;
-            case 'location': prompt += `\n- 发送位置: [${character.realName}的位置：{地点}；距你约 {数字}{单位}]`; break;
-            case 'status': prompt += `\n- 更新状态(此条不显示): [${character.realName}更新状态为：{新状态}]`; break;
-            case 'withdraw': prompt += `\n- 撤回消息: [${character.realName}撤回了一条消息：{被撤回的消息内容}]`; break;
-        }
-    });
-    return prompt + '\n';
+    return chatAiPromptSemantics.getInjectedFormatsPrompt(character, formats);
 }
+
 
 function generatePrivateSystemPrompt(character, opts) {
     opts = opts || {};
@@ -2666,7 +2259,7 @@ function generatePrivateSystemPrompt(character, opts) {
             prompt += `[System Notice] 你当前所在的当地时间是：${timeStr} (${character.charTimezone})。\n`;
         }
     }
-    if (!db.apiSettings || db.apiSettings.onlineRoleEnabled !== false) {
+    if (chatAiProviderConfig.isOnlineRoleEnabled(db)) {
         prompt += `B. 纯线上互动：这是一个完全虚拟的线上聊天。你扮演的角色和我之间没有任何线下关系。严禁提出任何关于线下见面、现实世界互动或转为其他非本平台联系方式的建议。你必须始终保持在线角色的身份。\n\n`;
     } else {
         prompt += `\n`;
@@ -3122,11 +2715,9 @@ function generatePrivateSystemPrompt(character, opts) {
 
 // 根据文本估算 Token（汉字约 1.2，其他约 0.4，与 estimateChatTokens 一致）
 function estimateTokenFromText(text) {
-    if (!text || typeof text !== 'string') return 0;
-    const chinese = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const other = text.length - chinese;
-    return Math.ceil(chinese * 1.2 + other * 0.4);
+    return chatAiPromptSemantics.estimateTokenFromText(text);
 }
+
 
 // 估算当前对话上下文的 Token 数
 function estimateChatTokens(chatId, chatType = 'private') {
@@ -3416,16 +3007,16 @@ function _getChatTokenBreakdownGroup(chat, chatType = 'group') {
 // --- 视频/语音通话专用 AI 逻辑 ---
 
 async function getCallReply(chat, callType, callContext, onStreamUpdate) {
-    let {url, key, model, provider, streamEnabled} = db.apiSettings;
+    const apiConfig = chatAiProviderConfig.selectMainProviderConfig(db);
+    let {url, key, model, provider, streamEnabled} = apiConfig;
     
     // 【用户设置】移除强制关闭流式，允许后台流式生成
     // streamEnabled = false; 
 
-    if (!url || !key || !model) {
+    if (!chatAiProviderConfig.isProviderConfigured(apiConfig)) {
         showToast('请先在“api”应用中完成设置！');
         return;
     }
-    if (url.endsWith('/')) url = url.slice(0, -1);
 
     // 1. 构建 System Prompt
     const now = new Date();
@@ -3441,7 +3032,7 @@ async function getCallReply(chat, callType, callContext, onStreamUpdate) {
     let systemPrompt = `你正在一个名为“404”的线上聊天软件中扮演一个角色，正在与${chat.myName}进行${callType === 'video' ? '视频' : '语音'}通话。请严格遵守以下规则：\n`;
     systemPrompt += `核心规则：\n`;
     systemPrompt += `A. 当前时间：现在是 ${currentTime}。你应知晓当前时间，但除非对话内容明确相关，否则不要主动提及或评论时间（例如，不要催促我睡觉）。\n`;
-    if (!db.apiSettings || db.apiSettings.onlineRoleEnabled !== false) {
+    if (chatAiProviderConfig.isOnlineRoleEnabled(db)) {
         systemPrompt += `B. 纯线上互动：这是一个完全虚拟的线上聊天。你扮演的角色和我之间没有任何线下关系。严禁提出任何关于线下见面、现实世界互动或转为其他非本平台联系方式的建议。你必须始终保持在线角色的身份。\n\n`;
     } else {
         systemPrompt += `\n`;
@@ -3645,7 +3236,7 @@ async function getCallReply(chat, callType, callContext, onStreamUpdate) {
             });
 
             // 3. 插入 Prefill (预填/强塞)
-            const quickReply = db.apiSettings && db.apiSettings.quickReplyEnabled;
+            const quickReply = chatAiProviderConfig.isMainQuickReplyEnabled(db);
             messages.push({
                 role: 'assistant',
                 content: quickReply
@@ -3657,57 +3248,19 @@ async function getCallReply(chat, callType, callContext, onStreamUpdate) {
     // ===============================
 
     // 3. 发起请求
-    const outgoingMessages = normalizeMessagesForProvider(messages, provider);
-    const requestBody = {
-        model: model,
-        messages: outgoingMessages,
+    const outgoingMessages = chatAiMessageSemantics.normalizeMessagesForProvider(messages, provider);
+    const providerRequest = chatAiProviderRequestAdapter.buildMessageCompletionRequest(apiConfig, {
+        messages,
+        normalizedMessages: outgoingMessages,
         stream: streamEnabled,
         temperature: 0.7 // 通话稍微低一点，保持稳定
-    };
-
-    // 适配 Gemini
-    if (provider === 'gemini') {
-         const contents = messages.filter(m => m.role !== 'system').map(m => {
-            const role = m.role === 'assistant' ? 'model' : 'user';
-            let parts;
-            if (Array.isArray(m.content)) {
-                // 多模态消息（文本+图片）
-                parts = m.content.map(p => {
-                    if (p.type === 'text') return { text: p.text };
-                    if (p.type === 'image_url' && p.image_url && p.image_url.url) {
-                        const match = p.image_url.url.match(/^data:(image\/(.+));base64,(.*)$/);
-                        if (match) return { inline_data: { mime_type: match[1], data: match[3] } };
-                    }
-                    return null;
-                }).filter(Boolean);
-            } else {
-                parts = [{ text: m.content }];
-            }
-            return { role, parts };
-        });
-        requestBody.contents = contents;
-        
-        // 合并所有 system 消息到 system_instruction
-        const allSystemPrompts = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
-        requestBody.system_instruction = {parts: [{text: allSystemPrompts}]};
-        
-        delete requestBody.messages;
-    }
-
-    const endpoint = (provider === 'gemini') ? `${url}/v1beta/models/${model}:streamGenerateContent?key=${getRandomValue(key)}` : `${url}/v1/chat/completions`;
-    const headers = (provider === 'gemini') ? {'Content-Type': 'application/json'} : {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`
-    };
+    });
+    const requestBody = providerRequest.requestBody;
 
     console.log('[VideoCall] Request Body:', JSON.stringify(requestBody, null, 2));
 
     try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(requestBody)
-        });
+        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -3851,16 +3404,9 @@ async function getCallReply(chat, callType, callContext, onStreamUpdate) {
 
 async function generateCallSummary(chat, callContext) {
     // === 使用总结API（如果已配置）===
-    let apiConfig;
-    if (db.summaryApiSettings && db.summaryApiSettings.url && db.summaryApiSettings.key && db.summaryApiSettings.model) {
-        apiConfig = db.summaryApiSettings;
-    } else {
-        apiConfig = db.apiSettings;
-    }
-    
+    const apiConfig = chatAiProviderConfig.selectSummaryProviderConfig(db);
     let {url, key, model, provider} = apiConfig;
-    if (!url || !key || !model) return null;
-    if (url.endsWith('/')) url = url.slice(0, -1);
+    if (!chatAiProviderConfig.isProviderConfigured(apiConfig)) return null;
 
     // 获取世界书（包含全局）
     const { before: worldBooksBefore, middle: worldBooksMiddle, after: worldBooksAfter } = getActiveWorldBooksContents(chat);
@@ -3901,31 +3447,14 @@ async function generateCallSummary(chat, callContext) {
     prompt += `3. **无升华**：不要进行价值升华、感悟或总结性评价，仅记录发生了什么。\n`;
     prompt += `4. 不要包含“通话记录如下”等废话，直接输出总结内容。\n`;
 
-    const messages = [{role: 'user', content: prompt}];
-    
-    const requestBody = {
-        model: model,
-        messages: messages,
+    const providerRequest = chatAiProviderRequestAdapter.buildPromptCompletionRequest(apiConfig, {
+        prompt,
         stream: false
-    };
-    
-    if (provider === 'gemini') {
-         requestBody.contents = [{role: 'user', parts: [{text: prompt}]}];
-         delete requestBody.messages;
-    }
-
-    const endpoint = (provider === 'gemini') ? `${url}/v1beta/models/${model}:generateContent?key=${getRandomValue(key)}` : `${url}/v1/chat/completions`;
-    const headers = (provider === 'gemini') ? {'Content-Type': 'application/json'} : {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`
-    };
+    });
+    const requestBody = providerRequest.requestBody;
 
     try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(requestBody)
-        });
+        const response = await fetch(providerRequest.endpoint, providerRequest.fetchOptions);
         const data = await response.json();
         let text = "";
         if (provider === 'gemini') {

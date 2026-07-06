@@ -1,4 +1,6 @@
 // SVG 图标库
+const shopWalletPublicApi = window.OwoApp.features.wallet.publicApi;
+const shopPaymentSemantics = shopWalletPublicApi.paymentSemantics;
 const ShopIcons = {
     food: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`, // 汉堡/饮料
     gift: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>`, // 礼物盒
@@ -417,7 +419,7 @@ function clearCart() {
 
 function updateCartUI() {
     const totalCount = shopState.cart.reduce((sum, i) => sum + i.quantity, 0);
-    const totalPrice = shopState.cart.reduce((sum, i) => sum + (parseFloat(i.item.price) * i.quantity), 0);
+    const totalPrice = shopPaymentSemantics.calculateCartTotal(shopState.cart);
 
     // 更新悬浮球
     const fab = document.querySelector('.shop-cart-fab');
@@ -866,7 +868,7 @@ function openCartDeliveryModal() {
     const title = document.getElementById('shop-delivery-item-name');
     
     const totalCount = shopState.cart.reduce((sum, i) => sum + i.quantity, 0);
-    const totalPrice = shopState.cart.reduce((sum, i) => sum + (parseFloat(i.item.price) * i.quantity), 0);
+    const totalPrice = shopPaymentSemantics.calculateCartTotal(shopState.cart);
     
     title.textContent = `结算 ${totalCount} 件商品 (合计 ¥${totalPrice.toFixed(2)})`;
     
@@ -914,11 +916,9 @@ function confirmPurchase() {
         deliveryName = `自提口令: ${code}`;
     }
     
-    // 计算总价
-    const totalPrice = shopState.cart.reduce((sum, i) => sum + (parseFloat(i.item.price) * i.quantity), 0);
-
-    // 生成商品列表字符串: 商品名x数量
-    const itemsStr = shopState.cart.map(entry => `${entry.item.name} x${entry.quantity}`).join(', ');
+    // V32: 购物车总价和商品清单字符串归 core.wallet.paymentSemantics，避免 shop/chat_render 各自实现一套。
+    const totalPrice = shopPaymentSemantics.calculateCartTotal(shopState.cart);
+    const itemsStr = shopPaymentSemantics.serializeCartItems(shopState.cart);
 
     const shopPayRadio = document.querySelector('input[name="shop-pay-method"]:checked');
     const shopPayMethod = shopPayRadio ? shopPayRadio.value : 'balance';
@@ -939,13 +939,7 @@ function confirmPurchase() {
                 return;
             }
             if (typeof addPiggyTransaction === 'function') {
-                addPiggyTransaction({
-                    type: 'expense',
-                    amount: totalPrice,
-                    remark: '商城订单：' + itemsStr,
-                    source: '商城',
-                    charName: realName || ''
-                });
+                addPiggyTransaction(shopPaymentSemantics.createShopExpenseRecord(totalPrice, itemsStr, realName || ''));
             }
         } else if (db.piggyBank && db.piggyBank.receivedFamilyCards) {
             const card = db.piggyBank.receivedFamilyCards.find(c => c.id === shopPayMethod);
@@ -967,7 +961,7 @@ function confirmPurchase() {
                     });
                     
                     if (fromChar.familyCardEnabled) {
-                        const notice = `[系统情景通知：你给${myName}的亲属卡刚刚产生了一笔 ${totalPrice.toFixed(2)} 元的消费，用途是：在商城购买了“${itemsStr}”。请根据你的人设和你们现在的关系，在下一次回复中自然地对此作出反应或询问。]`;
+                        const notice = shopPaymentSemantics.createFamilyCardConsumptionNotice(myName, totalPrice, itemsStr);
                         fromChar.history.push({
                             id: 'msg_sys_' + Date.now(),
                             role: 'system',
@@ -989,11 +983,11 @@ function confirmPurchase() {
     // 格式生成
     let messageText = '';
     if (deliveryType === 'pay-for-me') {
-        // 代付请求格式: [myName向realName发起了代付请求:总价|商品清单]
-        messageText = `[${myName}向${realName}发起了代付请求:${totalPrice.toFixed(2)}|${itemsStr}]`;
+        // V32: 代付请求格式归 core.wallet.paymentSemantics。
+        messageText = shopPaymentSemantics.buildPayRequestContent(myName, realName, totalPrice, itemsStr);
     } else {
-        // 普通订单格式: [myName为realName下单了：配送方式|总价|商品清单]
-        messageText = `[${myName}为${realName}下单了：${deliveryName}|${totalPrice.toFixed(2)}|${itemsStr}]`;
+        // V32: 普通订单格式归 core.wallet.paymentSemantics。
+        messageText = shopPaymentSemantics.buildShopOrderContent(myName, realName, deliveryName, totalPrice, itemsStr);
     }
 
     // 清空购物车

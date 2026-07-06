@@ -51,6 +51,7 @@
                     pomodoroSettings: { boundCharId: null, userPersona: '', focusBackground: '', taskCardBackground: '', encouragementMinutes: 25, pokeLimit: 5, globalWorldBookIds: [] },
                     insWidgetSettings: { avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg', bubble1: 'love u.', avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg', bubble2: 'miss u.' },
                     homeWidgetSettings: defaultWidgetSettings,
+                    hapticEnabled: true,
                     memoryTableTemplates: [],
                     vectorMemoryTemplates: [],
                     activePersonaId: null,

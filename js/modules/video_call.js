@@ -3,42 +3,26 @@
 const CAMERA_ON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556v4.35zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2z"/></svg>`;
 const CAMERA_OFF_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-off" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l.714 1H9.5a1 1 0 0 1 1 1v6a1 1 0 0 1-.144.518l.605.847zM1.428 4.18A.999.999 0 0 0 1 5v6a1 1 0 0 0 1 1h5.014l.714 1H2a2 2 0 0 1-2-2V5c0-.675.334-1.272.847-1.634l.58.814zM15 11.73l-3.5-1.555v-4.35L15 4.269v7.462zm-4.407 3.56-10-14 .814-.58 10 14-.814.58z"/></svg>`;
 
-const VideoCallModule = {
-    state: {
-        isCallActive: false,
-        callType: 'video', // 'video' or 'voice'
-        timerInterval: null,
-        seconds: 0,
-        currentChat: null,
-        currentCallContext: [], // 存储当前通话的消息记录
-        startTime: 0,
-        isAiSpeaking: false, // 防止用户连续输入
-        isGenerating: false, // 标记是否正在请求AI生成
-        initialAiResponse: null, // 存储开场白
-        incomingChat: null, // 暂存来电对象
-        isMinimized: false, // 是否处于悬浮窗模式
-        hasEnteredCallScene: false, // 是否已进入通话界面（区分「等待中」与「已接通」）
-        ringAudio: null, // 来电铃声 Audio 实例，用于循环播放与接通/拒绝时停止
-        // 真实摄像头相关
-        cameraStream: null,
-        facingMode: 'user', // 'user' = 前置, 'environment' = 后置
-        realCameraActive: false
-    },
+const videoCallModel = window.OwoApp?.features?.videoCall?.model;
+const videoCallMediaAdapter = window.OwoApp?.platform?.browser?.mediaAdapter;
+const videoCallAudioAdapter = window.OwoApp?.platform?.browser?.audioAdapter;
 
+
+const VideoCallModule = {
+    // @compat canonical: OwoApp.features.videoCall.model.createInitialState
+    state: videoCallModel.createInitialState(),
+
+    // @compat canonical: OwoApp.platform.browser.audioAdapter.stopAudio
     stopRingSound: function() {
         if (this.state.ringAudio) {
-            try {
-                this.state.ringAudio.pause();
-                this.state.ringAudio.currentTime = 0;
-                this.state.ringAudio.src = '';
-                this.state.ringAudio.load();
-            } catch (e) {}
+            videoCallAudioAdapter.stopAudio(this.state.ringAudio, { clearSrc: true });
             this.state.ringAudio = null;
         }
     },
 
     // --- 真实摄像头相关 ---
 
+    // @compat canonical: OwoApp.platform.browser.mediaAdapter.startUserCamera
     startRealCamera: async function() {
         const chat = this.state.currentChat;
         if (!chat || !chat.realCameraEnabled) return;
@@ -49,13 +33,13 @@ const VideoCallModule = {
         if (!pip || !video) return;
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: this.state.facingMode, width: { ideal: 480 }, height: { ideal: 640 } },
-                audio: false
+            const stream = await videoCallMediaAdapter.startUserCamera({
+                facingMode: this.state.facingMode,
+                width: 480,
+                height: 640
             });
-            this.state.cameraStream = stream;
-            this.state.realCameraActive = true;
-            video.srcObject = stream;
+            videoCallModel.setCameraStream(this.state, stream);
+            videoCallMediaAdapter.attachStreamToVideo(video, stream);
             pip.style.display = 'block';
 
             // 初始化PIP拖拽
@@ -73,55 +57,48 @@ const VideoCallModule = {
         }
     },
 
+    // @compat canonical: OwoApp.platform.browser.mediaAdapter.stopStream
     stopRealCamera: function() {
         if (this.state.cameraStream) {
-            this.state.cameraStream.getTracks().forEach(t => t.stop());
-            this.state.cameraStream = null;
+            videoCallMediaAdapter.stopStream(this.state.cameraStream);
         }
-        this.state.realCameraActive = false;
-        this.state.facingMode = 'user';
+        videoCallModel.resetCameraState(this.state);
         const pip = document.getElementById('vc-user-camera-pip');
         if (pip) {
             pip.style.display = 'none';
-            pip.classList.remove('rear-camera');
+            videoCallMediaAdapter.applyFacingClass(pip, 'user');
         }
         const video = document.getElementById('vc-user-camera-video');
-        if (video) video.srcObject = null;
+        videoCallMediaAdapter.attachStreamToVideo(video, null);
     },
 
     flipCamera: async function() {
         if (!this.state.realCameraActive) return;
 
-        // 切换方向
-        this.state.facingMode = this.state.facingMode === 'user' ? 'environment' : 'user';
+        const previousFacingMode = this.state.facingMode;
+        videoCallModel.toggleFacingMode(this.state);
 
-        // 停掉旧流
         if (this.state.cameraStream) {
-            this.state.cameraStream.getTracks().forEach(t => t.stop());
+            videoCallMediaAdapter.stopStream(this.state.cameraStream);
         }
 
         const pip = document.getElementById('vc-user-camera-pip');
         const video = document.getElementById('vc-user-camera-video');
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: this.state.facingMode, width: { ideal: 480 }, height: { ideal: 640 } },
-                audio: false
+            const stream = await videoCallMediaAdapter.startUserCamera({
+                facingMode: this.state.facingMode,
+                width: 480,
+                height: 640
             });
-            this.state.cameraStream = stream;
-            video.srcObject = stream;
-
-            if (this.state.facingMode === 'environment') {
-                pip.classList.add('rear-camera');
-            } else {
-                pip.classList.remove('rear-camera');
-            }
+            videoCallModel.setCameraStream(this.state, stream);
+            videoCallMediaAdapter.attachStreamToVideo(video, stream);
+            videoCallMediaAdapter.applyFacingClass(pip, this.state.facingMode);
             showToast(this.state.facingMode === 'user' ? '已切换到前置摄像头' : '已切换到后置摄像头');
         } catch (err) {
             console.error('[VideoCall] 翻转摄像头失败:', err);
             showToast('切换摄像头失败');
-            // 回退
-            this.state.facingMode = this.state.facingMode === 'user' ? 'environment' : 'user';
+            this.state.facingMode = previousFacingMode;
         }
     },
 
@@ -130,17 +107,11 @@ const VideoCallModule = {
 
         const video = document.getElementById('vc-user-camera-video');
         const canvas = document.getElementById('vc-camera-capture-canvas');
-        if (!video || !canvas || video.readyState < 2) return null;
-
-        // 压缩到 480 宽度
-        const maxW = 480;
-        const scale = Math.min(maxW / video.videoWidth, 1);
-        canvas.width = Math.round(video.videoWidth * scale);
-        canvas.height = Math.round(video.videoHeight * scale);
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/jpeg', 0.6);
+        return videoCallMediaAdapter.captureVideoFrame(video, canvas, {
+            maxWidth: 480,
+            mimeType: 'image/jpeg',
+            quality: 0.6
+        });
     },
 
     init: function() {
@@ -678,31 +649,11 @@ const VideoCallModule = {
         this.stopRingSound();
         if (db.globalIncomingCallSound) {
             try {
-                const ring = new Audio();
-                ring.preload = 'auto';
-                ring.loop = true;
-                ring.volume = 1;
-                // 等待音频元数据加载完成后再播放，避免播放中断
-                ring.addEventListener('canplaythrough', () => {
-                    if (this.state.ringAudio === ring) {
-                        ring.play().catch(() => {});
-                    }
-                }, { once: true });
-                // 某些浏览器 loop 不可靠，手动监听 ended 事件兜底循环
-                ring.addEventListener('ended', () => {
-                    if (this.state.ringAudio === ring) {
-                        try {
-                            ring.currentTime = 0;
-                            ring.play().catch(() => {});
-                        } catch (e) {}
-                    }
+                const ring = videoCallAudioAdapter.createLoopingAudio(db.globalIncomingCallSound, {
+                    volume: 1,
+                    shouldPlay: (audio) => this.state.ringAudio === audio,
+                    onError: () => console.warn('[VideoCall] 来电铃声加载失败')
                 });
-                // 处理加载错误
-                ring.addEventListener('error', () => {
-                    console.warn('[VideoCall] 来电铃声加载失败');
-                });
-                ring.src = db.globalIncomingCallSound;
-                ring.load();
                 this.state.ringAudio = ring;
             } catch (e) {}
         }
@@ -1273,7 +1224,7 @@ const VideoCallModule = {
             if (e.touches && e.touches.length > 1) return;
             
             pressTimer = setTimeout(() => {
-                if (typeof navigator.vibrate === 'function') navigator.vibrate(50);
+                videoCallMediaAdapter.vibrate(50);
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 this.showContextMenu(clientX, clientY, index);
@@ -1827,7 +1778,7 @@ const VideoCallModule = {
                     // if (container.classList.contains('expanded')) return;
                     
                     pressTimer = setTimeout(() => {
-                        if (typeof navigator.vibrate === 'function') navigator.vibrate(50);
+                        videoCallMediaAdapter.vibrate(50);
                         this.showDeleteConfirm(record.id, container);
                     }, 600);
                 };
@@ -1931,11 +1882,9 @@ const VideoCallModule = {
         }
     },
 
+    // @compat canonical: OwoApp.features.videoCall.model.formatDuration
     formatDuration: function(seconds) {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        if (m === 0) return `${s}秒`;
-        return `${m}分${s}秒`;
+        return videoCallModel.formatDuration(seconds);
     },
 
     // === 保存 NovelAI 生成的图片 ===

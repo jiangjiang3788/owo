@@ -1,5 +1,45 @@
 // --- 教程与备份功能 (js/modules/tutorial.js) ---
 
+// V8 backup/import/export canonical owners
+const tutorialBackupAdapter = window.OwoApp.platform.storage.backupAdapter;
+const tutorialFileAdapter = window.OwoApp.platform.browser.fileAdapter;
+const tutorialLegacyBackupApi = tutorialBackupAdapter.bindLegacyBackup({
+    getDb: () => db,
+    getDexieDB: () => dexieDB,
+    getGlobalSettingKeys: () => window.globalSettingKeysForBackup || [],
+    getDefaultWidgetSettings: () => defaultWidgetSettings,
+    saveData: (...args) => saveData(...args),
+    showToast: (...args) => showToast(...args)
+});
+
+// @compat canonical: OwoApp.platform.storage.backupAdapter.legacyBackupApi.createFullBackupData
+var createFullBackupData = window.OwoApp.compat.expose('createFullBackupData', tutorialLegacyBackupApi.createFullBackupData, {
+    state: 'canonical',
+    owner: 'OwoApp.platform.storage.backupAdapter.legacyBackupApi.createFullBackupData',
+    note: 'V8: 教程页旧 createFullBackupData 入口只转发到 backupAdapter 绑定后的 canonical API'
+});
+
+// @compat canonical: OwoApp.platform.storage.backupAdapter.legacyBackupApi.createPartialBackupData
+var createPartialBackupData = window.OwoApp.compat.expose('createPartialBackupData', tutorialLegacyBackupApi.createPartialBackupData, {
+    state: 'canonical',
+    owner: 'OwoApp.platform.storage.backupAdapter.legacyBackupApi.createPartialBackupData',
+    note: 'V8: 分类导出数据格式归 backupAdapter'
+});
+
+// @compat canonical: OwoApp.platform.storage.backupAdapter.legacyBackupApi.importPartialBackupData
+var importPartialBackupData = window.OwoApp.compat.expose('importPartialBackupData', tutorialLegacyBackupApi.importPartialBackupData, {
+    state: 'canonical',
+    owner: 'OwoApp.platform.storage.backupAdapter.legacyBackupApi.importPartialBackupData',
+    note: 'V8: 分类导入写入编排归 backupAdapter'
+});
+
+// @compat canonical: OwoApp.platform.storage.backupAdapter.legacyBackupApi.importBackupData
+var importBackupData = window.OwoApp.compat.expose('importBackupData', tutorialLegacyBackupApi.importBackupData, {
+    state: 'canonical',
+    owner: 'OwoApp.platform.storage.backupAdapter.legacyBackupApi.importBackupData',
+    note: 'V8: 完整备份恢复编排归 backupAdapter'
+});
+
 function setupTutorialApp() {
     const tutorialContentArea = document.getElementById('tutorial-content-area');
     tutorialContentArea.addEventListener('click', (e) => {
@@ -601,24 +641,8 @@ function renderTutorialContent() {
 
             const fullBackupData = await createFullBackupData();
 
-            const jsonString = JSON.stringify(fullBackupData);
-            const dataBlob = new Blob([jsonString]);
-
-            const compressionStream = new CompressionStream('gzip');
-            const compressedStream = dataBlob.stream().pipeThrough(compressionStream);
-            const compressedBlob = await new Response(compressedStream, { headers: { 'Content-Type': 'application/octet-stream' } }).blob();
-
-            const url = URL.createObjectURL(compressedBlob);
-            const a = document.createElement('a');
-            const now = new Date();
-            const date = now.toISOString().slice(0, 10);
-            const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
-            a.href = url;
-            a.download = `章鱼喷墨_备份数据_${date}_${time}.ee`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const filename = tutorialBackupAdapter.createBackupFilename('章鱼喷墨_备份数据');
+            await tutorialFileAdapter.downloadCompressedJson(fullBackupData, filename);
             loadingBtn = false
             showToast('聊天记录导出成功');
         }catch (e){
@@ -705,24 +729,8 @@ function renderTutorialContent() {
         try {
             showToast('正在准备分类导出...');
             const partialData = await createPartialBackupData(selected);
-            const jsonString = JSON.stringify(partialData);
-            const dataBlob = new Blob([jsonString]);
-
-            const compressionStream = new CompressionStream('gzip');
-            const compressedStream = dataBlob.stream().pipeThrough(compressionStream);
-            const compressedBlob = await new Response(compressedStream, { headers: { 'Content-Type': 'application/octet-stream' } }).blob();
-
-            const url = URL.createObjectURL(compressedBlob);
-            const a = document.createElement('a');
-            const now = new Date();
-            const date = now.toISOString().slice(0, 10);
-            const time = now.toTimeString().slice(0, 8).replace(/:/g, '');
-            a.href = url;
-            a.download = `章鱼喷墨_分类导出_${date}_${time}.ee`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const filename = tutorialBackupAdapter.createBackupFilename('章鱼喷墨_分类导出');
+            await tutorialFileAdapter.downloadCompressedJson(partialData, filename);
             loadingBtn = false;
             showToast('分类导出成功');
         } catch (e) {
@@ -1374,11 +1382,7 @@ function renderTutorialContent() {
             try {
                 showToast('正在导入数据，请稍候...');
 
-                const decompressionStream = new DecompressionStream('gzip');
-                const decompressedStream = file.stream().pipeThrough(decompressionStream);
-                const jsonString = await new Response(decompressedStream).text();
-
-                let data = JSON.parse(jsonString);
+                let data = await tutorialFileAdapter.readCompressedJsonFile(file);
 
                 const importResult = await importBackupData(data);
 
@@ -1578,10 +1582,7 @@ function renderTutorialContent() {
             if (!file) return;
             if (loadingBtn) return;
             try {
-                const decompressionStream = new DecompressionStream('gzip');
-                const decompressedStream = file.stream().pipeThrough(decompressionStream);
-                const jsonString = await new Response(decompressedStream).text();
-                const data = JSON.parse(jsonString);
+                const data = await tutorialFileAdapter.readCompressedJsonFile(file);
                 if (!data._exportTables || !Array.isArray(data._exportTables)) {
                     showToast('请选择由「分类导出」生成的文件（.ee）');
                     event.target.value = null;
@@ -2054,177 +2055,8 @@ function renderTutorialContent() {
     }
 }
 
-// 创建完整的备份数据（确保主题预设、屏幕预设等 globalSettingKeys 全部导出）
-async function createFullBackupData() {
-    const backupData = JSON.parse(JSON.stringify(db));
-    const keys = window.globalSettingKeysForBackup || [];
-    keys.forEach(k => {
-        if (db[k] !== undefined && backupData[k] === undefined) {
-            try { backupData[k] = JSON.parse(JSON.stringify(db[k])); } catch (e) { backupData[k] = db[k]; }
-        }
-    });
-    backupData._exportVersion = '3.0';
-    backupData._exportTimestamp = Date.now();
-    return backupData;
-}
-
-// 小剧场相关的所有 db 键（用于分类导出/导入）
-const THEATER_DB_KEYS = [
-    'theaterScenarios', 'theaterPromptPresets',
-    'theaterHtmlScenarios', 'theaterHtmlPromptPresets',
-    'theaterMode', 'theaterApiSettings', 'theaterFontSize', 'theaterFontPreset'
-];
-
-// 分类导出：只包含选中的表
-async function createPartialBackupData(selectedKeys) {
-    const keys = window.globalSettingKeysForBackup || [];
-    const result = { _exportVersion: '3.0_partial', _exportTimestamp: Date.now(), _exportTables: selectedKeys };
-    for (const key of selectedKeys) {
-        if (key === 'globalSettings') {
-            result.globalSettings = {};
-            keys.forEach(k => { result.globalSettings[k] = db[k] !== undefined ? JSON.parse(JSON.stringify(db[k])) : undefined; });
-        } else if (key === 'theaterData') {
-            result.theaterData = {};
-            THEATER_DB_KEYS.forEach(k => { result.theaterData[k] = db[k] !== undefined ? JSON.parse(JSON.stringify(db[k])) : undefined; });
-        } else if (db[key] !== undefined) {
-            result[key] = JSON.parse(JSON.stringify(db[key]));
-        }
-    }
-    return result;
-}
-
-// 分类导入：只合并文件里包含的表，不覆盖其他数据
-async function importPartialBackupData(data) {
-    const startTime = Date.now();
-    const tables = data._exportTables || [];
-    if (tables.length === 0) return { success: false, error: '文件中没有可导入的分类' };
-    try {
-        const keys = window.globalSettingKeysForBackup || [];
-        for (const key of tables) {
-            if (key === 'globalSettings' && data.globalSettings) {
-                Object.keys(data.globalSettings).forEach(k => { db[k] = data.globalSettings[k]; });
-            } else if (key === 'theaterData' && data.theaterData) {
-                Object.keys(data.theaterData).forEach(k => { db[k] = data.theaterData[k]; });
-            } else if (data[key] !== undefined) {
-                db[key] = data[key];
-            }
-        }
-        showToast('正在写入...');
-        await saveData(db);
-        const duration = Date.now() - startTime;
-        return { success: true, message: `分类导入完成 (耗时${duration}ms)` };
-    } catch (error) {
-        console.error('分类导入失败:', error);
-        return { success: false, error: error.message };
-    }
-}
-
-// 导入备份数据
-async function importBackupData(data) {
-    const startTime = Date.now();
-    try {
-        const clearTasks = [
-            dexieDB.characters.clear(),
-            dexieDB.groups.clear(),
-            dexieDB.worldBooks.clear(),
-            dexieDB.myStickers.clear(),
-            dexieDB.globalSettings.clear()
-        ];
-        if (dexieDB.archives) clearTasks.push(dexieDB.archives.clear());
-        await Promise.all(clearTasks);
-        showToast('正在清空旧数据...');
-
-        let convertedData = data;
-
-        if (data._exportVersion !== '3.0') {
-            showToast('检测到旧版备份文件，正在转换格式...');
-            
-            const reassembleHistory = (chat, backupData) => {
-                if (!chat.history || !Array.isArray(chat.history) || chat.history.length === 0) {
-                    return [];
-                }
-                if (typeof chat.history[0] === 'object' && chat.history[0] !== null) {
-                    return chat.history;
-                }
-                if (backupData.__chunks__ && typeof chat.history[0] === 'string') {
-                    let fullHistory = [];
-                    chat.history.forEach(key => {
-                        if (backupData.__chunks__[key]) {
-                            try {
-                                const chunk = JSON.parse(backupData.__chunks__[key]);
-                                fullHistory = fullHistory.concat(chunk);
-                            } catch (e) {
-                                console.error(`Failed to parse history chunk ${key}`, e);
-                            }
-                        }
-                    });
-                    return fullHistory;
-                }
-                return []; 
-            };
-
-            const newData = { ...data };
-
-            if (newData.characters) {
-                newData.characters = newData.characters.map(char => ({
-                    ...char,
-                    history: reassembleHistory(char, data)
-                }));
-            }
-            if (newData.groups) {
-                newData.groups = newData.groups.map(group => ({
-                    ...group,
-                    history: reassembleHistory(group, data)
-                }));
-            }
-            
-            convertedData = newData;
-        }
-
-        // 从备份恢复所有键（不限于当前 db 的键），避免漏掉主题预设、屏幕预设等
-        const metaKeys = ['_exportVersion', '_exportTimestamp', '_exportTables'];
-        Object.keys(convertedData).forEach(key => {
-            if (metaKeys.includes(key)) return;
-            if (convertedData[key] !== undefined) {
-                db[key] = convertedData[key];
-            }
-        });
-
-        // 补全角色/群聊缺失字段（如主题等），避免旧版备份或残缺数据导致预设丢失
-        (db.characters || []).forEach(c => {
-            if (c.theme === undefined || c.theme === null || c.theme === '') c.theme = 'white_pink';
-        });
-        (db.groups || []).forEach(g => {
-            if (g.theme === undefined || g.theme === null || g.theme === '') g.theme = 'white_pink';
-        });
-
-        if (!db.pomodoroTasks) db.pomodoroTasks = [];
-        if (!db.pomodoroSettings) db.pomodoroSettings = { boundCharId: null, userPersona: '', focusBackground: '', taskCardBackground: '', encouragementMinutes: 25, pokeLimit: 5, globalWorldBookIds: [] };
-        if (!db.insWidgetSettings) db.insWidgetSettings = { avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg', bubble1: 'love u.', avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg', bubble2: 'miss u.' };
-        if (!db.homeWidgetSettings) db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
-        if (!Array.isArray(db.themePresets)) db.themePresets = [];
-        if (!db.themeSettings || typeof db.themeSettings !== 'object') db.themeSettings = { global: {}, wallpapers: {}, bottomNav: {}, chatScreen: {} };
-        if (!Array.isArray(db.iconPresets)) db.iconPresets = [];
-        if (!Array.isArray(db.homeWidgetPresets)) db.homeWidgetPresets = [];
-        if (!Array.isArray(db.widgetWallpaperPresets)) db.widgetWallpaperPresets = [];
-
-        showToast('正在写入新数据...');
-        await saveData(db);
-
-        const duration = Date.now() - startTime;
-        const message = `导入完成 (耗时${duration}ms)`;
-        
-        return { success: true, message: message };
-
-    } catch (error) {
-        console.error('导入数据失败:', error);
-        return {
-            success: false,
-            error: error.message,
-            duration: Date.now() - startTime
-        };
-    }
-}
+// V8: 备份数据格式、分类导入导出和完整恢复实现已迁移到
+// OwoApp.platform.storage.backupAdapter；本文件只保留上方 compatibility alias。
 
 // GitHub Manager
 const GitHubMgr = {
@@ -2384,27 +2216,12 @@ const GitHubMgr = {
 
         onProgress('正在打包数据...');
         const backupData = await createFullBackupData();
-        const jsonString = JSON.stringify(backupData);
         
         onProgress('正在压缩...');
-        const dataBlob = new Blob([jsonString]);
-        const compressionStream = new CompressionStream('gzip');
-        const compressedStream = dataBlob.stream().pipeThrough(compressionStream);
-        const compressedBlob = await new Response(compressedStream, { headers: { 'Content-Type': 'application/octet-stream' } }).blob();
+        const compressedBlob = await tutorialFileAdapter.createGzipJsonBlob(backupData);
         
         onProgress('正在编码...');
-        const base64Content = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const res = reader.result;
-                let base64 = res.split(',')[1]; 
-                // 移除可能存在的换行符，防止上传失败
-                base64 = base64.replace(/\s/g, '');
-                resolve(base64);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(compressedBlob);
-        });
+        const base64Content = await tutorialFileAdapter.blobToBase64(compressedBlob);
 
         const useChunked = base64Content.length > GitHubMgr._SINGLE_FILE_MAX_B64;
         const token = GitHubMgr.config.token;
@@ -2583,15 +2400,8 @@ const GitHubMgr = {
                 }
 
                 showToast('正在解码并解压...');
-                const binStr = atob(fullBase64);
-                const bytes = new Uint8Array(binStr.length);
-                for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
-                const blob = new Blob([bytes], { type: 'application/octet-stream' });
-
-                const decompressionStream = new DecompressionStream('gzip');
-                const decompressedStream = blob.stream().pipeThrough(decompressionStream);
-                const jsonString = await new Response(decompressedStream).text();
-                data = JSON.parse(jsonString);
+                const blob = tutorialFileAdapter.base64ToBlob(fullBase64);
+                data = await tutorialFileAdapter.parseGzipJsonBlob(blob);
             } else {
                 if (!targetSingle) throw new Error('未找到可恢复的备份文件');
                 showToast('正在下载: ' + targetSingle.name);
@@ -2601,10 +2411,7 @@ const GitHubMgr = {
                 if (!dlRes.ok) throw new Error('下载文件失败: ' + dlRes.status);
                 showToast('下载完成，正在解压...');
                 const blob = await dlRes.blob();
-                const decompressionStream = new DecompressionStream('gzip');
-                const decompressedStream = blob.stream().pipeThrough(decompressionStream);
-                const jsonString = await new Response(decompressedStream).text();
-                data = JSON.parse(jsonString);
+                data = await tutorialFileAdapter.parseGzipJsonBlob(blob);
             }
 
             showToast('解压完成，开始导入...');
