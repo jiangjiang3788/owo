@@ -1,6 +1,6 @@
 {
-  "name": "UwU",
-  "short_name": "UwU",
+  "name": "章鱼喷墨机",
+  "short_name": "章鱼喷墨机",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",
@@ -29,6 +29,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
-
+  ],
+  "version": "0.2.1"
 }

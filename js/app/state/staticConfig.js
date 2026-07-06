@@ -2,6 +2,7 @@
 const updateLog = updateLogRecent.concat(updateLogArchive);
 
 window.OwoApp.app.state.staticConfig = Object.assign(window.OwoApp.app.state.staticConfig || {}, {
+    appName,
     BLOCKED_API_DOMAINS,
     colorThemes,
     defaultIcons,

@@ -98,4 +98,5 @@ const peekScreenApps = {
     'timeThoughts': { name: '时光想说', url: 'https://i.postimg.cc/FRpWm8MK/20260228-062619.webp' }
 };
 
-const appVersion = "6.8.1";
+const appName = "章鱼喷墨机";
+const appVersion = "0.2.1";

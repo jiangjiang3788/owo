@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /*
- * OWO V1/V2/V3/V4/V5/V6/V7/V8/V9/V10/V11/V12/V13/V14/V15/V16/V17/V18/V19/V20/V21/V22/V23/V24/V25/V26/V27/V28/V29/V30/V31/V32/V33/V34/V35/V36/V37/V38/V38.1 architecture check.
+ * OWO architecture check for product release v0.2.1.
+ * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
  */
@@ -59,7 +60,7 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO V1/V2/V3/V4/V5/V6/V7/V8/V9/V10/V11/V12/V13/V14/V15/V16/V17/V18/V19/V20/V21/V22/V23/V24/V25/V26/V27/V28/V29/V30/V31/V32/V33/V34/V35/V36/V37/V38/V38.1 architecture check\n');
+console.log('OWO architecture check · product release v0.2.1 · historical gates V1-V38.1\n');
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -71,7 +72,7 @@ for (const file of jsFiles) {
   } else if (lines > MAX_SOFT_LINES && isNewStructure) {
     warn(`${r} ${lines} 行，超过 ${MAX_SOFT_LINES}，需要解释或拆分`);
   } else if (lines > MAX_HARD_LINES && !r.startsWith('js/modules/')) {
-    warn(`${r} ${lines} 行是 legacy 大文件，V1/V2/V3/V4/V5/V6/V7/V8/V9/V10/V11/V12/V13/V14/V15/V16/V17/V18/V19/V20/V21/V22/V23/V24/V25/V26/V27/V28/V29/V30/V31/V32/V33/V34/V35/V36/V37/V38 暂不阻断，但后续必须拆分`);
+    warn(`${r} ${lines} 行是 legacy 大文件，v0.2.1 暂不阻断，但后续必须拆分`);
   }
 }
 

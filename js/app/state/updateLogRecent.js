@@ -1,6 +1,18 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
 {
+        version: "0.2.1",
+        date: "2026-07-06",
+        notes: [
+            "**[版本命名] 新功能开发第一版改为 v0.2.1**",
+            "后续功能迭代不再继续追加 V39/V40 作为产品版本号，旧 V27/V37/V38 只作为历史架构 gate 编号保留。",
+            "**[基线修复] 补齐根路径 gate 文档**",
+            "补齐 memory smoke、CSS ownership、legacy globals deprecation 等 gate 所需文档入口，方便后续定位新功能引入的问题。",
+            "**[范围控制] 本版不改业务逻辑**",
+            "悬浮球、请求控制台、表格记忆诊断、聊天框重排和设置第二页会从后续小版本逐步推进。"
+        ]
+    },
+    {
         version: "6.8.1",
         date: "2026-06-18",
         notes: [
