@@ -1,4 +1,4 @@
-// --- Memory Brain model owner (v0.4.2) ---
+// --- Memory Brain model owner (v0.4.7) ---
 // 只把 store/core 状态整理为展示模型，不访问 DOM。
 (function registerMemoryBrainModel(global) {
     const app = global.OwoApp;
@@ -44,8 +44,12 @@
             { version: 'v0.3.10', title: '旧记忆 owner 守门', result: 'v0.9 前 Memory Brain 只读，正式注入仍由当前档案记忆等旧 owner 执行。', status: 'done' },
             { version: 'v0.4.0', title: '历史源扫描器', result: '扫描全部聊天来源、消息总量、时间范围和预计切片数，先盘点整个过去。', status: 'done' },
             { version: 'v0.4.1', title: '历史切片 / 游标', result: '把几万条消息切成可续跑、可重试、带 overlap 的 archive chunks。', status: 'done' },
-            { version: 'v0.4.2', title: '回填队列 / 断点续跑', result: '建立 backfillJobs / runs，支持暂停、继续、失败重试和成本档。', status: 'active' },
-            { version: 'v0.4.3', title: '历史事件回填', result: '从 archiveChunks 批量生成历史事件，保留来源消息范围。', status: 'planned' }
+            { version: 'v0.4.2', title: '回填队列 / 断点续跑', result: '建立 backfillJobs / runs，支持暂停、继续、失败重试和成本档。', status: 'done' },
+            { version: 'v0.4.3', title: '历史事件回填', result: '从 archiveChunks 批量生成历史事件，保留来源消息范围。', status: 'done' },
+            { version: 'v0.4.4', title: '历史事实回填', result: '从历史事件批量抽取原子事实，并保留证据范围。', status: 'done' },
+            { version: 'v0.4.5', title: '去重 / 冲突 / 过时事实', result: '标记 duplicate / obsolete / disputed / merged，准备可信记忆。', status: 'done' },
+            { version: 'v0.4.6', title: '全量家族 / graph 重建', result: '基于全历史 active facts 重建 family 和 graph。', status: 'done' },
+            { version: 'v0.4.7', title: '全历史长期模型重建', result: '用清理后的事实、家族和 graph 重建长期模型。', status: 'active' }
         ];
     }
 
@@ -108,15 +112,15 @@
             .slice(0, 8).map(item => ({ id: item.id, createdAt: item.createdAt, mode: item.mode, counts: item.counts || {}, storedData: item.storedData || 'manifest-only', safetySummary: item.manifest && item.manifest.safetySummary || '' }));
     }
 
-    function buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards) {
+    function buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards, eventBackfillCards, factBackfillCards, factLifecycleCards, familyGraphRebuildCards, historyModelRebuildCards) {
         const settings = snapshot.settings || {};
         const scan = legacyScan || snapshot.lastLegacyScan || null;
         const activeFacts = asArray(snapshot.facts).filter(fact => fact && fact.status !== 'retired');
         const activeFamilies = asArray(snapshot.families).filter(family => family && family.status !== 'retired');
         return {
-            release: snapshot.release || 'v0.4.2',
+            release: snapshot.release || 'v0.4.7',
             mode: settings.mode || 'shadow',
-            currentStageId: settings.currentStageId || 'history-backfill',
+            currentStageId: settings.currentStageId || 'history-model-rebuild',
             thresholdText: Math.round((settings.familySimilarityThreshold || 0.7) * 100) + '%',
             familySummaryMinFacts: settings.familySummaryMinFacts || 5,
             processingMode: settings.processingMode || 'balanced',
@@ -148,11 +152,21 @@
             archiveBatchCount: countBatches(snapshot, 'history-archive-scan'),
             archiveChunkBatchCount: countBatches(snapshot, 'history-archive-chunking'),
             backfillBatchCount: countBatches(snapshot, 'history-backfill-queue'),
+            historyEventBatchCount: countBatches(snapshot, 'history-event-backfill'),
+            historyFactBatchCount: countBatches(snapshot, 'history-fact-backfill'),
+            factLifecycleBatchCount: countBatches(snapshot, 'fact-lifecycle'),
+            familyGraphRebuildBatchCount: countBatches(snapshot, 'family-graph-rebuild'),
+            historyModelRebuildBatchCount: countBatches(snapshot, 'history-long-term-model'),
             palaceCards: compactPalace(snapshot),
             exportCards: compactExports(snapshot),
             archiveCards: archiveCards || { totalText: {}, sources: [], runs: [] },
             chunkCards: chunkCards || { totalText: {}, cursors: [], chunks: [], runs: [] },
             backfillCards: backfillCards || { totalText: {}, jobs: [], runs: [] },
+            eventBackfillCards: eventBackfillCards || { totalText: {}, runs: [], batches: [], recentEvents: [] },
+            factBackfillCards: factBackfillCards || { totalText: {}, runs: [], batches: [], recentFacts: [] },
+            factLifecycleCards: factLifecycleCards || { totalText: {}, runs: [], batches: [], issues: [] },
+            familyGraphRebuildCards: familyGraphRebuildCards || { totalText: {}, runs: [], batches: [] },
+            historyModelRebuildCards: historyModelRebuildCards || { totalText: {}, runs: [], batches: [], activeModelCount: 0 },
             timelineEvents: compactEvents(snapshot),
             factCards: compactFacts(snapshot),
             familyCards: compactFamilies(snapshot),

@@ -23,6 +23,6 @@ v0.4.9 单一 owner 切换门
 
 到 v0.9 完成之前，Memory Brain 仍然是可读取、可整理、可预览的新脑；正式 prompt 注入继续由当前选择的旧记忆 owner 执行。
 
-v0.4.0 只扫描、统计、建索引；v0.4.1 只生成 archiveChunks 和 archiveCursors；v0.4.2 只生成 backfillJobs / backfillRuns 和断点状态。三版都不总结、不迁移、不跑 AI、不改旧记忆。
+v0.4.0 只扫描、统计、建索引；v0.4.1 只生成 archiveChunks 和 archiveCursors；v0.4.2 只生成 backfillJobs / backfillRuns 和断点状态。v0.4.3 对 event-backfill 任务调用 memory-event 模型生成历史事件；v0.4.4 对 fact-backfill 任务调用 memory-fact 模型拆出历史事实。仍不重建家族、graph、长期模型，不迁移旧记忆，不正式注入 prompt。
 
 完整 v0.4～v0.8 计划见 `docs/0.4/roadmap-v0.4-v0.8.md`。

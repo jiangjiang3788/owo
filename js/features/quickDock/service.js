@@ -1,4 +1,4 @@
-// --- Quick dock service (v0.2.17) ---
+// --- Quick dock service (v0.4.6) ---
 // 悬浮球是快捷宿主；控制台内容只调用 debugConsole public renderer，不复制控制台逻辑。
 (function registerQuickDockService(global) {
     const OwoApp = global.OwoApp;
@@ -60,17 +60,23 @@
         return result;
     }
 
-    async function backupNow() {
+    async function backupNow(options = {}) {
         const cloud = getCloudBackupPublic();
         if (!cloud || !cloud.backupNow) throw new Error('云备份接口未加载');
-        model.setStatusText('正在备份到 GitHub...');
+        const onProgress = typeof options.onProgress === 'function' ? options.onProgress : (message => model.setStatusText(message));
+        model.setStatusText('已收到同步请求，正在上传到 GitHub...');
+        toast('已开始同步，正在上传 GitHub…');
+        onProgress('正在同步到 GitHub，请稍等…');
         try {
-            const result = await cloud.backupNow({ onProgress: message => model.setStatusText(message), sourceTrigger: 'quickDock' });
-            model.setStatusText('备份完成');
-            toast('GitHub 备份完成');
+            const result = await cloud.backupNow({ onProgress: message => { model.setStatusText(message); onProgress(message); }, sourceTrigger: options.sourceTrigger || 'quickDock' });
+            model.setStatusText('同步完成');
+            onProgress('同步完成');
+            toast('GitHub 同步完成');
             return result;
         } catch (error) {
-            model.setStatusText('备份失败：' + error.message);
+            const message = '同步失败：' + error.message;
+            model.setStatusText(message);
+            onProgress(message);
             throw error;
         }
     }
@@ -78,7 +84,8 @@
     async function restoreLatest() {
         const cloud = getCloudBackupPublic();
         if (!cloud || !cloud.restoreLatest) throw new Error('云恢复接口未加载');
-        model.setStatusText('正在恢复最新 GitHub 备份...');
+        model.setStatusText('已收到恢复请求，正在下载最新 GitHub 备份...');
+        toast('已开始恢复，正在下载 GitHub 备份…');
         try {
             const result = await cloud.restoreLatest({ onProgress: message => model.setStatusText(message), sourceTrigger: 'quickDock' });
             model.setStatusText('恢复完成，请刷新应用确认数据');

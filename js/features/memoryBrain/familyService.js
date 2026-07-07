@@ -13,6 +13,22 @@
     }
     function getCoreApi() { return app.core.memoryBrain.publicApi; }
     function getPlatformApi() { return app.platform.memoryBrain.publicApi; }
+    function isLifecycleExcluded(fact) {
+        const status = String(fact && (fact.lifecycleStatus || fact.status) || 'active');
+        return ['duplicate', 'obsolete', 'disputed', 'merged', 'retired'].includes(status);
+    }
+    function normalizeEligibleIdSet(ids) {
+        if (!ids) return null;
+        if (ids instanceof Set) return ids;
+        return Array.isArray(ids) && ids.length ? new Set(ids.map(id => String(id))) : null;
+    }
+    function isEligibleFactForFamily(fact, options = {}) {
+        if (!fact || fact.status === 'retired' || !fact.content) return false;
+        if (options.excludeLifecycle === true && isLifecycleExcluded(fact)) return false;
+        const eligibleSet = normalizeEligibleIdSet(options.eligibleFactIds);
+        if (eligibleSet && !eligibleSet.has(String(fact.id || ''))) return false;
+        return true;
+    }
     function record(label, data, level) {
         if (feature.service && typeof feature.service.recordOperation === 'function') return feature.service.recordOperation(label, data || {}, level || 'event');
         return null;
@@ -78,7 +94,7 @@
         record('记忆脑家族向量准备结果', embeddingResult, embeddingResult.ok ? 'success' : 'event');
 
         const snapshot = platformApi.getSnapshot({ state });
-        const activeFacts = asArray(snapshot.facts).filter(fact => fact && fact.status !== 'retired' && fact.content);
+        const activeFacts = asArray(snapshot.facts).filter(fact => isEligibleFactForFamily(fact, options));
         const activeFamilies = asArray(snapshot.families).filter(family => family && family.status !== 'retired');
         if (!activeFacts.length) throw new Error('还没有原子事实。请先从事件提取事实，再整理记忆家族。');
         let drafts = coreApi.buildFamilyDrafts(activeFacts, activeFamilies, {
@@ -131,7 +147,7 @@
     }
     function getFamilyCards(options = {}) {
         const snapshot = getPlatformApi().getSnapshot(options);
-        const facts = asArray(snapshot.facts).filter(fact => fact && fact.status !== 'retired');
+        const facts = asArray(snapshot.facts).filter(fact => isEligibleFactForFamily(fact, { excludeLifecycle: true }));
         return asArray(snapshot.families).filter(family => family && family.status !== 'retired')
             .slice().sort((a, b) => asArray(b.factIds).length - asArray(a.factIds).length || String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))
             .slice(0, Number(options.limit) || 24)

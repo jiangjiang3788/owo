@@ -390,6 +390,41 @@
       "role": "Memory Brain history backfill queue UI",
       "status": "active",
       "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_event_backfill.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain history event backfill UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_fact_backfill.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain history fact backfill UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_lifecycle.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain fact lifecycle UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_rebuild.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain full family/graph rebuild UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_history_models.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain full-history long-term model rebuild UI",
+      "status": "active",
+      "maxLines": 220
     }
   ]
 }

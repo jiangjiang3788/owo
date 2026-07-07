@@ -1,4 +1,4 @@
-// --- Memory Brain backfill queue store owner (v0.4.2) ---
+// --- Memory Brain backfill queue store owner (v0.4.4) ---
 // 写入 backfillJobs / backfillRuns，支持暂停、继续、重试和回滚；不跑 AI、不改旧记忆、不接正式 prompt。
 (function registerBackfillQueueStore(global) {
     const app = global.OwoApp;
@@ -39,6 +39,28 @@
             });
         });
     }
+    function markEventsForJobs(events, jobs, meta) {
+        const jobByEvent = new Map(asArray(jobs).filter(job => job && job.kind === 'fact-backfill' && job.eventId).map(job => [job.eventId, job]));
+        return asArray(events).map(event => {
+            const job = jobByEvent.get(event && event.id);
+            if (!job) return event;
+            return Object.assign({}, event, {
+                factBackfillJobId: job.id,
+                factBackfillStatus: job.status,
+                factBackfillRunId: meta && meta.runId || job.lastRunId || event.factBackfillRunId || null,
+                updatedAt: meta && meta.updatedAt || event.updatedAt
+            });
+        });
+    }
+    function eventHasActiveFact(event, facts) {
+        return asArray(facts).some(fact => fact && fact.status !== 'retired' && fact.source && fact.source.eventId === event.id);
+    }
+    function selectBackfillSources(state, policy) {
+        if (policy.taskKind === 'fact-backfill') {
+            return asArray(state.events).filter(event => event && event.status !== 'retired' && (event.historical || event.kind === 'history-backfill') && !eventHasActiveFact(event, state.facts));
+        }
+        return asArray(state.archiveChunks).filter(chunk => chunk && chunk.status !== 'retired');
+    }
     function updateCursorsForJobs(cursors, chunks) {
         const chunksBySource = new Map();
         asArray(chunks).forEach(chunk => {
@@ -71,6 +93,8 @@
         const ids = new Set(asArray(options && options.jobIds).map(String));
         const limit = Number(options && options.limit) || 200;
         let selected = asArray(jobs).filter(job => job && job.status !== 'retired');
+        const taskKind = options && options.taskKind ? String(options.taskKind) : '';
+        if (taskKind) selected = selected.filter(job => job.kind === taskKind);
         if (ids.size) selected = selected.filter(job => ids.has(String(job.id)));
         else if (action === 'start') selected = selected.filter(job => ['pending', 'paused'].includes(job.status)).slice(0, limit);
         else if (action === 'pause') selected = selected.filter(job => ['pending', 'running', 'failed'].includes(job.status)).slice(0, limit);
@@ -80,7 +104,7 @@
         else selected = selected.slice(0, limit);
         return selected;
     }
-    function appendBatch(state, run, changedJobs, beforeJobs, beforeChunks, beforeCursors, input) {
+    function appendBatch(state, run, changedJobs, beforeJobs, beforeChunks, beforeCursors, input, beforeEvents) {
         const createdAt = run.createdAt || nowIso();
         const batch = {
             id: nextId('memory-brain-batch'),
@@ -99,6 +123,7 @@
             beforeJobs: clone(beforeJobs),
             beforeChunks: clone(beforeChunks),
             beforeCursors: clone(beforeCursors),
+            beforeEvents: clone(beforeEvents || []),
             writesLegacyMemory: false,
             formalPromptInjection: false
         };
@@ -111,20 +136,24 @@
         const api = getSemantics();
         const createdAt = nowIso();
         const runId = options.runId || nextId('backfill-run');
-        const chunks = asArray(state.archiveChunks).filter(chunk => chunk && chunk.status !== 'retired');
+        const policy = api.normalizeBackfillPolicy(options);
+        const sources = selectBackfillSources(state, policy);
         const beforeJobs = asArray(state.backfillJobs);
         const beforeChunks = asArray(state.archiveChunks);
         const beforeCursors = asArray(state.archiveCursors);
-        const newJobs = api.buildBackfillJobs(chunks, beforeJobs, options).map(job => Object.assign({}, job, { createdAt, updatedAt: createdAt, runIds: [runId] }));
+        const newJobs = api.buildBackfillJobs(sources, beforeJobs, policy).map(job => Object.assign({}, job, { createdAt, updatedAt: createdAt, runIds: [runId] }));
+        const newEventIds = new Set(newJobs.map(job => job.eventId).filter(Boolean));
+        const beforeEvents = asArray(state.events).filter(event => newEventIds.has(event && event.id));
         const existing = beforeJobs.filter(job => !newJobs.some(next => next.id === job.id));
         const allJobs = existing.concat(newJobs);
         const run = summarizeRun(Object.assign(api.buildBackfillRunReport(newJobs, Object.assign({}, options, { id: runId, action: 'prepare' })), { id: runId, createdAt, updatedAt: createdAt }), newJobs);
         state.backfillJobs = allJobs;
         state.archiveChunks = markChunksForJobs(state.archiveChunks, newJobs, { runId, updatedAt: createdAt });
+        state.events = markEventsForJobs(state.events, newJobs, { runId, updatedAt: createdAt });
         state.archiveCursors = updateCursorsForJobs(state.archiveCursors, state.archiveChunks);
         state.backfillRuns = [run].concat(asArray(state.backfillRuns)).slice(0, 80);
         state.lastBackfillRun = run;
-        const batch = appendBatch(state, run, newJobs, beforeJobs, beforeChunks, beforeCursors, options);
+        const batch = appendBatch(state, run, newJobs, beforeJobs, beforeChunks, beforeCursors, options, beforeEvents);
         state.updatedAt = createdAt;
         saveRootState();
         return clone({ run, jobs: newJobs, batch });
@@ -140,16 +169,19 @@
         const beforeCursors = asArray(state.archiveCursors);
         const selected = selectJobsForAction(beforeJobs, action, options);
         const selectedIds = new Set(selected.map(job => job.id));
+        const selectedEventIds = new Set(selected.map(job => job.eventId).filter(Boolean));
+        const beforeEvents = asArray(state.events).filter(event => selectedEventIds.has(event && event.id));
         const changedJobs = beforeJobs.map(job => selectedIds.has(job.id) ? api.applyBackfillJobAction(job, action, { now: createdAt, runId, errorMessage: options.errorMessage }) : job)
             .filter(job => selectedIds.has(job.id));
         const changedById = new Map(changedJobs.map(job => [job.id, job]));
         state.backfillJobs = beforeJobs.map(job => changedById.get(job.id) || job);
         state.archiveChunks = markChunksForJobs(state.archiveChunks, changedJobs, { runId, updatedAt: createdAt });
+        state.events = markEventsForJobs(state.events, changedJobs, { runId, updatedAt: createdAt });
         state.archiveCursors = updateCursorsForJobs(state.archiveCursors, state.archiveChunks);
         const run = summarizeRun(Object.assign(api.buildBackfillRunReport(changedJobs, Object.assign({}, options, { id: runId, action })), { id: runId, action, createdAt, updatedAt: createdAt }), changedJobs);
         state.backfillRuns = [run].concat(asArray(state.backfillRuns)).slice(0, 80);
         state.lastBackfillRun = run;
-        const batch = appendBatch(state, run, changedJobs, beforeJobs, beforeChunks, beforeCursors, Object.assign({}, options, { action }));
+        const batch = appendBatch(state, run, changedJobs, beforeJobs, beforeChunks, beforeCursors, Object.assign({}, options, { action }), beforeEvents);
         state.updatedAt = createdAt;
         saveRootState();
         return clone({ run, jobs: changedJobs, batch });
@@ -173,6 +205,10 @@
         state.backfillJobs = clone(asArray(batch.beforeJobs));
         state.archiveChunks = clone(asArray(batch.beforeChunks));
         state.archiveCursors = clone(asArray(batch.beforeCursors));
+        if (asArray(batch.beforeEvents).length) {
+            const eventMap = new Map(asArray(batch.beforeEvents).map(event => [event.id, event]));
+            state.events = asArray(state.events).map(event => eventMap.get(event && event.id) || event);
+        }
         state.backfillRuns = asArray(state.backfillRuns).map(run => run && run.id === batch.backfillRunId ? Object.assign({}, run, { status: 'rolled-back', rolledBackAt: nowIso() }) : run);
         state.batches = asArray(state.batches).map(item => item && item.id === batch.id ? Object.assign({}, item, { status: 'rolled-back', rolledBackAt: nowIso() }) : item);
         state.lastBackfillRun = asArray(state.backfillRuns).find(run => run && run.status === 'completed') || null;
@@ -183,7 +219,7 @@
     function getRoutingReport() {
         return {
             owner: 'platform/memoryBrain/backfillQueueStore',
-            release: 'v0.4.2',
+            release: 'v0.4.4',
             queueWrite: 'memoryBrain.backfillJobs + memoryBrain.backfillRuns + memoryBrain.batches only',
             noAiCall: true,
             noLegacyMutation: true,

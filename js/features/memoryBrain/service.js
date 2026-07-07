@@ -1,4 +1,4 @@
-// --- Memory Brain service owner (v0.4.2) ---
+// --- Memory Brain service owner (v0.4.7) ---
 // 编排记忆脑 App 的扫描、状态读取、事件/事实/家族入口和控制台记录；不直接渲染 DOM。
 (function registerMemoryBrainService(global) {
     const app = global.OwoApp;
@@ -23,7 +23,12 @@
         const archiveCards = feature.historyArchiveService && feature.historyArchiveService.getArchiveCards ? feature.historyArchiveService.getArchiveCards(options) : null;
         const chunkCards = feature.historyChunkService && feature.historyChunkService.getArchiveChunkCards ? feature.historyChunkService.getArchiveChunkCards(options) : null;
         const backfillCards = feature.historyBackfillService && feature.historyBackfillService.getBackfillCards ? feature.historyBackfillService.getBackfillCards(options) : null;
-        return model.buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards);
+        const eventBackfillCards = feature.historyEventBackfillService && feature.historyEventBackfillService.getHistoryEventBackfillCards ? feature.historyEventBackfillService.getHistoryEventBackfillCards(options) : null;
+        const factBackfillCards = feature.historyFactBackfillService && feature.historyFactBackfillService.getHistoryFactBackfillCards ? feature.historyFactBackfillService.getHistoryFactBackfillCards(options) : null;
+        const factLifecycleCards = feature.factLifecycleService && feature.factLifecycleService.getFactLifecycleCards ? feature.factLifecycleService.getFactLifecycleCards(options) : null;
+        const familyGraphRebuildCards = feature.familyGraphRebuildService && feature.familyGraphRebuildService.getFamilyGraphRebuildCards ? feature.familyGraphRebuildService.getFamilyGraphRebuildCards(options) : null;
+        const historyModelRebuildCards = feature.historyModelRebuildService && feature.historyModelRebuildService.getHistoryModelRebuildCards ? feature.historyModelRebuildService.getHistoryModelRebuildCards(options) : null;
+        return model.buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards, eventBackfillCards, factBackfillCards, factLifecycleCards, familyGraphRebuildCards, historyModelRebuildCards);
     }
 
     function scanHistoryArchive(options = {}) {
@@ -37,6 +42,14 @@
     function pauseBackfillQueue(options = {}) { return feature.historyBackfillService.pauseBackfillQueue(options); }
     function resumeBackfillQueue(options = {}) { return feature.historyBackfillService.resumeBackfillQueue(options); }
     function retryFailedBackfillJobs(options = {}) { return feature.historyBackfillService.retryFailedBackfillJobs(options); }
+    function runHistoryEventBackfill(options = {}) { return feature.historyEventBackfillService.runHistoryEventBackfill(options); }
+    function runHistoryFactBackfill(options = {}) { return feature.historyFactBackfillService.runHistoryFactBackfill(options); }
+    function runFactLifecycleReview(options = {}) { return feature.factLifecycleService.runFactLifecycleReview(options); }
+    function rollbackLatestFactLifecycleBatch(options = {}) { return feature.factLifecycleService.rollbackLatestFactLifecycleBatch(options); }
+    function rebuildFamilyGraph(options = {}) { return feature.familyGraphRebuildService.rebuildFamilyGraph(options); }
+    function rollbackLatestFamilyGraphRebuildBatch(options = {}) { return feature.familyGraphRebuildService.rollbackLatestFamilyGraphRebuildBatch(options); }
+    function rebuildFullHistoryModels(options = {}) { return feature.historyModelRebuildService.rebuildFullHistoryModels(options); }
+    function rollbackLatestHistoryModelBatch(options = {}) { return feature.historyModelRebuildService.rollbackLatestHistoryModelBatch(options); }
 
     function scanLegacySources(options = {}) {
         const report = getPlatformApi().rememberLegacyScan(options);
@@ -55,7 +68,7 @@
 
     function getHistorySortingAnswer() {
         return [
-            '历史整理分批进行，不一次性全吞。v0.4.0 先扫描全部聊天来源，v0.4.1 按聊天、角色、时间范围切成带 overlap 的可续跑 archiveChunks，v0.4.2 再把 chunks 编入可暂停、可继续、可重试的 backfillJobs。',
+            '历史整理分批进行，不一次性全吞。v0.4.0 先扫描全部聊天来源，v0.4.1 按聊天、角色、时间范围切成带 overlap 的可续跑 archiveChunks，v0.4.2 再把 chunks 编入可暂停、可继续、可重试的 backfillJobs，v0.4.3 开始把 running 的 event-backfill 任务真正整理成历史事件，v0.4.4 再把历史事件拆成原子事实。',
             '每批先生成事件摘要，保留来源消息范围；再拆原子事实；再做向量和关键词索引。',
             '事实可以进入多个记忆家族，家族超过阈值后更新摘要；graph 负责连接人、事、主题、目的、情绪和项目。',
             '所有批次都写入控制台，能看到原始输出、解析错误、应用结果，也能回滚。'
@@ -78,7 +91,11 @@
             'v0.3.10：旧记忆 owner 守门。Memory Brain 到 v0.9 前只读，正式注入仍由当前旧档案记忆 owner 负责。',
             'v0.4.0：历史大整理入口。扫描全部聊天来源、消息数量、时间范围和预计切片数，建立 archiveSources。',
             'v0.4.1：历史切片 / 游标。把几万条消息切成 archiveChunks，建立 archiveCursors，支持后续断点续跑。',
-            'v0.4.2：回填队列 / 断点续跑。把 archiveChunks 编入 backfillJobs / runs，支持暂停、继续、失败重试和回滚。'
+            'v0.4.2：回填队列 / 断点续跑。把 archiveChunks 编入 backfillJobs / runs，支持暂停、继续、失败重试和回滚。',
+            'v0.4.3：历史事件回填。对 running 的 event-backfill 任务调用 memory-event 模型，生成 0～多条历史事件并推进断点状态。',
+            'v0.4.4：历史事实回填。对历史事件建立 fact-backfill 任务，调用 memory-fact 模型拆出原子事实。',
+            'v0.4.5：事实生命周期。标记重复、冲突、过时事实，所有变更 batch 化可回滚。',
+            'v0.4.6：全量家族 / graph 重建。基于清理后的 active facts 重建 family 与 graph，批次可回滚。'
         ].join('\n');
     }
 
@@ -125,6 +142,11 @@
     function getArchiveCards(options = {}) { return feature.historyArchiveService.getArchiveCards(options); }
     function getArchiveChunkCards(options = {}) { return feature.historyChunkService.getArchiveChunkCards(options); }
     function getBackfillCards(options = {}) { return feature.historyBackfillService.getBackfillCards(options); }
+    function getHistoryEventBackfillCards(options = {}) { return feature.historyEventBackfillService.getHistoryEventBackfillCards(options); }
+    function getHistoryFactBackfillCards(options = {}) { return feature.historyFactBackfillService.getHistoryFactBackfillCards(options); }
+    function getFactLifecycleCards(options = {}) { return feature.factLifecycleService.getFactLifecycleCards(options); }
+    function getFamilyGraphRebuildCards(options = {}) { return feature.familyGraphRebuildService.getFamilyGraphRebuildCards(options); }
+    function getHistoryModelRebuildCards(options = {}) { return feature.historyModelRebuildService.getHistoryModelRebuildCards(options); }
     function retireFact(factId, options = {}) { return feature.factExtractionService.retireFact(factId, options); }
     function retireFamily(familyId, options = {}) { return feature.familyService.retireFamily(familyId, options); }
     function retireEdge(edgeId, options = {}) { return feature.graphService.retireEdge(edgeId, options); }
@@ -137,6 +159,8 @@
     function rollbackLatestInjectionPreviewBatch(options = {}) { return feature.injectionPreviewService.rollbackLatestInjectionPreviewBatch(options); }
     function rollbackLatestArchiveChunkBatch(options = {}) { return feature.historyChunkService.rollbackLatestArchiveChunkBatch(options); }
     function rollbackLatestBackfillBatch(options = {}) { return feature.historyBackfillService.rollbackLatestBackfillBatch(options); }
+    function rollbackLatestHistoryEventBatch(options = {}) { return feature.historyEventBackfillService.rollbackLatestHistoryEventBatch(options); }
+    function rollbackLatestHistoryFactBatch(options = {}) { return feature.historyFactBackfillService.rollbackLatestHistoryFactBatch(options); }
 
     function openConsole() {
         const quickDock = app.features.quickDock && app.features.quickDock.publicApi;
@@ -148,7 +172,7 @@
     function getRoutingReport() {
         return {
             owner: 'features/memoryBrain/service',
-            release: 'v0.4.2',
+            release: 'v0.4.7',
             platformOwner: 'platform/memoryBrain.publicApi',
             consoleOwner: 'platform/observability.operationTraceService',
             legacyMode: 'read-only-source',
@@ -164,14 +188,19 @@
             archiveOwner: 'features/memoryBrain/historyArchiveService',
             chunkOwner: 'features/memoryBrain/historyChunkService',
             backfillOwner: 'features/memoryBrain/historyBackfillService',
+            historyEventBackfillOwner: 'features/memoryBrain/historyEventBackfillService',
+            historyFactBackfillOwner: 'features/memoryBrain/historyFactBackfillService',
+            factLifecycleOwner: 'features/memoryBrain/factLifecycleService',
+            familyGraphRebuildOwner: 'features/memoryBrain/familyGraphRebuildService',
+            historyModelRebuildOwner: 'features/memoryBrain/historyModelRebuildService',
             shadowMode: true,
-            activeWrites: ['memoryBrain.events', 'memoryBrain.facts', 'memoryBrain.families', 'memoryBrain.edges', 'memoryBrain.models', 'memoryBrain.injectionPreviews', 'memoryBrain.scheduleQueue', 'memoryBrain.schedulerRuns', 'memoryBrain.exports', 'memoryBrain.archiveSources', 'memoryBrain.archiveScanRuns', 'memoryBrain.archiveChunks', 'memoryBrain.archiveCursors', 'memoryBrain.archiveChunkRuns', 'memoryBrain.backfillJobs', 'memoryBrain.backfillRuns', 'memoryBrain.batches']
+            activeWrites: ['memoryBrain.events', 'memoryBrain.facts', 'memoryBrain.families', 'memoryBrain.edges', 'memoryBrain.models', 'memoryBrain.injectionPreviews', 'memoryBrain.scheduleQueue', 'memoryBrain.schedulerRuns', 'memoryBrain.exports', 'memoryBrain.archiveSources', 'memoryBrain.archiveScanRuns', 'memoryBrain.archiveChunks', 'memoryBrain.archiveCursors', 'memoryBrain.archiveChunkRuns', 'memoryBrain.backfillJobs', 'memoryBrain.backfillRuns', 'memoryBrain.historyEventBackfillRuns', 'memoryBrain.historyFactBackfillRuns', 'memoryBrain.factLifecycleRuns', 'memoryBrain.factMerges', 'memoryBrain.conflicts', 'memoryBrain.obsoleteFacts', 'memoryBrain.familyGraphRebuildRuns', 'memoryBrain.historyModelRebuildRuns', 'memoryBrain.batches']
         };
     }
 
     feature.service = {
-        getDashboard, scanHistoryArchive, prepareArchiveChunks, prepareBackfillQueue, startBackfillQueue, pauseBackfillQueue, resumeBackfillQueue, retryFailedBackfillJobs, scanLegacySources, getReplacementAnswer, getHistorySortingAnswer, getFullPlanText, copyPlanningText,
-        summarizeRecentChat, extractFactsFromLatestEvent, organizeFamilies, buildGraph, buildLongTermModels, buildShadowInjectionPreview, updateCostProfile, buildMaintenancePlan, runMaintenanceCycle, getMemoryPalace, copyExportBundle, getTimelineEvents, getEventById, getFactCards, getFamilyCards, getGraphCards, getModelCards, getInjectionPreviewCards, getSchedulerCards, getArchiveCards, getArchiveChunkCards, getBackfillCards, getExportCards,
-        retireFact, retireFamily, retireEdge, retireModel, retireInjectionPreview, rollbackLatestFactBatch, rollbackLatestFamilyBatch, rollbackLatestGraphBatch, rollbackLatestModelBatch, rollbackLatestInjectionPreviewBatch, rollbackLatestMaintenanceBatch, rollbackLatestExportBatch, rollbackLatestArchiveChunkBatch, rollbackLatestBackfillBatch, openConsole, recordOperation, getRoutingReport
+        getDashboard, scanHistoryArchive, prepareArchiveChunks, prepareBackfillQueue, startBackfillQueue, pauseBackfillQueue, resumeBackfillQueue, retryFailedBackfillJobs, runHistoryEventBackfill, runHistoryFactBackfill, runFactLifecycleReview, rebuildFamilyGraph, rebuildFullHistoryModels, scanLegacySources, getReplacementAnswer, getHistorySortingAnswer, getFullPlanText, copyPlanningText,
+        summarizeRecentChat, extractFactsFromLatestEvent, organizeFamilies, buildGraph, buildLongTermModels, buildShadowInjectionPreview, updateCostProfile, buildMaintenancePlan, runMaintenanceCycle, getMemoryPalace, copyExportBundle, getTimelineEvents, getEventById, getFactCards, getFamilyCards, getGraphCards, getModelCards, getInjectionPreviewCards, getSchedulerCards, getArchiveCards, getArchiveChunkCards, getBackfillCards, getHistoryEventBackfillCards, getHistoryFactBackfillCards, getFactLifecycleCards, getFamilyGraphRebuildCards, getHistoryModelRebuildCards, getExportCards,
+        retireFact, retireFamily, retireEdge, retireModel, retireInjectionPreview, rollbackLatestFactBatch, rollbackLatestFamilyBatch, rollbackLatestGraphBatch, rollbackLatestModelBatch, rollbackLatestInjectionPreviewBatch, rollbackLatestMaintenanceBatch, rollbackLatestExportBatch, rollbackLatestArchiveChunkBatch, rollbackLatestBackfillBatch, rollbackLatestHistoryEventBatch, rollbackLatestHistoryFactBatch, rollbackLatestFactLifecycleBatch, rollbackLatestFamilyGraphRebuildBatch, rollbackLatestHistoryModelBatch, openConsole, recordOperation, getRoutingReport
     };
 })(window);

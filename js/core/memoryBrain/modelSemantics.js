@@ -1,4 +1,4 @@
-// --- Memory Brain model semantics owner (v0.3.5) ---
+// --- Memory Brain model semantics owner (v0.4.7) ---
 // 只处理“事件/事实/家族/graph → 长期模型”的纯语义：prompt、JSON 解析、字段归一化和卡片 compact。
 (function registerMemoryBrainModelSemantics(app) {
     const core = app.core;
@@ -8,13 +8,17 @@
         Object.freeze({ id: 'user-profile', title: '用户画像', goal: '长期理解用户的偏好、边界、关系模式和需求。' }),
         Object.freeze({ id: 'ai-self', title: 'AI 自我', goal: '记录 AI 在这段关系中的稳定角色、表达方式和成长痕迹。' }),
         Object.freeze({ id: 'world-model', title: '世界观', goal: '沉淀双方共享的价值、关系观和判断框架。' }),
-        Object.freeze({ id: 'project-brain', title: '项目脑', goal: '持续记住 OWO 项目的版本、架构决策、待办和边界。' })
+        Object.freeze({ id: 'project-brain', title: '项目脑', goal: '持续记住 OWO 项目的版本、架构决策、待办和边界。' }),
+        Object.freeze({ id: 'interaction-preferences', title: '互动偏好', goal: '沉淀用户喜欢/不喜欢怎样被回应、怎样被安抚和怎样协作。' }),
+        Object.freeze({ id: 'relationship-continuity', title: '关系连续性', goal: '记录长期关系节点、相处公约、共同仪式和连续性线索。' })
     ]);
     const TYPE_ALIASES = Object.freeze({
         user: 'user-profile', user_profile: 'user-profile', profile: 'user-profile', 用户画像: 'user-profile', 人物画像: 'user-profile',
         ai: 'ai-self', ai_self: 'ai-self', self: 'ai-self', aiSelf: 'ai-self', AI自我: 'ai-self', 'AI 自我': 'ai-self',
         world: 'world-model', world_model: 'world-model', worldview: 'world-model', 世界观: 'world-model',
-        project: 'project-brain', project_brain: 'project-brain', projectBrain: 'project-brain', 项目脑: 'project-brain'
+        project: 'project-brain', project_brain: 'project-brain', projectBrain: 'project-brain', 项目脑: 'project-brain',
+        interaction: 'interaction-preferences', interaction_preferences: 'interaction-preferences', preferences_model: 'interaction-preferences', 互动偏好: 'interaction-preferences', 回应偏好: 'interaction-preferences',
+        relationship: 'relationship-continuity', relationship_continuity: 'relationship-continuity', continuity: 'relationship-continuity', 关系连续性: 'relationship-continuity', 关系模型: 'relationship-continuity'
     });
     function asText(value) { return String(value == null ? '' : value).trim(); }
     function clampText(value, max) {
@@ -112,13 +116,13 @@
         const evidence = buildEvidenceLines(snapshot, options);
         return [
             '你是 OWO 小手机 App 的长期记忆脑模型整理器。',
-            '任务：基于已整理的事件、原子事实、记忆家族和 graph 关系，生成 4 个长期模型版本。不要写 prompt 注入，不要改旧记忆系统。',
+            '任务：基于已整理的事件、原子事实、记忆家族和 graph 关系，生成长期模型版本。不要写 prompt 注入，不要改旧记忆系统。',
             '',
-            '四个模型必须都有：user-profile、ai-self、world-model、project-brain。',
+            '模型必须都有：user-profile、ai-self、world-model、project-brain、interaction-preferences、relationship-continuity。',
             '原则：忠于证据；不要把一次情绪永久化；推测要写进 sourceReason；每个结论尽量引用 evidenceFactIds / familyIds / edgeIds。',
             '',
             '只输出 JSON，不要 markdown。JSON schema：',
-            '{ "models": [{ "type": "user-profile|ai-self|world-model|project-brain", "title": "标题", "summary": "长期理解摘要", "stableTraits": [], "preferences": [], "boundaries": [], "relationshipNotes": [], "projectDecisions": [], "openQuestions": [], "keywords": [], "labels": [], "evidenceFactIds": [], "familyIds": [], "edgeIds": [], "confidence": 0.8, "sourceReason": "证据和不确定性" }] }',
+            '{ "models": [{ "type": "user-profile|ai-self|world-model|project-brain|interaction-preferences|relationship-continuity", "title": "标题", "summary": "长期理解摘要", "stableTraits": [], "preferences": [], "boundaries": [], "relationshipNotes": [], "projectDecisions": [], "openQuestions": [], "keywords": [], "labels": [], "evidenceFactIds": [], "familyIds": [], "edgeIds": [], "confidence": 0.8, "sourceReason": "证据和不确定性" }] }',
             '',
             'FACTS:', evidence.facts.join('\n') || '无',
             '', 'FAMILIES:', evidence.families.join('\n') || '无',
@@ -143,7 +147,9 @@
             'user-profile': `用户长期关注的主题包括：${familyLine}。这些只是影子事实形成的初版画像。`,
             'ai-self': `AI 当前应把自己定位成长期陪伴和项目协作伙伴，优先保持连续、透明、可回滚。`,
             'world-model': `双方共享的世界观正在围绕长期陪伴、非企业化外置大脑、证据化记忆和用户可纠正展开。`,
-            'project-brain': `OWO Memory Brain 已形成事件、事实、家族和 graph 链路，下一步是长期模型与注入预览。`
+            'project-brain': `OWO Memory Brain 已形成事件、事实、家族和 graph 链路，下一步是长期模型与注入预览。`,
+            'interaction-preferences': `用户的互动偏好正在从事实和家族中沉淀，重点包括回应节奏、安抚方式、边界和不喜欢的沟通模式。`,
+            'relationship-continuity': `双方关系连续性正在围绕长期陪伴、共同仪式、关键节点和可回滚记忆脑逐步形成。`
         })[item.id], stableTraits: keywords.slice(0, 5), preferences: keywords.slice(0, 6), boundaries: ['不要写死分类', '不要双系统写入', '不要提前正式注入'], projectDecisions: ['长期模型保持影子模式', '模型必须有版本历史和回滚'] })));
     }
 

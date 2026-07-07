@@ -1,4 +1,4 @@
-// --- Memory Brain platform public facade (v0.4.2) ---
+// --- Memory Brain platform public facade (v0.4.7) ---
 // 只导出存储、embedding、事件/事实/家族/graph 批次与旧来源扫描能力，不写 UI 逻辑。
 (function registerMemoryBrainPlatformPublic(global) {
     const app = global.OwoApp;
@@ -15,6 +15,11 @@
     const archiveScanner = platform.historyArchiveScanner;
     const chunkStore = platform.historyChunkStore;
     const backfillStore = platform.backfillQueueStore;
+    const historyEventStore = platform.historyEventBackfillStore;
+    const historyFactStore = platform.historyFactBackfillStore;
+    const factLifecycleStore = platform.factLifecycleStore;
+    const familyGraphRebuildStore = platform.familyGraphRebuildStore;
+    const historyModelRebuildStore = platform.historyModelRebuildStore;
 
     platform.publicApi = {
         ensureState: function ensureState(options) { return store.ensureState(options || {}); },
@@ -36,6 +41,28 @@
         listBackfillJobs: function listBackfillJobs(options) { return backfillStore.listBackfillJobs(options || {}); },
         listBackfillRuns: function listBackfillRuns(options) { return backfillStore.listBackfillRuns(options || {}); },
         getBackfillSnapshot: function getBackfillSnapshot(options) { return backfillStore.getBackfillSnapshot(options || {}); },
+        selectHistoryEventBackfillWork: function selectHistoryEventBackfillWork(options) { return historyEventStore.selectHistoryEventBackfillWork(options || {}); },
+        appendHistoryEventBackfillBatch: function appendHistoryEventBackfillBatch(payload, options) { return historyEventStore.appendHistoryEventBackfillBatch(payload || {}, options || {}); },
+        listHistoryEventRuns: function listHistoryEventRuns(options) { return historyEventStore.listHistoryEventRuns(options || {}); },
+        selectHistoryFactBackfillWork: function selectHistoryFactBackfillWork(options) { return historyFactStore.selectHistoryFactBackfillWork(options || {}); },
+        appendHistoryFactBackfillBatch: function appendHistoryFactBackfillBatch(payload, options) { return historyFactStore.appendHistoryFactBackfillBatch(payload || {}, options || {}); },
+        listHistoryFactRuns: function listHistoryFactRuns(options) { return historyFactStore.listHistoryFactRuns(options || {}); },
+        buildFactLifecyclePlan: function buildFactLifecyclePlan(options) { return factLifecycleStore.buildFactLifecyclePlan(options || {}); },
+        applyFactLifecyclePlan: function applyFactLifecyclePlan(plan, options) { return factLifecycleStore.applyFactLifecyclePlan(plan || {}, options || {}); },
+        rollbackFactLifecycleBatch: function rollbackFactLifecycleBatch(batchId, options) { return factLifecycleStore.rollbackFactLifecycleBatch(batchId, options || {}); },
+        resetFamilyGraphForRebuild: function resetFamilyGraphForRebuild(options) { return familyGraphRebuildStore.resetFamilyGraphForRebuild(options || {}); },
+        appendFamilyGraphRebuildBatch: function appendFamilyGraphRebuildBatch(payload, options) { return familyGraphRebuildStore.appendFamilyGraphRebuildBatch(payload || {}, options || {}); },
+        rollbackRebuildResetBatch: function rollbackRebuildResetBatch(batchId, options) { return familyGraphRebuildStore.rollbackRebuildResetBatch(batchId, options || {}); },
+        rollbackFamilyGraphRebuildMetaBatch: function rollbackFamilyGraphRebuildMetaBatch(batchId, options) { return familyGraphRebuildStore.rollbackFamilyGraphRebuildMetaBatch(batchId, options || {}); },
+        rollbackFamilyGraphRebuildBatch: function rollbackFamilyGraphRebuildBatch(batchId, payload, options) { return familyGraphRebuildStore.rollbackFamilyGraphRebuildBatch(batchId, payload || {}, options || payload || {}); },
+        listFamilyGraphRebuildRuns: function listFamilyGraphRebuildRuns(options) { return familyGraphRebuildStore.listFamilyGraphRebuildRuns(options || {}); },
+        getFamilyGraphRebuildSnapshot: function getFamilyGraphRebuildSnapshot(options) { return familyGraphRebuildStore.getFamilyGraphRebuildSnapshot(options || {}); },
+        appendHistoryModelRebuildRun: function appendHistoryModelRebuildRun(payload, options) { return historyModelRebuildStore.appendHistoryModelRebuildRun(payload || {}, options || {}); },
+        listHistoryModelRebuildRuns: function listHistoryModelRebuildRuns(options) { return historyModelRebuildStore.listHistoryModelRebuildRuns(options || {}); },
+        getHistoryModelRebuildSnapshot: function getHistoryModelRebuildSnapshot(options) { return historyModelRebuildStore.getHistoryModelRebuildSnapshot(options || {}); },
+        rollbackHistoryModelRebuildRun: function rollbackHistoryModelRebuildRun(runId, options) { return historyModelRebuildStore.rollbackHistoryModelRebuildRun(runId, options || {}); },
+        listFactLifecycleRuns: function listFactLifecycleRuns(options) { return factLifecycleStore.listFactLifecycleRuns(options || {}); },
+        getFactLifecycleSnapshot: function getFactLifecycleSnapshot(options) { return factLifecycleStore.getFactLifecycleSnapshot(options || {}); },
         getReplacementPlan: function getReplacementPlan() { return store.getReplacementPlan(); },
         listEvents: function listEvents(options) { return store.listEvents(options || {}); },
         listFacts: function listFacts(options) { return factStore.listFacts(options || {}); },
@@ -74,19 +101,21 @@
         rollbackExportBatch: function rollbackExportBatch(batchId, options) { return exportAdapter.rollbackExportBatch(batchId, options || {}); },
         rollbackArchiveChunkBatch: function rollbackArchiveChunkBatch(batchId, options) { return chunkStore.rollbackArchiveChunkBatch(batchId, options || {}); },
         rollbackBackfillBatch: function rollbackBackfillBatch(batchId, options) { return backfillStore.rollbackBackfillBatch(batchId, options || {}); },
+        rollbackHistoryEventBackfillBatch: function rollbackHistoryEventBackfillBatch(batchId, options) { return historyEventStore.rollbackHistoryEventBackfillBatch(batchId, options || {}); },
+        rollbackHistoryFactBackfillBatch: function rollbackHistoryFactBackfillBatch(batchId, options) { return historyFactStore.rollbackHistoryFactBackfillBatch(batchId, options || {}); },
         getRoutingReport: function getRoutingReport() {
-            return Object.assign({}, store.getRoutingReport(), archiveScanner.getRoutingReport(), chunkStore.getRoutingReport(), backfillStore.getRoutingReport(), factStore.getRoutingReport(), embeddingService.getRoutingReport(), familyStore.getRoutingReport(), graphStore.getRoutingReport(), modelStore.getRoutingReport(), injectionStore.getRoutingReport(), scheduleStore.getRoutingReport(), exportAdapter.getRoutingReport());
+            return Object.assign({}, store.getRoutingReport(), archiveScanner.getRoutingReport(), chunkStore.getRoutingReport(), backfillStore.getRoutingReport(), historyEventStore.getRoutingReport(), historyFactStore.getRoutingReport(), factLifecycleStore.getRoutingReport(), familyGraphRebuildStore.getRoutingReport(), historyModelRebuildStore.getRoutingReport(), factStore.getRoutingReport(), embeddingService.getRoutingReport(), familyStore.getRoutingReport(), graphStore.getRoutingReport(), modelStore.getRoutingReport(), injectionStore.getRoutingReport(), scheduleStore.getRoutingReport(), exportAdapter.getRoutingReport());
         },
         getPublicContract: function getPublicContract() {
             return {
                 owner: 'platform/memoryBrain',
-                release: 'v0.4.2',
+                release: 'v0.4.7',
                 stableApis: [
                     'ensureState', 'getSnapshot', 'scanLegacySources', 'rememberLegacyScan',
-                    'scanArchiveSources', 'rememberArchiveSources', 'listArchiveSources', 'listArchiveScanRuns', 'getArchiveSnapshot', 'prepareArchiveChunks', 'listArchiveChunks', 'listArchiveCursors', 'listArchiveChunkRuns', 'getArchiveChunkSnapshot', 'prepareBackfillQueue', 'applyBackfillAction', 'listBackfillJobs', 'listBackfillRuns', 'getBackfillSnapshot',
+                    'scanArchiveSources', 'rememberArchiveSources', 'listArchiveSources', 'listArchiveScanRuns', 'getArchiveSnapshot', 'prepareArchiveChunks', 'listArchiveChunks', 'listArchiveCursors', 'listArchiveChunkRuns', 'getArchiveChunkSnapshot', 'prepareBackfillQueue', 'applyBackfillAction', 'listBackfillJobs', 'listBackfillRuns', 'getBackfillSnapshot', 'selectHistoryEventBackfillWork', 'appendHistoryEventBackfillBatch', 'listHistoryEventRuns', 'selectHistoryFactBackfillWork', 'appendHistoryFactBackfillBatch', 'listHistoryFactRuns', 'buildFactLifecyclePlan', 'applyFactLifecyclePlan', 'listFactLifecycleRuns', 'getFactLifecycleSnapshot',
                     'getReplacementPlan', 'listEvents', 'listFacts', 'listFamilies', 'listEdges', 'listModels', 'listInjectionPreviews', 'getSchedulerSnapshot', 'listSchedulerRuns', 'listScheduleQueue', 'listExports', 'createExportBundle',
                     'appendEventSummaryBatch', 'appendFactExtractionBatch', 'appendFamilyClusteringBatch', 'appendGraphLinkingBatch', 'appendLongTermModelBatch', 'appendInjectionPreviewBatch', 'updateSchedulerSettings', 'appendMaintenancePlanBatch', 'appendMaintenanceCycleBatch', 'appendExportPreviewBatch',
-                    'ensureFactEmbeddings', 'retireFact', 'retireFamily', 'retireEdge', 'retireModel', 'retireInjectionPreview', 'rollbackBatch', 'rollbackFamilyBatch', 'rollbackGraphBatch', 'rollbackModelBatch', 'rollbackInjectionPreviewBatch', 'rollbackMaintenanceBatch', 'rollbackExportBatch', 'rollbackArchiveChunkBatch', 'rollbackBackfillBatch'
+                    'ensureFactEmbeddings', 'retireFact', 'retireFamily', 'retireEdge', 'retireModel', 'retireInjectionPreview', 'rollbackBatch', 'rollbackFamilyBatch', 'rollbackGraphBatch', 'rollbackModelBatch', 'rollbackInjectionPreviewBatch', 'rollbackMaintenanceBatch', 'rollbackExportBatch', 'rollbackArchiveChunkBatch', 'rollbackBackfillBatch', 'rollbackHistoryEventBackfillBatch', 'rollbackHistoryFactBackfillBatch', 'rollbackFactLifecycleBatch', 'resetFamilyGraphForRebuild', 'rollbackFamilyGraphRebuildBatch', 'appendFamilyGraphRebuildBatch', 'rollbackRebuildResetBatch', 'rollbackFamilyGraphRebuildMetaBatch', 'listFamilyGraphRebuildRuns', 'getFamilyGraphRebuildSnapshot', 'appendHistoryModelRebuildRun', 'listHistoryModelRebuildRuns', 'getHistoryModelRebuildSnapshot', 'rollbackHistoryModelRebuildRun'
                 ]
             };
         }

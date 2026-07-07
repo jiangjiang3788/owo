@@ -87,6 +87,21 @@
         return text.includes('\n') ? '|\n' + text.split('\n').map(line => `${nextIndent}${line}`).join('\n') : text;
     }
 
+    function summarizeMessageMeta(message) {
+        if (!message || typeof message !== 'object') return message;
+        const timestamp = Number(message.timestamp || message.createdAt || 0);
+        return Object.assign({}, message, timestamp ? { timestampIso: new Date(timestamp).toISOString() } : {});
+    }
+
+    function compactResponseMetadata(metadata) {
+        if (!metadata || typeof metadata !== 'object') return metadata || {};
+        const output = Object.assign({}, metadata);
+        if (output.strippedProviderJson) output.strippedProviderJson = '[omitted: 已省略 provider 原始响应，避免和批次消息重复]';
+        if (output.rawResponse) output.rawResponse = '[omitted: 已省略原始响应，避免重复]';
+        if (output.responseJson) output.responseJson = '[omitted: 已省略响应 JSON，避免重复]';
+        return output;
+    }
+
     function formatTraceForDisplay(traceOrId) {
         const trace = typeof traceOrId === 'string' ? findTrace(traceOrId) : traceOrId;
         if (!trace) return '';
@@ -110,16 +125,34 @@
             httpStatus: trace.responseStatus || trace.httpStatus,
             errorMessage: trace.errorMessage
         });
+
+        if (category === 'response') {
+            const responseJson = trace.responseJson || {};
+            add('AI 回复批次', {
+                messageCount: (trace.event && trace.event.messageCount) || responseJson.messageCount || (responseJson.messages && responseJson.messages.length),
+                requestTraceId: (trace.event && trace.event.requestTraceId) || responseJson.requestTraceId,
+                childConsolePolicy: trace.event && trace.event.childConsolePolicy,
+                messages: responseJson.messages,
+                usage: responseJson.usage,
+                metadata: compactResponseMetadata(responseJson.metadata),
+                responseBatch: trace.responseBatch
+            });
+            add('诊断数据', trace.diagnostic || trace.diagnostics || trace.issues || trace.warnings);
+            add('操作数据', trace.event || trace.extra);
+            add('错误堆栈', trace.errorStack);
+            return sections.join('\n\n');
+        }
+
+        if (category === 'message' || category === 'reply') {
+            add('消息内容', event && event.content ? event.content : (trace.content || (trace.message && trace.message.content)));
+            add('消息元数据', event && event.kind === 'conversation' ? event : summarizeMessageMeta(trace.message));
+            add('诊断数据', trace.diagnostic || trace.diagnostics || trace.extra);
+            add('错误堆栈', trace.errorStack);
+            return sections.join('\n\n');
+        }
+
         add('发送 / 回复内容', event && event.content ? event.content : (trace.content || (trace.message && trace.message.content)));
-        if (category === 'response') add('AI 回复批次', {
-            messageCount: event && event.messageCount,
-            requestTraceId: event && event.requestTraceId,
-            childConsolePolicy: event && event.childConsolePolicy,
-            messages: trace.responseJson && trace.responseJson.messages,
-            usage: trace.responseJson && trace.responseJson.usage,
-            metadata: trace.responseJson && trace.responseJson.metadata
-        });
-        add('消息元数据', event && event.kind === 'conversation' ? event : trace.message);
+        add('消息元数据', event && event.kind === 'conversation' ? event : summarizeMessageMeta(trace.message));
         add('操作数据', trace.event || trace.extra || (event && event.kind === 'operation' ? event : null));
         add('请求 Header', trace.requestHeaders || trace.headers || (trace.fetchOptions && trace.fetchOptions.headers));
         add('请求体', trace.requestBody);
@@ -127,7 +160,6 @@
         add('响应正文', trace.responseBodyText || trace.responseBody);
         add('诊断数据', trace.diagnostic || trace.diagnostics || trace.issues || trace.warnings);
         add('错误堆栈', trace.errorStack);
-        add('原始记录', trace);
         return sections.join('\n\n');
     }
 

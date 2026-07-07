@@ -84,6 +84,39 @@
         });
         return output;
     }
+    function compactBatchMetadata(metadata) {
+        if (!metadata || typeof metadata !== 'object') return metadata || {};
+        const output = safeJsonClone(metadata) || {};
+        if (output.strippedProviderJson) output.strippedProviderJson = '[omitted: provider raw payload is kept only in the AI Request trace]';
+        if (output.rawResponse) output.rawResponse = '[omitted: raw response is kept only in the AI Request trace]';
+        if (output.responseJson) output.responseJson = '[omitted: response JSON is kept only in the AI Request trace]';
+        return output;
+    }
+    function previewBatchContent(batch) {
+        const text = String(batch && batch.content || '');
+        const lines = text.split(/\n+/).map(line => line.trim()).filter(Boolean);
+        const preview = lines.slice(0, 12).join('\n');
+        return lines.length > 12 ? preview + `\n... [omitted ${lines.length - 12} more lines in console preview]` : preview;
+    }
+    function compactBatchForTrace(batch) {
+        const source = batch || {};
+        return {
+            id: source.id || '', kind: 'ai-response-batch', status: source.status || 'success', source: source.source || 'ai.responseBatch',
+            label: source.label || 'AI 回复批次', provider: source.provider || '', model: source.model || '', requestTraceId: source.requestTraceId || '',
+            chatId: source.chatId || '', chatType: source.chatType || '', startedAt: source.startedAt, completedAt: source.completedAt, durationMs: source.durationMs,
+            messageCount: source.messageCount || 0, usage: safeJsonClone(source.usage), metadata: compactBatchMetadata(source.metadata), childConsolePolicy: 'single-batch-card'
+        };
+    }
+    function findAiResponseBatchTrace(batchId) {
+        const id = String(batchId || '');
+        if (!id) return null;
+        return traces.find(trace => (trace.responseBatch && trace.responseBatch.id === id) || (trace.event && trace.event.id === id) || trace.id === id) || null;
+    }
+    function findConversationTrace(messageId, category) {
+        const id = String(messageId || '');
+        if (!id) return null;
+        return traces.find(trace => (trace.category === category || trace.kind === category) && ((trace.message && trace.message.id === id) || trace.messageId === id)) || null;
+    }
     function notify() {
         const snapshot = getRecentTraces();
         listeners.slice().forEach(listener => {
@@ -193,8 +226,12 @@
         return safeJsonClone(upsertTrace(trace));
     }
     function recordConversationEvent(meta = {}) {
+        if (meta.suppressConsoleTrace || (meta.message && meta.message.suppressConsoleTrace)) return null;
         const role = String(meta.role || (meta.message && meta.message.role) || '').toLowerCase();
         const category = role === 'assistant' || role === 'char' || role === 'ai' ? 'reply' : role === 'user' ? 'message' : 'event';
+        const messageId = meta.messageId || (meta.message && meta.message.id) || '';
+        const existing = findConversationTrace(messageId, category);
+        if (existing) return safeJsonClone(existing);
         return recordConsoleEvent(Object.assign({}, meta, {
             kind: category,
             category,
@@ -207,6 +244,10 @@
     }
     function recordAiResponseBatch(meta = {}) {
         const batch = meta.batch || meta;
+        const batchId = batch.id || meta.id || '';
+        const existing = findAiResponseBatchTrace(batchId);
+        if (existing) return safeJsonClone(existing);
+        const compactMetadata = compactBatchMetadata(batch.metadata);
         const trace = recordConsoleEvent({
             kind: 'response',
             category: 'response',
@@ -220,25 +261,17 @@
             startedAt: batch.startedAt || meta.startedAt,
             completedAt: batch.completedAt || meta.completedAt,
             durationMs: Number(batch.durationMs || meta.durationMs || 0),
-            content: batch.content || '',
+            content: previewBatchContent(batch),
             message: {
-                id: batch.id || meta.id || '',
-                role: 'assistant',
-                chatId: batch.chatId || meta.chatId || '',
-                chatType: batch.chatType || meta.chatType || '',
-                timestamp: batch.completedAt || Date.now()
+                id: batchId, role: 'assistant', chatId: batch.chatId || meta.chatId || '', chatType: batch.chatType || meta.chatType || '', timestamp: batch.completedAt || Date.now()
             },
             event: {
-                kind: 'ai-response-batch',
-                id: batch.id || meta.id || '',
-                requestTraceId: batch.requestTraceId || '',
-                messageCount: batch.messageCount || 0,
-                childConsolePolicy: 'single-batch-card'
+                kind: 'ai-response-batch', id: batchId, requestTraceId: batch.requestTraceId || '', messageCount: batch.messageCount || 0, childConsolePolicy: 'single-batch-card'
             },
             responseJson: redactProviderPrivateFields({
                 usage: batch.usage,
                 messages: batch.messages,
-                metadata: batch.metadata,
+                metadata: compactMetadata,
                 requestTraceId: batch.requestTraceId
             }),
             diagnostic: {
@@ -246,10 +279,10 @@
                 reasoningLength: batch.metadata && batch.metadata.reasoningLength || 0,
                 reasoningRedacted: !!(batch.metadata && batch.metadata.reasoningRedacted),
                 messageCount: batch.messageCount || 0,
-                policy: '多条 AI 回复合并为一个控制台批次'
+                policy: '多条 AI 回复合并为一个控制台批次；子消息不再单独生成控制台记录'
             }
         });
-        trace.responseBatch = safeJsonClone(batch);
+        trace.responseBatch = compactBatchForTrace(batch);
         return trace;
     }
     function recordOperation(meta = {}) { return recordConsoleEvent(Object.assign({ kind: 'operation', category: 'operation', status: 'operation', label: '操作记录' }, meta)); }

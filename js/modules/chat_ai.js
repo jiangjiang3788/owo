@@ -7,6 +7,7 @@ const chatAiProviderConfig = window.OwoApp.platform.ai.providerConfig;
 const chatAiProviderRequestAdapter = window.OwoApp.platform.ai.providerRequestAdapter;
 const chatAiRequestTraceStore = window.OwoApp.platform.ai.requestTraceStore;
 const chatAiMessageSemantics = window.OwoApp.core.chat.messageSemantics;
+const chatAiMessageTimeSemantics = window.OwoApp.core.chat.messageTimeSemantics;
 const chatAiPromptSemantics = window.OwoApp.core.chat.promptSemantics;
 const chatAiMessageSanitizer = window.OwoApp.platform.ai.messageSanitizer;
 const chatAiResponseNormalizer = window.OwoApp.platform.ai.responseNormalizer;
@@ -408,24 +409,15 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
             let lastMsgTimeForAI = 0;
             const contents = historySlice.map(msg => {
                 const role = (msg.role === 'assistant' || msg.role === 'char') ? 'model' : 'user';
-                let prefix = '';
-                const currentMsgTime = msg.timestamp;
-                const timeDiff = currentMsgTime - lastMsgTimeForAI;
-                const isSameDay = new Date(currentMsgTime).toDateString() === new Date(lastMsgTimeForAI).toDateString();
-               
-               if (lastMsgTimeForAI === 0 || timeDiff > 20 * 60 * 1000 || !isSameDay) {
-                   const dateObj = new Date(currentMsgTime);
-                   const timeStr = `${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
-                   
-                   prefix = `[system: ${timeStr}]`;
-                   
-                   if (chatAiProviderConfig.isMainTimePerceptionEnabled(db) && timeDiff > 30 * 60 * 1000 && lastMsgTimeForAI !== 0) {
-                       prefix += `\n[system: 距离上次互动已过去 ${formatTimeGap(timeDiff)}。话题可能已中断，请自然地开启新话题或对时间流逝做出反应。]`;
-                   }
-                   
-                   prefix += '\n';
-               }
-                lastMsgTimeForAI = currentMsgTime;
+                const timeContext = chatAiMessageTimeSemantics && typeof chatAiMessageTimeSemantics.buildPromptTimePrefix === 'function'
+                    ? chatAiMessageTimeSemantics.buildPromptTimePrefix(msg, lastMsgTimeForAI, {
+                        alwaysPerMessage: true,
+                        includeGapNotice: chatAiProviderConfig.isMainTimePerceptionEnabled(db),
+                        gapThresholdMs: 30 * 60 * 1000
+                    })
+                    : { prefix: '', timestamp: msg.timestamp || lastMsgTimeForAI || Date.now() };
+                let prefix = timeContext.prefix || '';
+                lastMsgTimeForAI = timeContext.timestamp || msg.timestamp || lastMsgTimeForAI;
 
                 let parts;
                 if (msg.role === 'user' && msg.quote) {
@@ -547,18 +539,15 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
             
             historySlice.forEach(msg => {
                let content;
-               let prefix = '';
-               
-               const currentMsgTime = msg.timestamp;
-               const timeDiff = currentMsgTime - lastMsgTimeForAI;
-               const isSameDay = new Date(currentMsgTime).toDateString() === new Date(lastMsgTimeForAI).toDateString();
-               
-               if (lastMsgTimeForAI === 0 || timeDiff > 20 * 60 * 1000 || !isSameDay) {
-                   const dateObj = new Date(currentMsgTime);
-                   const timeStr = `${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
-                   prefix = `[system: ${timeStr}]\n`;
-               }
-               lastMsgTimeForAI = currentMsgTime;
+               const timeContext = chatAiMessageTimeSemantics && typeof chatAiMessageTimeSemantics.buildPromptTimePrefix === 'function'
+                   ? chatAiMessageTimeSemantics.buildPromptTimePrefix(msg, lastMsgTimeForAI, {
+                       alwaysPerMessage: true,
+                       includeGapNotice: chatAiProviderConfig.isMainTimePerceptionEnabled(db),
+                       gapThresholdMs: 30 * 60 * 1000
+                   })
+                   : { prefix: '', timestamp: msg.timestamp || lastMsgTimeForAI || Date.now() };
+               let prefix = timeContext.prefix || '';
+               lastMsgTimeForAI = timeContext.timestamp || msg.timestamp || lastMsgTimeForAI;
 
                if (msg.role === 'user' && msg.quote) {
                    const replyTextMatch = msg.content.match(/\[.*?的消息：([\s\S]+?)\]/);

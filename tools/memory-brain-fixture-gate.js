@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Memory Brain v0.4.2 fixture gate: event → facts → families → graph → models → injection → scheduler → palace/export → archive/backfill smoke without browser. */
+/* Memory Brain v0.4.4 fixture gate: event → facts → families → graph → models → injection → scheduler → palace/export → archive/backfill smoke without browser. */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -11,7 +11,7 @@ function ok(message) { console.log('✅ ' + message); }
 function read(rel) { return fs.readFileSync(path.join(root, rel), 'utf8'); }
 function load(context, rel) { vm.runInContext(read(rel), context, { filename: rel }); }
 
-console.log('OWO Memory Brain fixture gate · v0.4.2\n');
+console.log('OWO Memory Brain fixture gate · v0.4.4\n');
 
 const app = {
   core: { memoryBrain: {} },
@@ -40,6 +40,9 @@ context.window.db = context.db;
   'js/core/memoryBrain/archiveSourceSemantics.js',
   'js/core/memoryBrain/archiveChunkSemantics.js',
   'js/core/memoryBrain/backfillQueueSemantics.js',
+  'js/core/memoryBrain/historyEventBackfillSemantics.js',
+  'js/core/memoryBrain/historyFactBackfillSemantics.js',
+  'js/core/memoryBrain/factLifecycleSemantics.js',
   'js/core/memoryBrain/public.js',
   'js/platform/memoryBrain/memoryBrainStore.js',
   'js/platform/memoryBrain/memoryFactStore.js',
@@ -53,6 +56,10 @@ context.window.db = context.db;
   'js/platform/memoryBrain/historyArchiveScanner.js',
   'js/platform/memoryBrain/historyChunkStore.js',
   'js/platform/memoryBrain/backfillQueueStore.js',
+  'js/platform/memoryBrain/historyEventBackfillStore.js',
+  'js/platform/memoryBrain/historyFactBackfillStore.js',
+  'js/platform/memoryBrain/factLifecycleStore.js',
+  'js/platform/memoryBrain/familyGraphRebuildStore.js',
   'js/platform/memoryBrain/public.js'
 ].forEach(rel => load(context, rel));
 
@@ -182,6 +189,36 @@ else ok('backfillQueueStore 生成回填队列');
 const startResult = platform.applyBackfillAction('start', { state: context.db, limit: 2 });
 if (!startResult.jobs || startResult.jobs.length !== 2 || !startResult.jobs.every(job => job.status === 'running')) error('backfillQueueStore start 操作失败');
 else ok('backfillQueueStore 支持 start 断点操作');
+const work = platform.selectHistoryEventBackfillWork({ state: context.db, limit: 1 });
+if (!work.items || work.items.length !== 1 || !work.items[0].prompt || !work.items[0].messages.length) error('historyEventBackfillStore 未准备历史事件回填 work item');
+else ok('historyEventBackfillStore 准备历史事件回填 work item');
+const parsedHistoryEvents = core.parseHistoricalEventBackfillResponse(JSON.stringify({ events: [{ title: '历史测试事件', summary: '用户和 AI 在历史测试聊天中持续推进长期记忆脑。', keywords: ['历史', '记忆脑'], emotion: '认真', importance: 3, sourceStartIndex: 1, sourceEndIndex: 6, sourceReason: '测试事件来源明确' }] }));
+if (!parsedHistoryEvents.ok || parsedHistoryEvents.drafts.length !== 1) error('historyEventBackfillSemantics 未解析历史事件数组');
+else ok('historyEventBackfillSemantics 解析历史事件数组');
+const eventBackfill = platform.appendHistoryEventBackfillBatch({ input: { fixture: true }, results: [{ job: work.items[0].job, chunk: work.items[0].chunk, source: work.items[0].source, messages: work.items[0].messages, ok: true, rawOutput: 'fixture', drafts: parsedHistoryEvents.drafts, diagnostics: [] }] }, { state: context.db });
+if (!eventBackfill.events || eventBackfill.events.length !== 1 || eventBackfill.batch.kind !== 'history-event-backfill') error('historyEventBackfillStore 未写入历史事件回填批次');
+else ok('historyEventBackfillStore 写入历史事件回填批次');
+const factQueueResult = platform.prepareBackfillQueue({ state: context.db, jobLimit: 10, taskKind: 'fact-backfill' });
+if (!factQueueResult.jobs || !factQueueResult.jobs.length || !factQueueResult.jobs[0].eventId) error('backfillQueueStore 未能为历史事件生成 fact-backfill 任务');
+else ok('backfillQueueStore 为历史事件生成 fact-backfill 任务');
+const factStart = platform.applyBackfillAction('start', { state: context.db, limit: 1, taskKind: 'fact-backfill' });
+if (!factStart.jobs || factStart.jobs.length !== 1 || factStart.jobs[0].status !== 'running') error('fact-backfill start 操作失败');
+else ok('backfillQueueStore 支持 fact-backfill start');
+const factWork = platform.selectHistoryFactBackfillWork({ state: context.db, limit: 1 });
+if (!factWork.items || factWork.items.length !== 1 || !factWork.items[0].prompt || !factWork.items[0].event) error('historyFactBackfillStore 未准备历史事实回填 work item');
+else ok('historyFactBackfillStore 准备历史事实回填 work item');
+const parsedHistoryFacts = core.parseHistoricalFactBackfillResponse(JSON.stringify({ facts: [{ content: '用户在历史测试聊天中持续推进长期记忆脑。', subject: 'user', predicate: 'works_on', object: '长期记忆脑', factType: 'project-memory', labels: ['历史', '记忆脑'], keywords: ['历史', '记忆脑'], confidence: 0.88, evidenceQuote: '持续推进长期记忆脑', sourceReason: '历史事件摘要明确提到项目推进' }] }));
+if (!parsedHistoryFacts.ok || parsedHistoryFacts.drafts.length !== 1) error('historyFactBackfillSemantics 未解析历史事实数组');
+else ok('historyFactBackfillSemantics 解析历史事实数组');
+const factBackfill = platform.appendHistoryFactBackfillBatch({ input: { fixture: true }, results: [{ job: factWork.items[0].job, event: factWork.items[0].event, ok: true, rawOutput: 'fixture', drafts: parsedHistoryFacts.drafts, diagnostics: [] }] }, { state: context.db });
+if (!factBackfill.facts || factBackfill.facts.length !== 1 || factBackfill.batch.kind !== 'history-fact-backfill') error('historyFactBackfillStore 未写入历史事实回填批次');
+else ok('historyFactBackfillStore 写入历史事实回填批次');
+const factBackfillRollback = platform.rollbackHistoryFactBackfillBatch(factBackfill.batch.id, { state: context.db });
+if (!factBackfillRollback.ok || factBackfillRollback.factCount !== 1) error('history-fact-backfill rollback 失败');
+else ok('history-fact-backfill rollback 成功');
+const eventBackfillRollback = platform.rollbackHistoryEventBackfillBatch(eventBackfill.batch.id, { state: context.db });
+if (!eventBackfillRollback.ok || eventBackfillRollback.eventCount !== 1) error('history-event-backfill rollback 失败');
+else ok('history-event-backfill rollback 成功');
 const pauseResult = platform.applyBackfillAction('pause', { state: context.db, limit: 20 });
 if (!pauseResult.jobs || !pauseResult.jobs.length || !platform.listBackfillJobs({ state: context.db }).some(job => job.status === 'paused')) error('backfillQueueStore pause 操作失败');
 else ok('backfillQueueStore 支持 pause 操作');

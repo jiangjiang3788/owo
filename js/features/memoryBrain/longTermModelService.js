@@ -1,4 +1,4 @@
-// --- Memory Brain long-term model service owner (v0.3.5) ---
+// --- Memory Brain long-term model service owner (v0.4.7) ---
 // 编排 facts / families / graph → 用户画像、AI 自我、世界观、项目脑；不接正式 prompt 注入。
 (function registerMemoryBrainLongTermModelService(global) {
     const app = global.OwoApp;
@@ -61,7 +61,7 @@
             familyCount: asArray(snapshot.families).filter(family => family && family.status !== 'retired').length,
             edgeCount: asArray(snapshot.edges).filter(edge => edge && edge.status !== 'retired').length,
             currentModelCount: asArray(snapshot.models).filter(model => model && model.status === 'active').length,
-            requestedTypes: ['user-profile', 'ai-self', 'world-model', 'project-brain'],
+            requestedTypes: ['user-profile', 'ai-self', 'world-model', 'project-brain', 'interaction-preferences', 'relationship-continuity'],
             rebuild: Boolean(options.rebuild),
             prompt: clip(prompt, 12000)
         };

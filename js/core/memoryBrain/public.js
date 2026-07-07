@@ -1,4 +1,4 @@
-// --- Memory Brain core public facade (v0.4.2) ---
+// --- Memory Brain core public facade (v0.4.7) ---
 // 只导出纯语义能力，不承载运行时流程。
 (function registerMemoryBrainCorePublic(app) {
     const core = app.core;
@@ -15,6 +15,10 @@
     function archives() { return core.memoryBrain.archiveSourceSemantics; }
     function chunks() { return core.memoryBrain.archiveChunkSemantics; }
     function backfills() { return core.memoryBrain.backfillQueueSemantics; }
+    function historyEvents() { return core.memoryBrain.historyEventBackfillSemantics; }
+    function historyFacts() { return core.memoryBrain.historyFactBackfillSemantics; }
+    function factLifecycle() { return core.memoryBrain.factLifecycleSemantics; }
+    function historyModels() { return core.memoryBrain.historyModelRebuildSemantics; }
 
     core.memoryBrain.publicApi = {
         getLayers: function getLayers() { return core.memoryBrain.types.LAYERS.slice(); },
@@ -71,12 +75,26 @@
         buildBackfillRunReport: function buildBackfillRunReport(jobs, options) { return backfills().buildBackfillRunReport(jobs || [], options || {}); },
         compactBackfillJobForList: function compactBackfillJobForList(job) { return backfills().compactBackfillJobForList(job || {}); },
         compactBackfillRunForList: function compactBackfillRunForList(run) { return backfills().compactBackfillRunForList(run || {}); },
+        buildHistoricalEventBackfillPrompt: function buildHistoricalEventBackfillPrompt(chunk, messages, options) { return historyEvents().buildHistoricalEventBackfillPrompt(chunk || {}, messages || [], options || {}); },
+        parseHistoricalEventBackfillResponse: function parseHistoricalEventBackfillResponse(text) { return historyEvents().parseHistoricalEventBackfillResponse(text || ''); },
+        ensureHistoricalEventSources: function ensureHistoricalEventSources(drafts, messages, chunk, job, source) { return historyEvents().ensureHistoricalEventSources(drafts || [], messages || [], chunk || {}, job || {}, source || {}); },
+        compactHistoryEventBackfillRunForList: function compactHistoryEventBackfillRunForList(run) { return historyEvents().compactHistoryEventBackfillRunForList(run || {}); },
+        buildHistoricalFactBackfillPrompt: function buildHistoricalFactBackfillPrompt(event, options) { return historyFacts().buildHistoricalFactBackfillPrompt(event || {}, options || {}); },
+        parseHistoricalFactBackfillResponse: function parseHistoricalFactBackfillResponse(text) { return historyFacts().parseHistoricalFactBackfillResponse(text || ''); },
+        ensureHistoricalFactSources: function ensureHistoricalFactSources(drafts, event, job) { return historyFacts().ensureHistoricalFactSources(drafts || [], event || {}, job || {}); },
+        compactHistoryFactBackfillRunForList: function compactHistoryFactBackfillRunForList(run) { return historyFacts().compactHistoryFactBackfillRunForList(run || {}); },
+        buildFactLifecyclePlan: function buildFactLifecyclePlan(factsList, options) { return factLifecycle().buildFactLifecyclePlan(factsList || [], options || {}); },
+        compactFactLifecycleRunForList: function compactFactLifecycleRunForList(run) { return factLifecycle().compactFactLifecycleRunForList(run || {}); },
+        compactFactLifecycleIssueForList: function compactFactLifecycleIssueForList(issue, factsById) { return factLifecycle().compactFactLifecycleIssueForList(issue || {}, factsById || new Map()); },
+        buildHistoryModelEvidence: function buildHistoryModelEvidence(snapshot, options) { return historyModels().buildHistoryModelEvidence(snapshot || {}, options || {}); },
+        buildHistoryModelRebuildPrompt: function buildHistoryModelRebuildPrompt(evidence, options) { return historyModels().buildHistoryModelRebuildPrompt(evidence || {}, options || {}); },
+        compactHistoryModelRebuildRunForList: function compactHistoryModelRebuildRunForList(run) { return historyModels().compactHistoryModelRebuildRunForList(run || {}); },
         buildCutoverSafetyReport: function buildCutoverSafetyReport(snapshot) { return products().buildCutoverSafetyReport(snapshot || {}); },
         buildMemoryExportManifest: function buildMemoryExportManifest(snapshot, options) { return products().buildMemoryExportManifest(snapshot || {}, options || {}); },
         getPublicContract: function getPublicContract() {
             return {
                 owner: 'core/memoryBrain',
-                release: 'v0.4.2',
+                release: 'v0.4.7',
                 role: 'types/semantics',
                 stableApis: [
                     'getLayers', 'getMigrationStages', 'createDefaultState', 'normalizeState',
@@ -87,7 +105,7 @@
                     'buildLongTermModelPrompt', 'parseLongTermModelResponse', 'compactModelForList',
                     'buildMemoryInjectionPackage', 'compactInjectionPreviewForList',
                     'normalizeSchedulerSettings', 'getCostProfiles', 'collectWeightUpdates', 'buildMaintenancePlan', 'compactSchedulerForList',
-                    'buildMemoryPalace', 'buildArchiveSourceFromChat', 'buildArchiveScanReport', 'compactArchiveSourceForList', 'buildArchiveChunks', 'buildArchiveCursors', 'buildArchiveChunkRunReport', 'compactArchiveChunkForList', 'compactArchiveCursorForList', 'buildBackfillJobs', 'applyBackfillJobAction', 'buildBackfillRunReport', 'compactBackfillJobForList', 'compactBackfillRunForList', 'buildCutoverSafetyReport', 'buildMemoryExportManifest'
+                    'buildMemoryPalace', 'buildArchiveSourceFromChat', 'buildArchiveScanReport', 'compactArchiveSourceForList', 'buildArchiveChunks', 'buildArchiveCursors', 'buildArchiveChunkRunReport', 'compactArchiveChunkForList', 'compactArchiveCursorForList', 'buildBackfillJobs', 'applyBackfillJobAction', 'buildBackfillRunReport', 'compactBackfillJobForList', 'compactBackfillRunForList', 'buildHistoricalEventBackfillPrompt', 'parseHistoricalEventBackfillResponse', 'ensureHistoricalEventSources', 'compactHistoryEventBackfillRunForList', 'buildHistoricalFactBackfillPrompt', 'parseHistoricalFactBackfillResponse', 'ensureHistoricalFactSources', 'compactHistoryFactBackfillRunForList', 'buildFactLifecyclePlan', 'compactFactLifecycleRunForList', 'compactFactLifecycleIssueForList', 'buildHistoryModelEvidence', 'buildHistoryModelRebuildPrompt', 'compactHistoryModelRebuildRunForList', 'buildCutoverSafetyReport', 'buildMemoryExportManifest'
                 ]
             };
         }

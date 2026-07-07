@@ -8,6 +8,22 @@
     function rootState(options) { return (options && options.state) || global.db || {}; }
     function getCoreApi() { return app.core.memoryBrain.publicApi; }
     function getPlatformApi() { return app.platform.memoryBrain.publicApi; }
+    function isLifecycleExcluded(fact) {
+        const status = String(fact && (fact.lifecycleStatus || fact.status) || 'active');
+        return ['duplicate', 'obsolete', 'disputed', 'merged', 'retired'].includes(status);
+    }
+    function normalizeEligibleIdSet(ids) {
+        if (!ids) return null;
+        if (ids instanceof Set) return ids;
+        return Array.isArray(ids) && ids.length ? new Set(ids.map(id => String(id))) : null;
+    }
+    function isEligibleFactForGraph(fact, options = {}) {
+        if (!fact || fact.status === 'retired' || !fact.content) return false;
+        if (options.excludeLifecycle === true && isLifecycleExcluded(fact)) return false;
+        const eligibleSet = normalizeEligibleIdSet(options.eligibleFactIds);
+        if (eligibleSet && !eligibleSet.has(String(fact.id || ''))) return false;
+        return true;
+    }
     function record(label, data, level) {
         if (feature.service && typeof feature.service.recordOperation === 'function') return feature.service.recordOperation(label, data || {}, level || 'event');
         return null;
@@ -32,7 +48,7 @@
         const platformApi = getPlatformApi();
         const coreApi = getCoreApi();
         const snapshot = platformApi.getSnapshot({ state });
-        const activeFacts = asArray(snapshot.facts).filter(fact => fact && fact.status !== 'retired' && fact.content);
+        const activeFacts = asArray(snapshot.facts).filter(fact => isEligibleFactForGraph(fact, options));
         const activeFamilies = asArray(snapshot.families).filter(family => family && family.status !== 'retired');
         if (!activeFacts.length) throw new Error('还没有原子事实。请先从事件提取事实。');
         if (!activeFamilies.length) throw new Error('还没有记忆家族。请先整理记忆家族，再建立 graph。');

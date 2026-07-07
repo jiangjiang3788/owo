@@ -1,4 +1,4 @@
-// --- Memory Brain long-term model view owner (v0.3.5) ---
+// --- Memory Brain long-term model view owner (v0.4.7) ---
 // 只渲染长期模型卡片，不访问 store、不发请求。
 (function registerMemoryBrainModelView(global) {
     const app = global.OwoApp;
@@ -18,7 +18,7 @@
         return `<div class="memory-brain-model-list"><strong>${escapeHtml(title)}</strong>${items.map(item => `<p>${escapeHtml(item)}</p>`).join('')}</div>`;
     }
     function typeLabel(type) {
-        return ({ 'user-profile': '用户画像', 'ai-self': 'AI 自我', 'world-model': '世界观', 'project-brain': '项目脑' })[type] || type || '长期模型';
+        return ({ 'user-profile': '用户画像', 'ai-self': 'AI 自我', 'world-model': '世界观', 'project-brain': '项目脑', 'interaction-preferences': '互动偏好', 'relationship-continuity': '关系连续性' })[type] || type || '长期模型';
     }
     function renderModelList(cards) {
         const list = Array.isArray(cards) ? cards : [];

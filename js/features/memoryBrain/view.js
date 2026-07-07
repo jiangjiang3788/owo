@@ -1,4 +1,4 @@
-// --- Memory Brain view owner (v0.4.2) ---
+// --- Memory Brain view owner (v0.4.7) ---
 // 只负责记忆脑 App 展示和按钮绑定，不直接读取旧记忆系统私有状态。
 (function registerMemoryBrainView(global) {
     const app = global.OwoApp;
@@ -50,16 +50,21 @@
         const archiveHtml = feature.historyArchiveView && feature.historyArchiveView.renderHistoryArchivePanel ? feature.historyArchiveView.renderHistoryArchivePanel(dashboard.archiveCards) : '<div class="memory-brain-empty">历史归档视图尚未加载。</div>';
         const chunkHtml = feature.historyChunkView && feature.historyChunkView.renderHistoryChunkPanel ? feature.historyChunkView.renderHistoryChunkPanel(dashboard.chunkCards) : '<div class="memory-brain-empty">历史切片视图尚未加载。</div>';
         const backfillHtml = feature.historyBackfillView && feature.historyBackfillView.renderHistoryBackfillPanel ? feature.historyBackfillView.renderHistoryBackfillPanel(dashboard.backfillCards) : '<div class="memory-brain-empty">回填队列视图尚未加载。</div>';
+        const eventBackfillHtml = feature.historyEventBackfillView && feature.historyEventBackfillView.renderHistoryEventBackfillPanel ? feature.historyEventBackfillView.renderHistoryEventBackfillPanel(dashboard.eventBackfillCards) : '<div class="memory-brain-empty">历史事件回填视图尚未加载。</div>';
+        const factBackfillHtml = feature.historyFactBackfillView && feature.historyFactBackfillView.renderHistoryFactBackfillPanel ? feature.historyFactBackfillView.renderHistoryFactBackfillPanel(dashboard.factBackfillCards) : '<div class="memory-brain-empty">历史事实回填视图尚未加载。</div>';
+        const lifecycleHtml = feature.factLifecycleView && feature.factLifecycleView.renderFactLifecyclePanel ? feature.factLifecycleView.renderFactLifecyclePanel(dashboard.factLifecycleCards) : '<div class="memory-brain-empty">事实生命周期视图尚未加载。</div>';
+        const rebuildHtml = feature.familyGraphRebuildView && feature.familyGraphRebuildView.renderFamilyGraphRebuildPanel ? feature.familyGraphRebuildView.renderFamilyGraphRebuildPanel(dashboard.familyGraphRebuildCards) : '<div class="memory-brain-empty">全量重建视图尚未加载。</div>';
+        const historyModelHtml = feature.historyModelRebuildView && feature.historyModelRebuildView.renderHistoryModelRebuildPanel ? feature.historyModelRebuildView.renderHistoryModelRebuildPanel(dashboard.historyModelRebuildCards) : '<div class="memory-brain-empty">全历史长期模型重建视图尚未加载。</div>';
         return `
             <header class="app-header memory-brain-header">
                 <button class="back-btn" data-target="home-screen">‹</button>
-                <div class="title-container"><h1 class="title">记忆脑</h1><p class="memory-brain-subtitle">v0.4.2 · 回填队列 / 断点续跑 · 影子模式</p></div>
+                <div class="title-container"><h1 class="title">记忆脑</h1><p class="memory-brain-subtitle">v0.4.7 · 全历史长期模型重建 · 影子模式</p></div>
                 <button class="action-btn" id="memory-brain-open-console-btn">控制台</button>
             </header>
             <main class="memory-brain-page">
                 <section class="memory-brain-hero">
-                    <div><span class="memory-brain-kicker">Memory Brain</span><h2>开始把历史切片编入可暂停、可继续、可重试的回填队列。</h2>
-                    <p>v0.4.2 在 archiveChunks 基础上生成 backfillJobs 和 backfillRuns；只排队、记断点，不总结、不迁移、不注入。</p></div>
+                    <div><span class="memory-brain-kicker">Memory Brain</span><h2>基于全历史 active facts、families 和 graph 重建长期模型。</h2>
+                    <p>v0.4.7 重建用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性；正式注入仍由当前旧记忆 owner 执行。</p></div>
                     <div class="memory-brain-hero-stats"><strong>${escapeHtml(dashboard.eventCount || 0)}</strong><span>时间线事件</span><strong>${escapeHtml(dashboard.archiveSourceCount || 0)}</strong><span>历史来源</span><strong>${escapeHtml(dashboard.archiveChunkCount || 0)}</strong><span>历史切片</span><strong>${escapeHtml(dashboard.backfillJobCount || 0)}</strong><span>回填任务</span><strong>${escapeHtml(dashboard.factCount || 0)}</strong><span>原子事实</span><strong>${escapeHtml(dashboard.familyCount || 0)}</strong><span>记忆家族</span><strong>${escapeHtml(dashboard.edgeCount || 0)}</strong><span>关系边</span><strong>${escapeHtml(dashboard.modelCount || 0)}</strong><span>长期模型</span><strong>${escapeHtml(dashboard.injectionPreviewCount || 0)}</strong><span>注入预览</span><strong>${escapeHtml(dashboard.scheduleQueueCount || 0)}</strong><span>整理队列</span><strong>${escapeHtml(dashboard.exportCount || 0)}</strong><span>导出记录</span></div>
                 </section>
 
@@ -78,10 +83,38 @@
                 <section class="memory-brain-actions memory-brain-backfill-actions">
                     <label class="memory-brain-limit-field"><span>任务上限</span><input id="memory-brain-backfill-limit-input" type="number" min="1" max="5000" value="200"></label>
                     <label class="memory-brain-limit-field"><span>任务类型</span><select id="memory-brain-backfill-task-select"><option value="event-backfill">历史事件回填</option><option value="fact-backfill">历史事实回填</option><option value="family-rebuild">全量家族重建</option><option value="graph-rebuild">全量 graph 重建</option><option value="model-rebuild">长期模型重建</option></select></label>
-                    <button id="memory-brain-start-backfill-btn">开始一批</button><button id="memory-brain-pause-backfill-btn">暂停队列</button><button id="memory-brain-resume-backfill-btn">继续队列</button><button id="memory-brain-retry-backfill-btn">重试失败</button><button id="memory-brain-rollback-backfill-btn">撤回最近回填队列</button>
+                    <button id="memory-brain-start-backfill-btn">开始一批</button><button id="memory-brain-run-event-backfill-btn">回填历史事件</button><button id="memory-brain-run-fact-backfill-btn">回填历史事实</button><button id="memory-brain-pause-backfill-btn">暂停队列</button><button id="memory-brain-resume-backfill-btn">继续队列</button><button id="memory-brain-retry-backfill-btn">重试失败</button><button id="memory-brain-rollback-backfill-btn">撤回最近回填队列</button><button id="memory-brain-rollback-history-events-btn">撤回最近历史事件</button><button id="memory-brain-rollback-history-facts-btn">撤回最近历史事实</button>
                 </section>
                 <div class="memory-brain-inline-status" id="memory-brain-backfill-status"></div>
-                <section class="memory-brain-section memory-brain-backfill-section"><div class="memory-brain-section-title"><h2>回填队列 / 断点续跑</h2><p>把 archiveChunks 编入 backfillJobs，支持暂停、继续、重试和批次回滚。v0.4.2 仍不跑 AI。</p></div>${backfillHtml}</section>
+                <section class="memory-brain-section memory-brain-backfill-section"><div class="memory-brain-section-title"><h2>回填队列 / 断点续跑</h2><p>把 archiveChunks 编入 backfillJobs，支持暂停、继续、重试和批次回滚。v0.4.2 只建队列；v0.4.3 生成历史事件；v0.4.4 运行 fact-backfill 任务并生成历史事实。</p></div>${backfillHtml}</section>
+                <section class="memory-brain-section memory-brain-event-backfill-section"><div class="memory-brain-section-title"><h2>历史事件回填</h2><p>把 running 的 event-backfill 任务整理成历史事件，作为历史事实回填的上游。</p></div>${eventBackfillHtml}</section>
+                <section class="memory-brain-section memory-brain-fact-backfill-section"><div class="memory-brain-section-title"><h2>历史事实回填</h2><p>把历史事件拆成可追溯的 atomic facts，继续 shadow，不改旧记忆。</p></div>${factBackfillHtml}</section>
+
+                <section class="memory-brain-actions memory-brain-lifecycle-actions">
+                    <label class="memory-brain-limit-field"><span>重复阈值%</span><input id="memory-brain-lifecycle-threshold-input" type="number" min="70" max="99" value="90"></label>
+                    <button id="memory-brain-run-lifecycle-btn">清理重复 / 冲突 / 过时事实</button><button id="memory-brain-rollback-lifecycle-btn">撤回最近清理</button>
+                </section>
+                <div class="memory-brain-inline-status" id="memory-brain-lifecycle-status"></div>
+                <section class="memory-brain-section memory-brain-lifecycle-section"><div class="memory-brain-section-title"><h2>事实生命周期</h2><p>标记 duplicate / disputed / obsolete，保留 batch 和回滚；不合并进旧记忆。</p></div>${lifecycleHtml}</section>
+
+                <section class="memory-brain-actions memory-brain-rebuild-actions">
+                    <label class="memory-brain-limit-field"><span>家族最少事实</span><input id="memory-brain-rebuild-family-min-input" type="number" min="1" max="8" value="2"></label>
+                    <label class="memory-brain-limit-field"><span>最多关系边</span><input id="memory-brain-rebuild-edge-max-input" type="number" min="24" max="260" value="180"></label>
+                    <button id="memory-brain-rebuild-family-graph-btn">全量重建家族 / Graph</button><button id="memory-brain-rollback-rebuild-btn">撤回最近全量重建</button>
+                </section>
+                <div class="memory-brain-inline-status" id="memory-brain-rebuild-status"></div>
+                <section class="memory-brain-section memory-brain-rebuild-section"><div class="memory-brain-section-title"><h2>全量家族 / Graph 重建</h2><p>只基于 active facts，自动排除 duplicate / obsolete / disputed。会先 reset 新脑 family/graph，再批次化重建，仍不接正式 prompt。</p></div>${rebuildHtml}</section>
+
+
+
+                <section class="memory-brain-actions memory-brain-history-model-actions">
+                    <label class="memory-brain-limit-field"><span>证据事实上限</span><input id="memory-brain-history-model-max-facts-input" type="number" min="24" max="320" value="160"></label>
+                    <label class="memory-brain-limit-field"><span>家族上限</span><input id="memory-brain-history-model-max-families-input" type="number" min="6" max="80" value="42"></label>
+                    <label class="memory-brain-limit-field"><span>关系上限</span><input id="memory-brain-history-model-max-edges-input" type="number" min="12" max="220" value="120"></label>
+                    <button id="memory-brain-rebuild-history-models-btn">全历史重建长期模型</button><button id="memory-brain-rollback-history-models-btn">撤回最近全历史模型</button>
+                </section>
+                <div class="memory-brain-inline-status" id="memory-brain-history-model-status"></div>
+                <section class="memory-brain-section memory-brain-history-model-section"><div class="memory-brain-section-title"><h2>全历史长期模型重建</h2><p>基于清理后的 facts、全量家族和 graph 生成 6 个长期模型。继续保持 shadow，不接正式 prompt。</p></div>${historyModelHtml}</section>
 
                 <section class="memory-brain-actions memory-brain-event-actions">
                     <label class="memory-brain-limit-field"><span>最近消息</span><input id="memory-brain-event-limit-input" type="number" min="2" max="120" value="30"></label>
@@ -130,8 +163,8 @@
 
                 <section class="memory-brain-section memory-brain-palace-section"><div class="memory-brain-section-title"><h2>记忆小屋 / 产品化收口</h2><p>把事件、事实、家族、graph、长期模型、注入预览、调度和导出路线放进一个能长期查看的入口。</p></div>${palaceHtml}</section>
                 <section class="memory-brain-section memory-brain-scheduler-section"><div class="memory-brain-section-title"><h2>调度 / 成本 / 浮现衰减</h2><p>这里设置省钱、均衡、深度三档，并生成手动确认的整理队列。运行维护只更新新记忆脑权重，不接正式 prompt。</p></div>${schedulerHtml}</section>
-                <section class="memory-brain-section memory-brain-injection-section"><div class="memory-brain-section-title"><h2>注入预览</h2><p>这里展示新记忆脑本次准备注入的内容，并和旧记忆来源只读对照。v0.4.2 仍不接正式 prompt。</p></div>${injectionHtml}</section>
-                <section class="memory-brain-section memory-brain-model-section"><div class="memory-brain-section-title"><h2>长期模型</h2><p>用户画像、AI 自我、世界观和项目脑在这里以版本卡片展示。现在只是影子模型，不接正式聊天注入。</p></div>${modelHtml}</section>
+                <section class="memory-brain-section memory-brain-injection-section"><div class="memory-brain-section-title"><h2>注入预览</h2><p>这里展示新记忆脑本次准备注入的内容，并和旧记忆来源只读对照。v0.4.7 仍不接正式 prompt。</p></div>${injectionHtml}</section>
+                <section class="memory-brain-section memory-brain-model-section"><div class="memory-brain-section-title"><h2>长期模型</h2><p>用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性在这里以版本卡片展示。现在只是影子模型，不接正式聊天注入。</p></div>${modelHtml}</section>
                 <section class="memory-brain-section memory-brain-graph-section"><div class="memory-brain-section-title"><h2>Graph 关系网</h2><p>手机端先用关系卡片，不做重 canvas。每条边都能看到来源事实、家族和为什么连接。</p></div>${graphHtml}</section>
                 <section class="memory-brain-section memory-brain-family-section"><div class="memory-brain-section-title"><h2>记忆家族</h2><p>事实不再孤立，会按相似度聚成自然主题簇。家族名由 AI 命名；没有 API 时也会用关键词 fallback。</p></div>${familyHtml}</section>
                 <section class="memory-brain-section memory-brain-timeline-section"><div class="memory-brain-section-title"><h2>事件时间线</h2><p>每张卡片都保留来源消息范围。事件是事实、家族和 graph 的上游。</p></div>${timelineHtml}</section>
@@ -140,7 +173,7 @@
                 <section class="memory-brain-section"><div class="memory-brain-section-title"><h2>九层记忆结构</h2><p>分类不写死，只固定生长流程：事件 → 事实 → 家族 → graph → 长期模型 → 注入包 → 调度生命层 → 记忆小屋收口层。</p></div><div class="memory-brain-layer-grid">${renderLayerCards(dashboard.layerCards)}</div></section>
                 <section class="memory-brain-section"><div class="memory-brain-section-title"><h2>旧系统什么时候被替换</h2><p>替换不是时间点，而是 gate：新记忆脑能稳定整理、对照、注入后才接管。</p></div><div class="memory-brain-stage-list">${renderReplacementCards(dashboard.replacementCards)}</div></section>
                 <section class="memory-brain-section"><div class="memory-brain-section-title"><h2>历史记录怎么整理</h2><p>历史不会一次性全吞，先分批生成事件，再拆事实，再聚家族和 graph。</p></div>${renderLegacyScan(dashboard.legacyScan)}</section>
-                <section class="memory-brain-section memory-brain-note"><h2>避免双系统的规则</h2><p>v0.4.2 新增 backfillJobs、backfillRuns 和 history-backfill-queue 批次。旧表格、旧向量、旧日记在切换前继续正式工作；新记忆脑只写入 memoryBrain.* 影子状态，仍不参与正式 prompt 注入。</p></section>
+                <section class="memory-brain-section memory-brain-note"><h2>避免双系统的规则</h2><p>v0.4.7 新增全历史长期模型重建，基于清理后的事实池、家族和 graph 生成长期理解，同时继续保持控制台单批次卡和旧 owner 正式注入。旧表格、旧向量、旧日记在切换前继续正式工作；新记忆脑只写入 memoryBrain.* 影子状态，仍不参与正式 prompt 注入。</p></section>
             </main>`;
     }
     function showToast(text) { const toast = app.shared && app.shared.ui && app.shared.ui.toast; if (toast && typeof toast.showToast === 'function') toast.showToast(text); }
@@ -196,8 +229,20 @@
         });
         bindAsyncButton(screen, '#memory-brain-start-backfill-btn', '#memory-brain-backfill-status', '正在标记一批回填任务为 running，仍不跑 AI…', async () => {
             const limitInput = screen.querySelector('#memory-brain-backfill-limit-input');
-            const result = await service.startBackfillQueue({ limit: limitInput ? Number(limitInput.value) || 20 : 20 });
+            const taskSelect = screen.querySelector('#memory-brain-backfill-task-select');
+            const result = await service.startBackfillQueue({ limit: limitInput ? Number(limitInput.value) || 20 : 20, taskKind: taskSelect ? taskSelect.value : 'event-backfill' });
             showToast(`已开始 ${result.jobs && result.jobs.length || 0} 个回填任务`);
+        });
+        bindAsyncButton(screen, '#memory-brain-run-event-backfill-btn', '#memory-brain-backfill-status', '正在回填历史事件，会调用 memory-event 模型，但仍不接正式 prompt…', async () => {
+            const limitInput = screen.querySelector('#memory-brain-backfill-limit-input');
+            const result = await service.runHistoryEventBackfill({ limit: limitInput ? Math.min(Number(limitInput.value) || 3, 20) : 3 });
+            showToast(`已回填 ${result.events && result.events.length || 0} 条历史事件`);
+        });
+        bindAsyncButton(screen, '#memory-brain-run-fact-backfill-btn', '#memory-brain-backfill-status', '正在回填历史事实，会调用 memory-fact 模型，但仍不接正式 prompt…', async () => {
+            const limitInput = screen.querySelector('#memory-brain-backfill-limit-input');
+            const maxFactsInput = screen.querySelector('#memory-brain-fact-max-input');
+            const result = await service.runHistoryFactBackfill({ limit: limitInput ? Math.min(Number(limitInput.value) || 3, 20) : 3, maxFacts: maxFactsInput ? Number(maxFactsInput.value) || 8 : 8 });
+            showToast(`已回填 ${result.facts && result.facts.length || 0} 条历史事实`);
         });
         bindAsyncButton(screen, '#memory-brain-pause-backfill-btn', '#memory-brain-backfill-status', '正在暂停回填队列…', async () => {
             const result = await service.pauseBackfillQueue({ limit: 5000 });
@@ -215,6 +260,35 @@
         if (rollbackChunkBtn) rollbackChunkBtn.addEventListener('click', () => { try { const result = service.rollbackLatestArchiveChunkBatch(); showToast(`已撤回最近历史切片：${result.chunkCount || 0} 个切片`); render(); } catch (error) { setStatus(screen, '#memory-brain-archive-status', error.message, 'error'); showToast(error.message); } });
         const rollbackBackfillBtn = screen.querySelector('#memory-brain-rollback-backfill-btn');
         if (rollbackBackfillBtn) rollbackBackfillBtn.addEventListener('click', () => { try { const result = service.rollbackLatestBackfillBatch(); showToast(`已撤回最近回填队列：${result.jobCount || 0} 个任务`); render(); } catch (error) { setStatus(screen, '#memory-brain-backfill-status', error.message, 'error'); showToast(error.message); } });
+        const rollbackHistoryEventBtn = screen.querySelector('#memory-brain-rollback-history-events-btn');
+        if (rollbackHistoryEventBtn) rollbackHistoryEventBtn.addEventListener('click', () => { try { const result = service.rollbackLatestHistoryEventBatch(); showToast(`已撤回最近历史事件：${result.eventCount || 0} 条事件`); render(); } catch (error) { setStatus(screen, '#memory-brain-backfill-status', error.message, 'error'); showToast(error.message); } });
+        const rollbackHistoryFactBtn = screen.querySelector('#memory-brain-rollback-history-facts-btn');
+        if (rollbackHistoryFactBtn) rollbackHistoryFactBtn.addEventListener('click', () => { try { const result = service.rollbackLatestHistoryFactBatch(); showToast(`已撤回最近历史事实：${result.factCount || 0} 条事实`); render(); } catch (error) { setStatus(screen, '#memory-brain-backfill-status', error.message, 'error'); showToast(error.message); } });
+        bindAsyncButton(screen, '#memory-brain-run-lifecycle-btn', '#memory-brain-lifecycle-status', '正在标记重复、冲突和过时事实，不写旧记忆…', async () => {
+            const input = screen.querySelector('#memory-brain-lifecycle-threshold-input');
+            const duplicateThreshold = Math.max(0.7, Math.min(0.99, (Number(input && input.value) || 90) / 100));
+            const result = await service.runFactLifecycleReview({ duplicateThreshold });
+            showToast(`已标记 ${result.updates && result.updates.length || 0} 条事实生命周期状态`);
+        });
+        const rollbackLifecycleBtn = screen.querySelector('#memory-brain-rollback-lifecycle-btn');
+        if (rollbackLifecycleBtn) rollbackLifecycleBtn.addEventListener('click', () => { try { const result = service.rollbackLatestFactLifecycleBatch(); showToast(`已撤回最近事实清理：${result.restoredFactCount || 0} 条事实`); render(); } catch (error) { setStatus(screen, '#memory-brain-lifecycle-status', error.message, 'error'); showToast(error.message); } });
+        bindAsyncButton(screen, '#memory-brain-rebuild-family-graph-btn', '#memory-brain-rebuild-status', '正在全量重建家族 / Graph，只写 memoryBrain.*，不接正式 prompt…', async () => {
+            const minInput = screen.querySelector('#memory-brain-rebuild-family-min-input');
+            const edgeInput = screen.querySelector('#memory-brain-rebuild-edge-max-input');
+            const result = await service.rebuildFamilyGraph({ familyMinFacts: minInput ? Number(minInput.value) || 2 : 2, maxEdges: edgeInput ? Number(edgeInput.value) || 180 : 180 });
+            showToast(`已重建 ${result.familyResult && result.familyResult.families && result.familyResult.families.length || 0} 个家族，${result.graphResult && result.graphResult.edges && result.graphResult.edges.length || 0} 条关系`);
+        });
+        bindAsyncButton(screen, '#memory-brain-rebuild-history-models-btn', '#memory-brain-history-model-status', '正在基于全历史 facts / families / graph 重建长期模型，不接正式 prompt…', async () => {
+            const factInput = screen.querySelector('#memory-brain-history-model-max-facts-input');
+            const familyInput = screen.querySelector('#memory-brain-history-model-max-families-input');
+            const edgeInput = screen.querySelector('#memory-brain-history-model-max-edges-input');
+            const result = await service.rebuildFullHistoryModels({ maxFacts: factInput ? Number(factInput.value) || 160 : 160, maxFamilies: familyInput ? Number(familyInput.value) || 42 : 42, maxEdges: edgeInput ? Number(edgeInput.value) || 120 : 120 });
+            showToast(`已重建 ${result.models && result.models.length || 0} 个全历史长期模型`);
+        });
+        const rollbackRebuildBtn = screen.querySelector('#memory-brain-rollback-rebuild-btn');
+        if (rollbackRebuildBtn) rollbackRebuildBtn.addEventListener('click', () => { try { const result = service.rollbackLatestFamilyGraphRebuildBatch(); showToast(result.ok ? '已撤回最近全量重建' : '撤回失败'); render(); } catch (error) { setStatus(screen, '#memory-brain-rebuild-status', error.message, 'error'); showToast(error.message); } });
+        const rollbackHistoryModelBtn = screen.querySelector('#memory-brain-rollback-history-models-btn');
+        if (rollbackHistoryModelBtn) rollbackHistoryModelBtn.addEventListener('click', () => { try { const result = service.rollbackLatestHistoryModelBatch(); showToast(`已撤回最近全历史模型：${result.modelCount || 0} 个模型`); render(); } catch (error) { setStatus(screen, '#memory-brain-history-model-status', error.message, 'error'); showToast(error.message); } });
         const copyPlanBtn = screen.querySelector('#memory-brain-copy-plan-btn');
         if (copyPlanBtn) copyPlanBtn.addEventListener('click', () => { service.copyPlanningText(); showToast('已复制 v0.3.x 完整计划'); });
         bindAsyncButton(screen, '#memory-brain-generate-event-btn', '#memory-brain-event-status', '正在整理最近聊天，结果会写入影子时间线…', async () => {
@@ -290,7 +364,7 @@
         const dashboard = service.getDashboard();
         screen.innerHTML = buildHtml(dashboard);
         bindEvents(screen);
-        service.recordOperation('打开记忆脑 App', { mode: dashboard.mode, stage: dashboard.currentStageId, totals: dashboard.totals, eventCount: dashboard.eventCount, factCount: dashboard.factCount, familyCount: dashboard.familyCount, edgeCount: dashboard.edgeCount, modelCount: dashboard.modelCount, injectionPreviewCount: dashboard.injectionPreviewCount, scheduleQueueCount: dashboard.scheduleQueueCount, schedulerRunCount: dashboard.schedulerRunCount, exportCount: dashboard.exportCount, archiveSourceCount: dashboard.archiveSourceCount, archiveRunCount: dashboard.archiveRunCount, archiveChunkCount: dashboard.archiveChunkCount, archiveChunkRunCount: dashboard.archiveChunkRunCount });
+        service.recordOperation('打开记忆脑 App', { mode: dashboard.mode, stage: dashboard.currentStageId, totals: dashboard.totals, eventCount: dashboard.eventCount, factCount: dashboard.factCount, familyCount: dashboard.familyCount, edgeCount: dashboard.edgeCount, modelCount: dashboard.modelCount, injectionPreviewCount: dashboard.injectionPreviewCount, scheduleQueueCount: dashboard.scheduleQueueCount, schedulerRunCount: dashboard.schedulerRunCount, exportCount: dashboard.exportCount, archiveSourceCount: dashboard.archiveSourceCount, archiveRunCount: dashboard.archiveRunCount, archiveChunkCount: dashboard.archiveChunkCount, archiveChunkRunCount: dashboard.archiveChunkRunCount, historyFactBatchCount: dashboard.historyFactBatchCount, familyGraphRebuildBatchCount: dashboard.familyGraphRebuildBatchCount, historyModelRebuildBatchCount: dashboard.historyModelRebuildBatchCount });
         return true;
     }
 

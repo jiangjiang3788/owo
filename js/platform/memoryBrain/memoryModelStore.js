@@ -1,4 +1,4 @@
-// --- Memory Brain model store owner (v0.3.5) ---
+// --- Memory Brain model store owner (v0.4.7) ---
 // 负责 long-term models 的版本历史、批次写入和回滚；不渲染 UI、不接正式 prompt 注入。
 (function registerMemoryBrainModelStore(global) {
     const app = global.OwoApp;
@@ -77,7 +77,7 @@
         if (newModels.length) state.models = newModels.concat(asArray(state.models));
         const batch = {
             id: batchId,
-            kind: 'long-term-model',
+            kind: payload.batchKind || 'long-term-model',
             status: newModels.length ? 'applied' : (payload.errorMessage ? 'error' : 'skipped'),
             createdAt, updatedAt: createdAt,
             mode: state.settings && state.settings.mode || 'shadow',
@@ -89,7 +89,10 @@
             modelTypes: newModels.map(model => model.type),
             supersededModelIds,
             beforeModels,
-            errorMessage: payload.errorMessage || ''
+            errorMessage: payload.errorMessage || '',
+            rebuildScope: payload.rebuildScope || payload.input && payload.input.rebuildScope || '',
+            evidenceSummary: safeClone(payload.evidenceSummary || payload.input && payload.input.evidenceSummary || {}),
+            aiTask: payload.aiTask || ''
         };
         state.batches = asArray(state.batches).filter(item => item && item.id !== batch.id);
         state.batches.unshift(batch);
@@ -100,7 +103,7 @@
     function rollbackModelBatch(batchId, options = {}) {
         const state = ensureState(options);
         const batch = asArray(state.batches).find(item => item && item.id === batchId);
-        if (!batch || batch.kind !== 'long-term-model') return { ok: false, reason: 'batch_not_found_or_not_long_term_model' };
+        if (!batch || !['long-term-model', 'history-long-term-model'].includes(batch.kind)) return { ok: false, reason: 'batch_not_found_or_not_long_term_model' };
         const updatedAt = nowIso();
         const modelIds = new Set(asArray(batch.modelIds));
         asArray(state.models).forEach(model => {
@@ -133,7 +136,7 @@
     function getRoutingReport() {
         return {
             owner: 'platform/memoryBrain/memoryModelStore',
-            release: 'v0.3.7',
+            release: 'v0.4.7',
             modelWrite: 'memoryBrain.models + memoryBrain.batches only',
             injectionMode: 'shadow-preview-v0.3.7',
             legacyMode: 'read-only-source',

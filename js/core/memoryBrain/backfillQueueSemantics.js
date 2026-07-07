@@ -1,4 +1,4 @@
-// --- Memory Brain backfill queue semantics owner (v0.4.2) ---
+// --- Memory Brain backfill queue semantics owner (v0.4.4) ---
 // 纯计算：把 archiveChunks 转成可暂停、继续、重试的 backfillJobs / backfillRuns；不访问存储、网络或界面。
 (function registerBackfillQueueSemantics(app) {
     const core = app.core.memoryBrain;
@@ -51,18 +51,56 @@
             dryRun: source.dryRun === true
         };
     }
-    function chunkIsEligible(chunk, policy) {
-        if (!chunk || chunk.status === 'retired') return false;
-        if (chunk.status === 'done' && !policy.includeDone) return false;
-        if (chunk.status === 'failed' && !policy.includeFailed) return false;
+    function sourceIsEligible(item, policy) {
+        if (!item || item.status === 'retired') return false;
+        if (policy.taskKind === 'fact-backfill') {
+            const status = item.factBackfillStatus || item.backfillStatus || item.status;
+            if (status === 'done' && !policy.includeDone) return false;
+            if (status === 'failed' && !policy.includeFailed) return false;
+            return Boolean(item.id && item.summary);
+        }
+        if (item.status === 'done' && !policy.includeDone) return false;
+        if (item.status === 'failed' && !policy.includeFailed) return false;
         return true;
     }
-    function makeJobId(taskKind, chunk) {
-        return `backfill-job-${taskKind}-${chunk.id || hashText(JSON.stringify(chunk))}`;
+    function makeJobId(taskKind, source) {
+        return `backfill-job-${taskKind}-${source.id || hashText(JSON.stringify(source))}`;
     }
-    function buildBackfillJob(chunk, options) {
-        const policy = normalizeBackfillPolicy(options || {});
-        const task = getTaskKind(policy.taskKind);
+    function buildFactBackfillJob(event, policy, task) {
+        const source = event.source || {};
+        return {
+            id: makeJobId(task.id, event),
+            kind: task.id,
+            layer: 'event-backfill',
+            status: 'pending',
+            phase: task.id,
+            eventId: event.id,
+            eventTitle: event.title || '未命名历史事件',
+            archiveChunkId: source.archiveChunkId || '',
+            archiveSourceId: source.archiveSourceId || '',
+            sourceChatId: source.chatId || '',
+            sourceType: source.chatType || '',
+            sourceName: source.chatName || '历史聊天',
+            chunkRangeText: `#${source.startIndex || '?'}-#${source.endIndex || '?'}`,
+            messageStartIndex: source.startIndex || null,
+            messageEndIndex: source.endIndex || null,
+            messageCount: source.messageCount || 0,
+            rangeHash: hashText([event.id, event.summary, source.startIndex, source.endIndex].join('|')),
+            previewText: cleanText(`${event.title || ''} / ${event.summary || ''}`, 220),
+            attemptCount: 0,
+            maxAttempts: policy.maxAttempts,
+            priority: event.createdAt ? Date.parse(event.createdAt) || 0 : 0,
+            costProfileId: policy.costProfileId,
+            concurrencyGroup: `${task.id}:${source.archiveSourceId || source.chatId || 'unknown'}`,
+            nextAction: task.nextVersion,
+            errorMessage: '',
+            runIds: [],
+            mode: OWNER_MODE.mode,
+            formalInjection: OWNER_MODE.formalInjection,
+            writesLegacyMemory: OWNER_MODE.writesLegacyMemory
+        };
+    }
+    function buildChunkBackfillJob(chunk, policy, task) {
         return {
             id: makeJobId(task.id, chunk),
             kind: task.id,
@@ -94,10 +132,15 @@
             writesLegacyMemory: OWNER_MODE.writesLegacyMemory
         };
     }
+    function buildBackfillJob(source, options) {
+        const policy = normalizeBackfillPolicy(options || {});
+        const task = getTaskKind(policy.taskKind);
+        return task.id === 'fact-backfill' ? buildFactBackfillJob(source, policy, task) : buildChunkBackfillJob(source, policy, task);
+    }
     function buildBackfillJobs(chunks, existingJobs, options) {
         const policy = normalizeBackfillPolicy(options || {});
         const existing = new Map(asArray(existingJobs).filter(job => job && job.id).map(job => [job.id, job]));
-        const sorted = asArray(chunks).filter(chunk => chunkIsEligible(chunk, policy))
+        const sorted = asArray(chunks).filter(item => sourceIsEligible(item, policy))
             .sort((a, b) => String(a.sourceName || '').localeCompare(String(b.sourceName || '')) || (a.index || 0) - (b.index || 0))
             .slice(0, policy.jobLimit);
         const jobs = [];
@@ -173,7 +216,7 @@
             doneCount: summary.done,
             messageCount: summary.messages,
             policy,
-            nextVersion: 'v0.4.3 history event backfill',
+            nextVersion: policy.taskKind === 'fact-backfill' ? 'v0.4.4 history fact backfill' : 'v0.4.3 history event backfill',
             mode: OWNER_MODE.mode,
             formalInjection: OWNER_MODE.formalInjection,
             writesLegacyMemory: OWNER_MODE.writesLegacyMemory
@@ -192,7 +235,9 @@
             priority: job.priority || 0,
             previewText: job.previewText || '',
             errorMessage: job.errorMessage || '',
-            nextAction: job.nextAction || 'v0.4.3'
+            nextAction: job.nextAction || 'v0.4.4',
+            eventTitle: job.eventTitle || '',
+            eventId: job.eventId || ''
         };
     }
     function compactBackfillRunForList(run) {

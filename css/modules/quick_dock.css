@@ -26,6 +26,15 @@
     opacity: 0.72;
 }
 
+.quick-dock--busy .quick-dock-panel button {
+    opacity: 0.62;
+}
+
+.quick-dock--busy .quick-dock-status {
+    color: #2f4d63;
+    font-weight: 700;
+}
+
 
 .quick-dock-panel[hidden] {
     display: none !important;

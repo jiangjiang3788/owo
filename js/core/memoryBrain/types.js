@@ -1,20 +1,20 @@
-// --- Memory Brain types owner (v0.4.2) ---
+// --- Memory Brain types owner (v0.4.7) ---
 // 只定义长期记忆脑的数据形状、层级和迁移阶段；不访问运行时、网络或持久化。
 (function registerMemoryBrainTypes(app) {
     const core = app.core;
     core.memoryBrain = core.memoryBrain || {};
 
     const SCHEMA_VERSION = 1;
-    const RELEASE = 'v0.4.2';
+    const RELEASE = 'v0.4.7';
 
     const LAYERS = Object.freeze([
         Object.freeze({ id: 'raw', name: '聊天原文层', goal: '所有发送、回复、附件和请求都可追溯。', status: 'legacy-source' }),
-        Object.freeze({ id: 'archive', name: '历史归档层', goal: '扫描全部聊天，建立可切片、可续跑的大历史来源索引。', status: 'active-v0.4.2' }),
+        Object.freeze({ id: 'archive', name: '历史归档层', goal: '扫描全部聊天，建立可切片、可续跑的大历史来源索引。', status: 'active-v0.4.4' }),
         Object.freeze({ id: 'event', name: '事件摘要层', goal: '把一段对话整理成真实时间线事件。', status: 'active-v0.3.1' }),
-        Object.freeze({ id: 'fact', name: '原子事实层', goal: '复合记忆拆成可多归属的事实单元。', status: 'active-v0.3.2' }),
-        Object.freeze({ id: 'family', name: '记忆家族层', goal: '相似事实自动聚成主题家族并持续摘要。', status: 'active-v0.3.3' }),
-        Object.freeze({ id: 'graph', name: 'Graph 关系层', goal: '人、事、主题、目的、情绪、项目互相连接。', status: 'active-v0.3.4' }),
-        Object.freeze({ id: 'model', name: '长期模型层', goal: '形成用户画像、AI 自我、世界观和项目脑。', status: 'active-v0.3.5' }),
+        Object.freeze({ id: 'fact', name: '原子事实层', goal: '复合记忆拆成可多归属的事实单元，并标记重复、冲突和过时状态。', status: 'active-v0.4.5' }),
+        Object.freeze({ id: 'family', name: '记忆家族层', goal: '相似事实自动聚成主题家族并持续摘要。', status: 'active-v0.4.6' }),
+        Object.freeze({ id: 'graph', name: 'Graph 关系层', goal: '人、事、主题、目的、情绪、项目互相连接。', status: 'active-v0.4.6' }),
+        Object.freeze({ id: 'model', name: '长期模型层', goal: '形成用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性。', status: 'active-v0.4.7' }),
         Object.freeze({ id: 'injection', name: '注入包层', goal: '每次聊天前选择应该想起什么，并可预览。', status: 'active-v0.3.6' }),
         Object.freeze({ id: 'scheduler', name: '调度生命层', goal: '省钱/均衡/深度模式、整理队列、浮现和衰减。', status: 'active-v0.3.7' }),
         Object.freeze({ id: 'product', name: '记忆小屋收口层', goal: '把时间线、事实、家族、graph、模型、注入预览和导出路线收成长期可用 UI。', status: 'active-v0.3.8' })
@@ -119,6 +119,47 @@
             brainMode: '历史回填队列'
         }),
         Object.freeze({
+            id: 'history-event-backfill',
+            name: '历史事件回填',
+            targetVersion: 'v0.4.3',
+            goal: '从 archiveChunks 批量生成历史事件，保留来源消息范围，并推进 backfillJobs 断点状态。',
+            oldSystemMode: '正式注入',
+            brainMode: '历史事件时间线'
+        }),
+        Object.freeze({
+            id: 'history-fact-backfill',
+            name: '历史事实回填',
+            targetVersion: 'v0.4.4',
+            goal: '从历史事件批量拆出原子事实，保留事件证据、消息范围和回填批次。',
+            oldSystemMode: '正式注入',
+            brainMode: '历史原子事实'
+        }),
+
+        Object.freeze({
+            id: 'fact-lifecycle',
+            name: '事实生命周期清理',
+            targetVersion: 'v0.4.5',
+            goal: '对历史事实池做 duplicate / obsolete / disputed 标记，为全量家族和 graph 重建前清理噪声。',
+            oldSystemMode: '正式注入',
+            brainMode: '事实可信清理'
+        }),
+        Object.freeze({
+            id: 'family-graph-rebuild',
+            name: '全量家族 / graph 重建',
+            targetVersion: 'v0.4.6',
+            goal: '用清理后的 active facts 重建记忆家族和 graph，排除 duplicate / obsolete / disputed。',
+            oldSystemMode: '正式注入',
+            brainMode: '全历史关系结构重建'
+        }),
+        Object.freeze({
+            id: 'history-model-rebuild',
+            name: '全历史长期模型重建',
+            targetVersion: 'v0.4.7',
+            goal: '用清理后的 facts、全量 family 和 graph 重建用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性。',
+            oldSystemMode: '正式注入',
+            brainMode: '全历史长期模型影子重建'
+        }),
+        Object.freeze({
             id: 'cutover',
             name: '正式替换',
             targetVersion: 'v0.6+',
@@ -139,7 +180,7 @@
             costProfileId: 'balanced',
             autoApplyPolicy: 'auto-with-rollback',
             legacyBridgeMode: 'read-only-source',
-            currentStageId: 'history-backfill'
+            currentStageId: 'history-model-rebuild'
         };
     }
 
@@ -165,9 +206,18 @@
             archiveChunkRuns: [],
             backfillJobs: [],
             backfillRuns: [],
+            historyEventBackfillRuns: [],
+            historyFactBackfillRuns: [],
+            factLifecycleRuns: [],
+            familyGraphRebuildRuns: [],
+            historyModelRebuildRuns: [],
+            factMerges: [],
+            conflicts: [],
+            obsoleteFacts: [],
             lastBackfillRun: null,
             lastArchiveScan: null,
             lastArchiveChunkRun: null,
+            lastHistoryModelRebuildRun: null,
             lastLegacyScan: null,
             createdAt: null,
             updatedAt: null
@@ -202,9 +252,18 @@
             archiveChunkRuns: normalizeArray(source.archiveChunkRuns),
             backfillJobs: normalizeArray(source.backfillJobs),
             backfillRuns: normalizeArray(source.backfillRuns),
+            historyEventBackfillRuns: normalizeArray(source.historyEventBackfillRuns),
+            historyFactBackfillRuns: normalizeArray(source.historyFactBackfillRuns),
+            factLifecycleRuns: normalizeArray(source.factLifecycleRuns),
+            familyGraphRebuildRuns: normalizeArray(source.familyGraphRebuildRuns),
+            historyModelRebuildRuns: normalizeArray(source.historyModelRebuildRuns),
+            factMerges: normalizeArray(source.factMerges),
+            conflicts: normalizeArray(source.conflicts),
+            obsoleteFacts: normalizeArray(source.obsoleteFacts),
             lastBackfillRun: source.lastBackfillRun || null,
             lastArchiveScan: source.lastArchiveScan || null,
             lastArchiveChunkRun: source.lastArchiveChunkRun || null,
+            lastHistoryModelRebuildRun: source.lastHistoryModelRebuildRun || null,
             lastLegacyScan: source.lastLegacyScan || null
         });
     }

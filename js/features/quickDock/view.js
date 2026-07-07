@@ -1,4 +1,4 @@
-// --- Quick dock view (v0.2.17) ---
+// --- Quick dock view (v0.4.6) ---
 // 悬浮球承载控制台宿主；控制台列表/详情仍由 debugConsole renderer 统一输出。
 (function registerQuickDockView(global) {
     const OwoApp = global.OwoApp;
@@ -19,6 +19,11 @@
     function setBusy(isBusy) {
         if (!rootEl) return;
         rootEl.classList.toggle('quick-dock--busy', !!isBusy);
+    }
+
+    function setActionStatus(text) {
+        model.setStatusText(text || '');
+        render();
     }
 
     function destroyConsoleMount() {
@@ -53,8 +58,8 @@
             <div class="quick-dock-grid">
                 <button type="button" data-qd-action="open-console">控制台</button>
                 <button type="button" data-qd-action="open-prompt">提示词</button>
-                <button type="button" data-qd-action="backup-now">立即备份</button>
-                <button type="button" data-qd-action="restore-latest">恢复备份</button>
+                <button type="button" data-qd-action="backup-now">立即同步</button>
+                <button type="button" data-qd-action="restore-latest">恢复同步</button>
             </div>
             <p class="quick-dock-status">${escapeHtml(status || '提示：控制台在悬浮球内直接查看；数据管理只保留入口，不再重复嵌套面板。')}</p>`;
     }
@@ -128,14 +133,22 @@
             return;
         }
         setBusy(true);
+        if (action === 'backup-now') {
+            service.toast('开始同步到 GitHub…', 1600);
+            setActionStatus('已点击同步，正在连接 GitHub…');
+        }
         try {
             if (action === 'switch-model') {
                 const select = document.getElementById('quick-dock-model-select');
                 await service.switchModel(select ? select.value : '');
             } else if (action === 'backup-now') {
-                await service.backupNow();
+                await service.backupNow({ onProgress: message => setActionStatus(message), sourceTrigger: 'quickDock' });
             } else if (action === 'restore-latest') {
                 if (!confirm('确定恢复 GitHub 最新备份吗？当前本地数据会被导入数据覆盖。')) return;
+                model.setStatusText('已点击恢复，正在准备下载 GitHub 备份…');
+                service.toast('开始恢复 GitHub 备份…', 1600);
+                render();
+                setBusy(true);
                 await service.restoreLatest();
             } else if (action === 'save-prompt') {
                 const enabled = document.getElementById('quick-dock-prompt-enabled');
