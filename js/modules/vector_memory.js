@@ -42,6 +42,28 @@
         return vectorMemoryContextService.embedEntriesIfNeeded(entries, {state: db});
     };
 
+    function getLegacyMemoryOwnerSemanticsForVector() {
+        return window.OwoApp && window.OwoApp.core && window.OwoApp.core.memory && window.OwoApp.core.memory.legacyMemoryOwnerSemantics;
+    }
+
+    function isVectorMemoryOwnerActive(chat) {
+        const owner = getLegacyMemoryOwnerSemanticsForVector();
+        return owner && typeof owner.isVectorOwner === 'function'
+            ? owner.isVectorOwner(chat)
+            : !!(chat && chat.memoryMode === 'vector');
+    }
+
+    function stopVectorAutoSummaryForInactiveOwner(chat) {
+        if (!chat || isVectorMemoryOwnerActive(chat)) return false;
+        const owner = getLegacyMemoryOwnerSemanticsForVector();
+        if (owner && typeof owner.ensureRuntimeOwnerState === 'function') owner.ensureRuntimeOwnerState(chat);
+        else if (chat.vectorMemory) {
+            chat.vectorMemory.autoSummaryPending = false;
+            if (chat.vectorMemory.autoSummaryState === 'running' || chat.vectorMemory.autoSummaryState === 'queued') chat.vectorMemory.autoSummaryState = 'idle';
+        }
+        return true;
+    }
+
     function ensureVectorTemplateStore() {
         return vectorMemoryModel.ensureVectorTemplateStore(db);
     }
@@ -206,6 +228,10 @@ function parseVectorSummaryXml(rawContent) {
 
 async function runVectorAutoSummary(chat, options = {}) {
         ensureVectorMemoryState(chat);
+        if (stopVectorAutoSummaryForInactiveOwner(chat)) {
+            if (!options.silent && typeof showToast === 'function') showToast('当前不是向量记忆模式，向量自动总结已暂停');
+            return 0;
+        }
         if (!chat.vectorMemory.autoSummaryEnabled && !options.force) return 0;
         if (chat.vectorMemory.autoSummaryState === 'running') return 0;
         if (chat.vectorMemory.autoSummaryState === 'failed' && !options.ignoreFailedState) return 0;
@@ -234,6 +260,7 @@ async function runVectorAutoSummary(chat, options = {}) {
         if (!chat) return;
         if (!db.characters || !db.characters.some(item => item.id === chat.id)) return;
         ensureVectorMemoryState(chat);
+        if (stopVectorAutoSummaryForInactiveOwner(chat)) return;
         if (!chat.vectorMemory.autoSummaryEnabled) return;
         if (chat.vectorMemory.autoSummaryState === 'running' || chat.vectorMemory.autoSummaryState === 'failed') return;
         const nextRange = getNextAutoVectorRange(chat);
@@ -972,6 +999,14 @@ async function runVectorAutoSummary(chat, options = {}) {
                 const chat = getCurrentVectorChat();
                 if (!chat) return;
                 ensureVectorMemoryState(chat);
+                if (event.target.checked && stopVectorAutoSummaryForInactiveOwner(chat)) {
+                    event.target.checked = false;
+                    chat.vectorMemory.autoSummaryEnabled = false;
+                    if (typeof showToast === 'function') showToast('当前不是向量记忆模式，向量自动总结已暂停');
+                    await saveCharacter(chat.id);
+                    refreshVectorAutoControls(chat);
+                    return;
+                }
                 chat.vectorMemory.autoSummaryEnabled = event.target.checked;
                 if (!event.target.checked) {
                     chat.vectorMemory.autoSummaryPending = false;

@@ -101,4 +101,4 @@ const peekScreenApps = {
 };
 
 const appName = "章鱼喷墨机";
-const appVersion = "0.3.0";
+const appVersion = "0.3.9";

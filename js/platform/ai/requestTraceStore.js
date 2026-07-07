@@ -69,6 +69,21 @@
         if (!trimmed || !/^[\[{]/.test(trimmed)) return undefined;
         try { return JSON.parse(trimmed); } catch (error) { return undefined; }
     }
+    function redactProviderPrivateFields(value) {
+        if (value === undefined || value === null) return value;
+        if (typeof value !== 'object') return value;
+        if (Array.isArray(value)) return value.map(redactProviderPrivateFields);
+        const output = {};
+        Object.keys(value).forEach(key => {
+            if (/reasoning|chain_of_thought|thoughts/i.test(key)) {
+                const raw = value[key] == null ? '' : String(value[key]);
+                output[key] = raw ? `[redacted:${raw.length} chars]` : '';
+                return;
+            }
+            output[key] = redactProviderPrivateFields(value[key]);
+        });
+        return output;
+    }
     function notify() {
         const snapshot = getRecentTraces();
         listeners.slice().forEach(listener => {
@@ -126,10 +141,13 @@
         trace.responseHeaders = sanitizeHeaders(payload.responseHeaders);
         if (payload.responseText !== undefined) {
             const limited = limitText(payload.responseText);
-            trace.responseBodyText = limited.text;
+            const parsed = parseJsonMaybe(limited.text);
+            const redactedJson = redactProviderPrivateFields(parsed);
+            trace.responseBodyText = redactedJson ? JSON.stringify(redactedJson) : limited.text;
             trace.responseBodyTruncated = limited.truncated;
             trace.responseBodyOriginalLength = limited.originalLength;
-            trace.responseJson = parseJsonMaybe(limited.text);
+            trace.responseJson = redactedJson;
+            trace.providerPrivateFieldsRedacted = !!(parsed && JSON.stringify(parsed) !== JSON.stringify(redactedJson));
         }
         if (payload.captureError) trace.captureError = String(payload.captureError.message || payload.captureError);
         notify();
@@ -187,6 +205,53 @@
             message: meta.message || { id: meta.messageId || '', role, senderId: meta.senderId || '', chatId: meta.chatId || '', chatType: meta.chatType || '', timestamp: meta.timestamp || Date.now() }
         }));
     }
+    function recordAiResponseBatch(meta = {}) {
+        const batch = meta.batch || meta;
+        const trace = recordConsoleEvent({
+            kind: 'response',
+            category: 'response',
+            status: batch.status || 'success',
+            label: batch.label || 'AI 回复批次',
+            source: batch.source || 'ai.responseBatch',
+            provider: batch.provider || meta.provider || '',
+            model: batch.model || meta.model || '',
+            chatId: batch.chatId || meta.chatId || '',
+            chatType: batch.chatType || meta.chatType || '',
+            startedAt: batch.startedAt || meta.startedAt,
+            completedAt: batch.completedAt || meta.completedAt,
+            durationMs: Number(batch.durationMs || meta.durationMs || 0),
+            content: batch.content || '',
+            message: {
+                id: batch.id || meta.id || '',
+                role: 'assistant',
+                chatId: batch.chatId || meta.chatId || '',
+                chatType: batch.chatType || meta.chatType || '',
+                timestamp: batch.completedAt || Date.now()
+            },
+            event: {
+                kind: 'ai-response-batch',
+                id: batch.id || meta.id || '',
+                requestTraceId: batch.requestTraceId || '',
+                messageCount: batch.messageCount || 0,
+                childConsolePolicy: 'single-batch-card'
+            },
+            responseJson: redactProviderPrivateFields({
+                usage: batch.usage,
+                messages: batch.messages,
+                metadata: batch.metadata,
+                requestTraceId: batch.requestTraceId
+            }),
+            diagnostic: {
+                hasReasoning: !!(batch.metadata && batch.metadata.hasReasoning),
+                reasoningLength: batch.metadata && batch.metadata.reasoningLength || 0,
+                reasoningRedacted: !!(batch.metadata && batch.metadata.reasoningRedacted),
+                messageCount: batch.messageCount || 0,
+                policy: '多条 AI 回复合并为一个控制台批次'
+            }
+        });
+        trace.responseBatch = safeJsonClone(batch);
+        return trace;
+    }
     function recordOperation(meta = {}) { return recordConsoleEvent(Object.assign({ kind: 'operation', category: 'operation', status: 'operation', label: '操作记录' }, meta)); }
     function recordErrorEvent(meta = {}) {
         const error = meta.error || {};
@@ -226,7 +291,7 @@
     }
     function formatTraceForCopy(trace) { return JSON.stringify(safeJsonClone(trace), null, 2); }
 
-    ai.requestTraceStore = { trackedFetch, recordRequestStart, recordRequestSuccess, recordRequestFailure, recordDiagnostic, recordConsoleEvent, recordConversationEvent, recordOperation, recordErrorEvent, getRecentTraces, clearTraces, subscribe, formatTraceForCopy, getMaxTraceCount: () => MAX_TRACE_COUNT };
+    ai.requestTraceStore = { trackedFetch, recordRequestStart, recordRequestSuccess, recordRequestFailure, recordDiagnostic, recordConsoleEvent, recordConversationEvent, recordAiResponseBatch, recordOperation, recordErrorEvent, getRecentTraces, clearTraces, subscribe, formatTraceForCopy, getMaxTraceCount: () => MAX_TRACE_COUNT };
 
     if (!global.__owoUnifiedConsoleErrorHookInstalled && global.addEventListener) {
         global.__owoUnifiedConsoleErrorHookInstalled = true;

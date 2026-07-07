@@ -1,0 +1,184 @@
+/* Memory Brain fact module owner: features/memoryBrain (v0.3.2) */
+.memory-brain-fact-actions {
+    grid-template-columns: 1.05fr 1.25fr 1.1fr 1fr;
+    align-items: stretch;
+}
+
+.memory-brain-fact-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.memory-brain-fact-section::before {
+    content: "";
+    position: absolute;
+    right: -36px;
+    top: -36px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 218, 236, 0.46), transparent 66%);
+}
+
+.memory-brain-fact-list {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 13px;
+}
+
+.memory-brain-fact-card {
+    padding: 13px;
+    border: 1px solid rgba(196, 171, 216, 0.28);
+    border-radius: 19px;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(231, 224, 255, 0.52), transparent 32%),
+        linear-gradient(180deg, rgba(255, 252, 254, 0.96), rgba(247, 251, 255, 0.94));
+    box-shadow: 0 12px 26px rgba(116, 99, 129, 0.08);
+}
+
+.memory-brain-fact-topline,
+.memory-brain-fact-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.memory-brain-fact-topline {
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: rgba(105, 78, 110, 0.74);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.memory-brain-fact-topline em {
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.76);
+    color: #8c5d9d;
+    font-style: normal;
+}
+
+.memory-brain-fact-card h3 {
+    margin: 0 0 7px;
+    color: #342d38;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.memory-brain-fact-atom {
+    margin: 0 0 9px;
+    color: rgba(54, 47, 58, 0.56);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.memory-brain-fact-badges span {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.76);
+    color: rgba(85, 68, 98, 0.78);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.memory-brain-fact-detail {
+    margin-top: 10px;
+}
+
+.memory-brain-fact-detail summary {
+    cursor: pointer;
+    color: #8e648f;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.memory-brain-fact-detail-grid {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(139, 112, 154, 0.2);
+}
+
+.memory-brain-fact-detail-grid strong {
+    display: block;
+    margin-bottom: 5px;
+    color: rgba(59, 50, 66, 0.72);
+    font-size: 11px;
+}
+
+.memory-brain-fact-detail-grid p {
+    margin: 0;
+    color: rgba(50, 43, 55, 0.66);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.memory-brain-fact-detail-grid div div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.memory-brain-fact-retire-btn {
+    margin-top: 11px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 237, 244, 0.92);
+    color: #9e5c74;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.memory-brain-plan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.memory-brain-plan-card {
+    padding: 11px;
+    border-radius: 17px;
+    border: 1px solid rgba(207, 190, 222, 0.28);
+    background: linear-gradient(180deg, rgba(255, 250, 254, 0.94), rgba(248, 251, 255, 0.92));
+}
+
+.memory-brain-plan-card span {
+    display: inline-flex;
+    margin-bottom: 6px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: #996189;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.memory-brain-plan-card[data-status="active"] span {
+    background: rgba(255, 226, 239, 0.9);
+    color: #9d4f78;
+}
+
+.memory-brain-plan-card h3 {
+    margin: 0 0 5px;
+    color: #3d3340;
+    font-size: 13px;
+}
+
+.memory-brain-plan-card p {
+    margin: 0;
+    color: rgba(54, 47, 59, 0.62);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+@media (max-width: 390px) {
+    .memory-brain-fact-actions,
+    .memory-brain-plan-grid { grid-template-columns: 1fr; }
+}

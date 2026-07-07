@@ -113,7 +113,12 @@
             phoneControlRecycleBin: [],  // 角色掌控模式：被角色“删除”的角色移入回收站，可恢复
             memoryTableTemplates: [],
             vectorMemoryTemplates: [],
-            memoryBrain: null
+            memoryBrain: null,
+            aiConfig: {
+                version: '0.3.9',
+                mode: 'legacy-compatible-router',
+                taskRoutes: []
+            }
         };
     }
 

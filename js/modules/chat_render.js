@@ -1437,6 +1437,7 @@ const chatConsoleTraceRecordedMessageIds = new Set();
 
 function recordChatMessageConsoleTrace(message, targetChatId, targetChatType) {
     if (!message || !message.id) return;
+    if (message.suppressConsoleTrace && message.aiResponseBatchId) return;
     const key = [targetChatType || '', targetChatId || '', message.id].join(':');
     if (chatConsoleTraceRecordedMessageIds.has(key)) return;
     chatConsoleTraceRecordedMessageIds.add(key);

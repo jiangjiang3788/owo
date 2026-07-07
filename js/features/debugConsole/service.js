@@ -40,6 +40,9 @@
         const category = String(trace.category || trace.kind || trace.eventType || status || '').toLowerCase();
         if (category === 'message' || status === 'message' || status === 'user_message') return 'message';
         if (category === 'reply' || status === 'reply' || status === 'assistant_reply') return 'reply';
+        if (category === 'response' || status === 'response' || category === 'ai-response-batch') return 'response';
+        if (category === 'memory' || String(trace.source || '').indexOf('memoryBrain') !== -1 || String(trace.label || '').indexOf('记忆脑') !== -1) return 'memory';
+        if (category === 'scheduler' || String(trace.source || '').indexOf('Scheduler') !== -1 || String(trace.label || '').indexOf('调度') !== -1) return 'scheduler';
         if (category === 'operation' || status === 'operation') return 'operation';
         if (category === 'event' || status === 'event') return 'event';
         if (category === 'error' || status === 'error' || status === 'http_error') return 'error';
@@ -55,7 +58,7 @@
     }
 
     function getCategoryLabel(category) {
-        return ({ message: '发送', reply: '回复', request: '请求', error: '错误', diagnostic: '诊断', operation: '操作', event: '事件' })[category] || '记录';
+        return ({ message: 'Chat', reply: 'Chat', response: 'AI Response', request: 'AI Request', memory: 'Memory Brain', scheduler: 'Scheduler', error: 'Error', diagnostic: '诊断', operation: '操作', event: '事件' })[category] || '记录';
     }
 
     function formatScalar(value) {
@@ -108,6 +111,14 @@
             errorMessage: trace.errorMessage
         });
         add('发送 / 回复内容', event && event.content ? event.content : (trace.content || (trace.message && trace.message.content)));
+        if (category === 'response') add('AI 回复批次', {
+            messageCount: event && event.messageCount,
+            requestTraceId: event && event.requestTraceId,
+            childConsolePolicy: event && event.childConsolePolicy,
+            messages: trace.responseJson && trace.responseJson.messages,
+            usage: trace.responseJson && trace.responseJson.usage,
+            metadata: trace.responseJson && trace.responseJson.metadata
+        });
         add('消息元数据', event && event.kind === 'conversation' ? event : trace.message);
         add('操作数据', trace.event || trace.extra || (event && event.kind === 'operation' ? event : null));
         add('请求 Header', trace.requestHeaders || trace.headers || (trace.fetchOptions && trace.fetchOptions.headers));
@@ -125,7 +136,7 @@
     function clearTraces() { getTraceStore().clearTraces(); }
     function subscribe(listener) { return getTraceStore().subscribe(listener); }
     function getStatusLabel(status) {
-        return ({ success: '成功', http_error: 'HTTP错误', error: '失败', diagnostic: '诊断', warning: '警告', message: '发送', reply: '回复', operation: '操作', user_message: '发送', assistant_reply: '回复', system_message: '系统', message_event: '消息', event: '事件', pending: '进行中' })[status] || '记录';
+        return ({ success: '成功', http_error: 'HTTP错误', error: '失败', diagnostic: '诊断', warning: '警告', message: '发送', reply: '回复', response: '批次', operation: '操作', user_message: '发送', assistant_reply: '回复', system_message: '系统', message_event: '消息', event: '事件', pending: '进行中' })[status] || '记录';
     }
     function getMaxTraceCount() { return getTraceStore().getMaxTraceCount ? getTraceStore().getMaxTraceCount() : 80; }
 

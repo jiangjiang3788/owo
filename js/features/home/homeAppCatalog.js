@@ -49,13 +49,13 @@
     function getRoutingReport() {
         return {
             owner: 'features/home/homeAppCatalog',
-            release: 'v0.3.0',
+            release: 'v0.3.1',
             primaryCount: primaryApps.length,
             secondaryCount: secondaryApps.length,
             dockTargets: dockApps.map(item => item.target),
             primaryTargets: primaryApps.map(item => item.target),
             mergedLegacyScreens: Array.from(mergedLegacyScreens),
-            note: 'v0.3.0: Memory Brain enters primary apps; Data Management / Prompt / Appearance remain Dock-only, API is first Dock item.'
+            note: 'v0.3.1: Memory Brain adds the shadow event timeline; Data Management / Prompt / Appearance remain Dock-only, API is first Dock item.'
         };
     }
 

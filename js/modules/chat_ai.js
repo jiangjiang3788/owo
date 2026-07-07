@@ -8,6 +8,8 @@ const chatAiProviderRequestAdapter = window.OwoApp.platform.ai.providerRequestAd
 const chatAiRequestTraceStore = window.OwoApp.platform.ai.requestTraceStore;
 const chatAiMessageSemantics = window.OwoApp.core.chat.messageSemantics;
 const chatAiPromptSemantics = window.OwoApp.core.chat.promptSemantics;
+const chatAiMessageSanitizer = window.OwoApp.platform.ai.messageSanitizer;
+const chatAiResponseNormalizer = window.OwoApp.platform.ai.responseNormalizer;
 
 // 检查角色是否在免打扰时段内
 function isInQuietHours(charId) {
@@ -321,6 +323,22 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
             if (m.content && typeof m.content === 'string' && m.content.trim().startsWith('<thinking>')) return false;
             return true;
         });
+
+        if (chatAiMessageSanitizer && typeof chatAiMessageSanitizer.sanitizeHistoryMessages === 'function') {
+            const sanitized = chatAiMessageSanitizer.sanitizeHistoryMessages(historySlice, { limit: chat.maxMemory || 0 });
+            historySlice = sanitized.messages;
+            if (sanitized.diagnostics && sanitized.diagnostics.dropped && sanitized.diagnostics.dropped.length) {
+                chatAiRequestTraceStore.recordDiagnostic({
+                    source: 'chat_ai.historySanitizer',
+                    label: '聊天历史净化结果',
+                    category: 'diagnostic',
+                    status: 'diagnostic',
+                    diagnostic: sanitized.diagnostics,
+                    chatId,
+                    chatType
+                });
+            }
+        }
 
         let weatherText = '';
         if (chatType === 'private' && window.WeatherService) {
@@ -752,6 +770,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
         requestBody = providerRequest.requestBody;
         }
         console.log('[DEBUG] AutoReply Request Body:', JSON.stringify(requestBody));
+        const aiRequestStartedAt = Date.now();
         const response = await chatAiRequestTraceStore.trackedFetch(providerRequest, {
             source: 'chat_ai.getAiReply',
             label: isSummary ? '自动总结请求' : (isBackground ? '后台自动回复请求' : '聊天回复请求'),
@@ -767,7 +786,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
         }
         
         if (streamEnabled) {
-            await processStream(response, chat, provider, chatId, chatType, isBackground, isCharBlockedMonologue);
+            await processStream(response, chat, provider, model, chatId, chatType, isBackground, isCharBlockedMonologue, aiRequestStartedAt);
         } else {
             let result;
             try {
@@ -779,12 +798,10 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
                 throw new Error(`API返回了非JSON格式数据 (可能是网页HTML)。请检查API地址是否正确。原始内容开头: ${text.substring(0, 50)}...`);
             }
 
-            let fullResponse = "";
-            if (provider === 'gemini') {
-                fullResponse = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            } else {
-                fullResponse = result.choices[0].message.content;
-            }
+            const normalizedAiResponse = chatAiResponseNormalizer && typeof chatAiResponseNormalizer.normalizeChatCompletion === 'function'
+                ? chatAiResponseNormalizer.normalizeChatCompletion(result, { provider, model })
+                : { content: provider === 'gemini' ? (result.candidates?.[0]?.content?.parts?.[0]?.text || '') : (result.choices?.[0]?.message?.content || ''), usage: result.usage || null, metadata: {} };
+            let fullResponse = normalizedAiResponse.content || "";
             
             // === 【补丁：把被吃掉的开头补回来】 ===
             // 仅在 CoT 开启且检测到闭合标签时补全
@@ -820,7 +837,28 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
             // ===================================
             
             
-            await handleAiReplyContent(fullResponse, chat, chatId, chatType, isBackground, isCharBlockedMonologue);
+            const responseBatch = chatAiResponseNormalizer && typeof chatAiResponseNormalizer.buildResponseBatch === 'function'
+                ? chatAiResponseNormalizer.buildResponseBatch({
+                    normalized: normalizedAiResponse,
+                    provider,
+                    model,
+                    source: 'chat_ai.getAiReply',
+                    label: isSummary ? 'AI 回复批次 · 自动总结' : (isBackground ? 'AI 回复批次 · 后台' : 'AI 回复批次'),
+                    chatId,
+                    chatType,
+                    startedAt: aiRequestStartedAt,
+                    completedAt: Date.now(),
+                    durationMs: Date.now() - aiRequestStartedAt
+                })
+                : null;
+            const responseBatchTrace = responseBatch && chatAiRequestTraceStore && typeof chatAiRequestTraceStore.recordAiResponseBatch === 'function'
+                ? chatAiRequestTraceStore.recordAiResponseBatch(responseBatch)
+                : null;
+            await handleAiReplyContent(fullResponse, chat, chatId, chatType, isBackground, isCharBlockedMonologue, {
+                responseBatchId: responseBatchTrace && responseBatchTrace.id || responseBatch && responseBatch.id || '',
+                responseBatch,
+                suppressChildConsoleTrace: true
+            });
         }
 
     } catch (error) {
@@ -844,7 +882,7 @@ async function getAiReply(chatId, chatType, isBackground = false, isSummary = fa
     }
 }
 
-async function processStream(response, chat, apiType, targetChatId, targetChatType, isBackground = false, isCharBlockedMonologue = false) {
+async function processStream(response, chat, apiType, model, targetChatId, targetChatType, isBackground = false, isCharBlockedMonologue = false, aiRequestStartedAt = Date.now()) {
     const reader = response.body.getReader(), decoder = new TextDecoder();
     let fullResponse = "", accumulatedChunk = "";
     for (; ;) {
@@ -911,7 +949,29 @@ async function processStream(response, chat, apiType, targetChatId, targetChatTy
     }
 
     // ===================
-    await handleAiReplyContent(fullResponse, chat, targetChatId, targetChatType, isBackground, isCharBlockedMonologue);
+    const normalizedStreamResponse = { content: fullResponse, usage: null, model: model || '', provider: apiType || '', metadata: { stream: true } };
+    const responseBatch = chatAiResponseNormalizer && typeof chatAiResponseNormalizer.buildResponseBatch === 'function'
+        ? chatAiResponseNormalizer.buildResponseBatch({
+            normalized: normalizedStreamResponse,
+            provider: apiType,
+            model: model || '',
+            source: 'chat_ai.processStream',
+            label: isBackground ? 'AI 回复批次 · 流式后台' : 'AI 回复批次 · 流式',
+            chatId: targetChatId,
+            chatType: targetChatType,
+            startedAt: aiRequestStartedAt,
+            completedAt: Date.now(),
+            durationMs: Date.now() - aiRequestStartedAt
+        })
+        : null;
+    const responseBatchTrace = responseBatch && chatAiRequestTraceStore && typeof chatAiRequestTraceStore.recordAiResponseBatch === 'function'
+        ? chatAiRequestTraceStore.recordAiResponseBatch(responseBatch)
+        : null;
+    await handleAiReplyContent(fullResponse, chat, targetChatId, targetChatType, isBackground, isCharBlockedMonologue, {
+        responseBatchId: responseBatchTrace && responseBatchTrace.id || responseBatch && responseBatch.id || '',
+        responseBatch,
+        suppressChildConsoleTrace: true
+    });
 }
 
 /** 返回该角色在手机掌控下可见的角色与群聊（未开启角色过滤则返回全部，开启则只返回指定的角色及所在群聊） */
@@ -1092,8 +1152,16 @@ function executePhoneControlCommands(text, controllingChar) {
     return { cleaned, executed };
 }
 
-async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChatType, isBackground = false, isCharBlockedMonologue = false) {
+async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChatType, isBackground = false, isCharBlockedMonologue = false, responseTraceContext = {}) {
     const rawResponse = fullResponse;
+    function attachAiResponseTraceContext(message, context) {
+        if (!message || !context || !context.responseBatchId) return message;
+        if (message.role === 'assistant' || message.role === 'char') {
+            message.aiResponseBatchId = context.responseBatchId;
+            message.suppressConsoleTrace = context.suppressChildConsoleTrace !== false;
+        }
+        return message;
+    }
     if (fullResponse) {
         // 1. 移除 [incipere] 标签
         fullResponse = fullResponse.replace(/\[incipere\]/g, "");
@@ -1275,6 +1343,7 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                     content: item.content.trim(),
                     timestamp: Date.now()
                 };
+                attachAiResponseTraceContext(message, responseTraceContext);
                 chat.history.push(message);
                 addMessageBubble(message, targetChatId, targetChatType);
                 continue; // 跳过后续处理
@@ -1417,6 +1486,7 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                     }
                 }
 
+                attachAiResponseTraceContext(message, responseTraceContext);
                 chat.history.push(message);
                 addMessageBubble(message, targetChatId, targetChatType);
                 
@@ -1477,7 +1547,8 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                             }
                         };
                         if (isCharBlockedMonologue) message.sentWhileCharBlocked = true;
-                        chat.history.push(message);
+                        attachAiResponseTraceContext(message, responseTraceContext);
+                chat.history.push(message);
                         addMessageBubble(message, targetChatId, targetChatType);
                     } else {
                         let filteredReplyText2 = replyText;
@@ -1496,7 +1567,8 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                             statusSnapshot: item.statusSnapshot
                         };
                         if (isCharBlockedMonologue) message.sentWhileCharBlocked = true;
-                        chat.history.push(message);
+                        attachAiResponseTraceContext(message, responseTraceContext);
+                chat.history.push(message);
                         addMessageBubble(message, targetChatId, targetChatType);
                     }
                 } else {
@@ -1552,7 +1624,8 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                         }
                     }
 
-                    chat.history.push(message);
+                    attachAiResponseTraceContext(message, responseTraceContext);
+                chat.history.push(message);
                     addMessageBubble(message, targetChatId, targetChatType);
                 }
 
@@ -1591,6 +1664,7 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                         timestamp: Date.now(),
                         senderId: senderId
                     };
+                    attachAiResponseTraceContext(message, responseTraceContext);
                     group.history.push(message);
                     addMessageBubble(message, targetChatId, targetChatType);
                     continue; // 私聊消息处理完毕，跳过后续普通消息匹配
@@ -1613,7 +1687,8 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                             senderId: sender.id,
                             isTransferAction: true
                         };
-                        group.history.push(message);
+                        attachAiResponseTraceContext(message, responseTraceContext);
+                    group.history.push(message);
                         addMessageBubble(message, targetChatId, targetChatType);
                     }
                     continue;
@@ -1638,7 +1713,8 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                             senderId: sender.id,
                             transferStatus: 'pending'
                         };
-                        group.history.push(message);
+                        attachAiResponseTraceContext(message, responseTraceContext);
+                    group.history.push(message);
                         addMessageBubble(message, targetChatId, targetChatType);
                     }
                 } else if (nameMatch || item.char) {
@@ -1654,7 +1730,8 @@ async function handleAiReplyContent(fullResponse, chat, targetChatId, targetChat
                             timestamp: Date.now(),
                             senderId: sender.id
                         };
-                        group.history.push(message);
+                        attachAiResponseTraceContext(message, responseTraceContext);
+                    group.history.push(message);
                         addMessageBubble(message, targetChatId, targetChatType);
                     }
                 }
@@ -1841,6 +1918,58 @@ function getInjectedFormatsPrompt(character, formats) {
 }
 
 
+
+function getLegacyMemoryOwnerSemantics() {
+    return window.OwoApp && window.OwoApp.core && window.OwoApp.core.memory && window.OwoApp.core.memory.legacyMemoryOwnerSemantics;
+}
+
+function getActiveLegacyMemoryMode(chat) {
+    const owner = getLegacyMemoryOwnerSemantics();
+    return owner && typeof owner.getActiveMemoryMode === 'function'
+        ? owner.getActiveMemoryMode(chat)
+        : ((chat && chat.memoryMode === 'table') ? 'table' : (chat && chat.memoryMode === 'vector' ? 'vector' : 'journal'));
+}
+
+function isLegacyMemoryMode(chat, mode) {
+    const owner = getLegacyMemoryOwnerSemantics();
+    return owner && typeof owner.isMemoryMode === 'function'
+        ? owner.isMemoryMode(chat, mode)
+        : getActiveLegacyMemoryMode(chat) === mode;
+}
+
+function shouldUseJournalMemory(chat) { return isLegacyMemoryMode(chat, 'journal'); }
+function shouldUseTableMemory(chat) { return isLegacyMemoryMode(chat, 'table'); }
+function shouldUseVectorMemory(chat) { return isLegacyMemoryMode(chat, 'vector'); }
+
+function buildFavoritedJournalMemoryBlock(chat, options = {}) {
+    if (!chat || !shouldUseJournalMemory(chat)) return '';
+    const favoritedJournals = (chat.memoryJournals || [])
+        .filter(j => j && j.isFavorited)
+        .map(j => `标题：${j.title}\n内容：${j.content}`)
+        .join('\n\n---\n\n');
+    if (!favoritedJournals) return '';
+    const body = `【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}`;
+    return options.wrapJournalTag ? `<journal_memories>\n${body}\n</journal_memories>` : body;
+}
+
+function buildActiveLegacyMemoryContextBlock(chat, options = {}) {
+    if (!chat) return '';
+    if (shouldUseTableMemory(chat)) {
+        return typeof getMemoryTableContextBlock === 'function' ? (getMemoryTableContextBlock(chat) || '') : '';
+    }
+    if (shouldUseVectorMemory(chat)) {
+        return typeof getVectorMemoryContextBlock === 'function' ? (getVectorMemoryContextBlock(chat) || '') : '';
+    }
+    return buildFavoritedJournalMemoryBlock(chat, options);
+}
+
+function getLegacyMemoryOwnerSnapshot(chat) {
+    const owner = getLegacyMemoryOwnerSemantics();
+    return owner && typeof owner.buildOwnerSnapshot === 'function'
+        ? owner.buildOwnerSnapshot(chat)
+        : { formalOwner: getActiveLegacyMemoryMode(chat), memoryBrainFormalInjection: false };
+}
+
 function generatePrivateSystemPrompt(character, opts) {
     opts = opts || {};
     const linkedChar = (character.source === 'forum' && character.linkedCharId && db.characters)
@@ -1875,24 +2004,10 @@ function generatePrivateSystemPrompt(character, opts) {
     // 处理用户自定义的底层系统提示词模板
     if (useCustomPrompt && template) {
         
-        // 构建共同回忆字符串
-        let commonMemories = '';
-        if (character.memoryMode === 'table' && typeof getMemoryTableContextBlock === 'function') {
-            commonMemories = getMemoryTableContextBlock(character) || '';
-        } else if (character.memoryMode === 'vector' && typeof getVectorMemoryContextBlock === 'function') {
-            commonMemories = getVectorMemoryContextBlock(character) || '';
-        } else {
-            let favoritedJournals = (character.memoryJournals || [])
-                .filter(j => j.isFavorited)
-                .map(j => `标题：${j.title}\n内容：${j.content}`)
-                .join('\n\n---\n\n');
-            if (favoritedJournals) {
-                commonMemories = `【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}`;
-            }
-        }
-        
-        // 构建群聊记忆互通字符串
-        if (character.syncGroupMemory) {
+        // 构建共同回忆字符串：严格只读取当前正式旧记忆 owner，禁止表格/向量模式空内容时回退到日记。
+        let commonMemories = buildActiveLegacyMemoryContextBlock(character) || '';
+        // 构建群聊记忆互通字符串：群聊收藏日记只属于 journal owner；表格/向量 owner 下不混入日记记忆。
+        if (shouldUseJournalMemory(character) && character.syncGroupMemory) {
             let groupsWithCharacter = db.groups.filter(group => 
                 group.members && group.members.some(member => member.originalCharId === character.id)
             );
@@ -2073,21 +2188,11 @@ function generatePrivateSystemPrompt(character, opts) {
         
         if (activeNode.readMemory) {
             nodePrompt += `<memoir>\n`;
-            const tableMemoryText = character.memoryMode === 'table' && typeof getMemoryTableContextBlock === 'function'
-                ? getMemoryTableContextBlock(character)
-                : (character.memoryMode === 'vector' && typeof getVectorMemoryContextBlock === 'function'
-                    ? getVectorMemoryContextBlock(character)
-                    : '');
-            if (tableMemoryText) {
-                nodePrompt += `${tableMemoryText}\n`;
-            } else {
-                const favoritedJournals = (character.memoryJournals || [])
-                    .filter(j => j.isFavorited)
-                    .map(j => `标题：${j.title}\n内容：${j.content}`)
-                    .join('\n\n---\n\n');
-                if (favoritedJournals) {
-                    nodePrompt += `<journal_memories>\n【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}\n</journal_memories>\n\n`;
-                }
+            const activeMemoryText = buildActiveLegacyMemoryContextBlock(character, { wrapJournalTag: true });
+            if (activeMemoryText) {
+                nodePrompt += `${activeMemoryText}\n`;
+            }
+            if (shouldUseJournalMemory(character)) {
                 
                 // 提取过往线上聊天记录
                 let startIndex = -1;
@@ -2551,25 +2656,12 @@ function generatePrivateSystemPrompt(character, opts) {
     }
 
     prompt += `<memoir>\n`
-    const tableMemoryText = character.memoryMode === 'table' && typeof getMemoryTableContextBlock === 'function'
-        ? getMemoryTableContextBlock(character)
-        : (character.memoryMode === 'vector' && typeof getVectorMemoryContextBlock === 'function'
-            ? getVectorMemoryContextBlock(character)
-            : '');
-    if (tableMemoryText) {
-        prompt += `${tableMemoryText}\n`;
-    } else {
-        const favoritedJournals = (character.memoryJournals || [])
-            .filter(j => j.isFavorited)
-            .map(j => `标题：${j.title}\n内容：${j.content}`)
-            .join('\n\n---\n\n');
-
-        if (favoritedJournals) {
-            prompt += `【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}\n\n`;
-        }
-        
-        // 群聊记忆互通功能
-        if (character.syncGroupMemory) {
+    const activeMemoryText = buildActiveLegacyMemoryContextBlock(character);
+    if (activeMemoryText) {
+        prompt += `${activeMemoryText}\n`;
+    }
+    // 群聊记忆互通功能：仅 journal owner 读取群聊收藏日记，表格/向量 owner 不回退到日记。
+    if (shouldUseJournalMemory(character) && character.syncGroupMemory) {
             // 查找该角色所在的所有群聊
             let groupsWithCharacter = db.groups.filter(group => 
                 group.members && group.members.some(member => member.originalCharId === character.id)
@@ -2642,7 +2734,6 @@ function generatePrivateSystemPrompt(character, opts) {
                 }
             }
         }
-    }
     prompt += `</memoir>\n\n`
 
     prompt += `<logic_rules>\n`
@@ -2799,12 +2890,9 @@ function getChatTokenBreakdown(chatId, chatType = 'private') {
     }
     const stickerTokens = estimateTokenFromText(stickerText);
 
-    // 5) 长期记忆（共同回忆 / 收藏日记）
-    const favoritedJournals = (character.memoryJournals || [])
-        .filter(j => j.isFavorited)
-        .map(j => `标题：${j.title}\n内容：${j.content}`)
-        .join('\n\n---\n\n');
-    const memoirTokens = estimateTokenFromText(favoritedJournals);
+    // 5) 长期记忆：只统计当前正式旧记忆 owner 的注入块。
+    const activeLegacyMemoryText = buildActiveLegacyMemoryContextBlock(character);
+    const memoirTokens = estimateTokenFromText(activeLegacyMemoryText);
 
     // 6) 窥屏知晓 + 代发消息（冒充）知晓
     let peekText = '';
@@ -2867,7 +2955,7 @@ function getChatTokenBreakdown(chatId, chatType = 'private') {
 
     // 9) 群聊记忆互通
     let groupMemoryText = '';
-    if (character.syncGroupMemory) {
+    if (shouldUseJournalMemory(character) && character.syncGroupMemory) {
         let groupsWithCharacter = (db.groups || []).filter(group =>
             group.members && group.members.some(member => member.originalCharId === character.id)
         );
@@ -3091,22 +3179,9 @@ async function getCallReply(chat, callType, callContext, onStreamUpdate) {
     }
 
     systemPrompt += `<memoir>\n`
-    const tableMemoryText = chat.memoryMode === 'table' && typeof getMemoryTableContextBlock === 'function'
-        ? getMemoryTableContextBlock(chat)
-        : (chat.memoryMode === 'vector' && typeof getVectorMemoryContextBlock === 'function'
-            ? getVectorMemoryContextBlock(chat)
-            : '');
-    if (tableMemoryText) {
-        systemPrompt += `${tableMemoryText}\n`;
-    } else {
-        const favoritedJournals = (chat.memoryJournals || [])
-            .filter(j => j.isFavorited)
-            .map(j => `标题：${j.title}\n内容：${j.content}`)
-            .join('\n\n---\n\n');
-
-        if (favoritedJournals) {
-            systemPrompt += `【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}\n\n`;
-        }
+    const activeCallMemoryText = buildActiveLegacyMemoryContextBlock(chat);
+    if (activeCallMemoryText) {
+        systemPrompt += `${activeCallMemoryText}\n`;
     }
     systemPrompt += `</memoir>\n\n`
 
@@ -3433,11 +3508,8 @@ async function generateCallSummary(chat, callContext) {
     // 获取世界书（包含全局）
     const { before: worldBooksBefore, middle: worldBooksMiddle, after: worldBooksAfter } = getActiveWorldBooksContents(chat);
 
-    // 获取回忆日记
-    const favoritedJournals = (chat.memoryJournals || [])
-        .filter(j => j.isFavorited)
-        .map(j => `标题：${j.title}\n内容：${j.content}`)
-        .join('\n\n---\n\n');
+    // 只读取当前正式旧记忆 owner 的背景，禁止档案/向量模式空内容时回退到日记。
+    const activeLegacyMemoryText = buildActiveLegacyMemoryContextBlock(chat);
 
     let prompt = `请根据以下背景信息和通话记录，生成一段简短的聊天记录总结。\n\n`;
 
@@ -3454,9 +3526,9 @@ async function generateCallSummary(chat, callContext) {
     prompt += `用户人设：${chat.myPersona || "无"}\n`;
     prompt += `</user_settings>\n\n`;
 
-    if (favoritedJournals) {
+    if (activeLegacyMemoryText) {
         prompt += `<memoir>\n`;
-        prompt += `【共同回忆】\n${favoritedJournals}\n`;
+        prompt += `${activeLegacyMemoryText}\n`;
         prompt += `</memoir>\n\n`;
     }
 

@@ -1,0 +1,26 @@
+/* Memory Brain graph styles owner (v0.3.4) */
+.memory-brain-graph-section{position:relative;}
+.memory-brain-graph-summary{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px 10px;align-items:center;margin:12px 0;padding:12px 14px;border-radius:18px;background:rgba(91,114,255,.08);border:1px solid rgba(91,114,255,.14);}
+.memory-brain-graph-summary strong{font-size:1.35rem;color:var(--primary-color);}
+.memory-brain-graph-summary span{font-size:.8rem;color:var(--secondary-color);}
+.memory-brain-graph-node-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px;margin:12px 0;}
+.memory-brain-graph-node-card{padding:12px;border-radius:18px;background:rgba(255,255,255,.76);border:1px solid rgba(80,80,120,.12);box-shadow:0 8px 18px rgba(30,33,65,.06);}
+.memory-brain-graph-node-card span{display:inline-flex;padding:2px 8px;border-radius:999px;background:rgba(255,173,199,.18);font-size:.68rem;color:var(--secondary-color);}
+.memory-brain-graph-node-card strong{display:block;margin-top:7px;font-size:.95rem;color:var(--text-color);}
+.memory-brain-graph-node-card em{display:block;margin-top:3px;font-size:.76rem;font-style:normal;color:var(--secondary-color);}
+.memory-brain-graph-node-empty{padding:12px;border-radius:16px;background:rgba(255,255,255,.62);color:var(--secondary-color);}
+.memory-brain-graph-edge-list{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+.memory-brain-graph-edge-card{padding:14px;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(244,247,255,.9));border:1px solid rgba(91,114,255,.16);box-shadow:0 10px 24px rgba(30,33,65,.08);}
+.memory-brain-graph-edge-line{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;}
+.memory-brain-graph-edge-line span{padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.86);font-size:.84rem;color:var(--text-color);border:1px solid rgba(80,80,120,.1);}
+.memory-brain-graph-edge-line em{position:relative;padding:5px 10px;border-radius:999px;background:rgba(91,114,255,.12);font-style:normal;font-size:.72rem;color:var(--primary-color);white-space:nowrap;}
+.memory-brain-graph-edge-meta{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:.74rem;color:var(--secondary-color);}
+.memory-brain-graph-edge-card p{margin:10px 0 0;font-size:.84rem;line-height:1.55;color:var(--text-color);}
+.memory-brain-graph-pills,.memory-brain-graph-family-pills,.memory-brain-graph-mini-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.memory-brain-graph-pills span,.memory-brain-graph-family-pills span,.memory-brain-graph-mini-pills span{padding:3px 8px;border-radius:999px;background:rgba(255,173,199,.18);font-size:.72rem;color:var(--secondary-color);}
+.memory-brain-graph-family-pills span{background:rgba(91,114,255,.12);color:var(--primary-color);}
+.memory-brain-graph-mini-pills span{font-size:.66rem;background:rgba(80,80,120,.08);}
+.memory-brain-graph-edge-card details{margin-top:10px;font-size:.78rem;color:var(--secondary-color);}
+.memory-brain-graph-edge-card ul{margin:8px 0 0;padding-left:18px;line-height:1.45;}
+.memory-brain-graph-retire-btn{margin-top:12px;border:0;border-radius:999px;padding:7px 11px;background:rgba(255,100,120,.1);color:#b84a5d;font-size:.76rem;}
+@media(max-width:420px){.memory-brain-graph-edge-line{grid-template-columns:1fr;}.memory-brain-graph-edge-line em{justify-self:flex-start}.memory-brain-graph-summary{grid-template-columns:auto 1fr;}}

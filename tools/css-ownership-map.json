@@ -320,6 +320,76 @@
       "role": "feature-module",
       "status": "canonical",
       "maxLines": 320
+    },
+    {
+      "path": "css/modules/memory_brain_timeline.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_facts.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 240
+    },
+    {
+      "path": "css/modules/memory_brain_families.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_graph.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_models.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_injection.css",
+      "owner": "features/memoryBrain",
+      "role": "feature-module",
+      "status": "canonical",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_scheduler.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain scheduler/cost/weight maintenance UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_palace.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain palace/productization UI",
+      "status": "active",
+      "maxLines": 240
+    },
+    {
+      "path": "css/modules/memory_brain_archive.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain history archive scanner/chunk UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_backfill.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain history backfill queue UI",
+      "status": "active",
+      "maxLines": 220
     }
   ]
 }

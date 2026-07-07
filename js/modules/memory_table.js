@@ -21,6 +21,28 @@
     const memoryTableUpdateDiagnosticsService = window.OwoApp.features.memoryTable.updateDiagnosticsService;
     const memoryTableView = window.OwoApp.features.memoryTable.view;
 
+    function getLegacyMemoryOwnerSemanticsForTable() {
+        return window.OwoApp && window.OwoApp.core && window.OwoApp.core.memory && window.OwoApp.core.memory.legacyMemoryOwnerSemantics;
+    }
+
+    function isTableMemoryOwnerActive(chat) {
+        const owner = getLegacyMemoryOwnerSemanticsForTable();
+        return owner && typeof owner.isTableOwner === 'function'
+            ? owner.isTableOwner(chat)
+            : !!(chat && chat.memoryMode === 'table');
+    }
+
+    function stopMemoryTableAutoUpdateForInactiveOwner(chat) {
+        if (!chat || isTableMemoryOwnerActive(chat)) return false;
+        const owner = getLegacyMemoryOwnerSemanticsForTable();
+        if (owner && typeof owner.ensureRuntimeOwnerState === 'function') owner.ensureRuntimeOwnerState(chat);
+        else if (chat.memoryTables) {
+            chat.memoryTables.autoUpdatePending = false;
+            if (chat.memoryTables.autoUpdateState === 'running' || chat.memoryTables.autoUpdateState === 'queued') chat.memoryTables.autoUpdateState = 'idle';
+        }
+        return true;
+    }
+
     // @compat canonical: OwoApp.core.memory.tableSemantics
     const deepClone = memoryTableSemantics.deepClone;
 
@@ -143,6 +165,12 @@
     async function applyMemoryTableAutoUpdateToggle(chat, enabled) {
         if (!chat) return { status: 'noop' };
         ensureMemoryTableAutoUpdateState(chat);
+        if (enabled && stopMemoryTableAutoUpdateForInactiveOwner(chat)) {
+            chat.memoryTables.autoUpdateEnabled = false;
+            refreshMemoryTableAutoUpdateControls(chat, getBoundTemplates(chat).length > 0);
+            if (typeof showToast === 'function') showToast('当前不是档案/表格记忆模式，表格自动更新已暂停');
+            return { status: 'wrong-memory-owner' };
+        }
         chat.memoryTables.autoUpdateEnabled = enabled;
 
         if (!enabled) {
@@ -1261,6 +1289,10 @@ ${historyText}`;
     async function processMemoryTableAutoUpdate(chat, options = {}) {
         if (!chat) return { status: 'noop', updatedCount: 0 };
         ensureMemoryTableAutoUpdateState(chat);
+        if (stopMemoryTableAutoUpdateForInactiveOwner(chat)) {
+            refreshMemoryTableAutoUpdateControls(chat, getBoundTemplates(chat).length > 0);
+            return { status: 'wrong-memory-owner', updatedCount: 0 };
+        }
         if (getBoundTemplates(chat).length === 0) {
             refreshMemoryTableAutoUpdateControls(chat, false);
             return { status: 'noop', updatedCount: 0 };
@@ -1406,6 +1438,10 @@ ${historyText}`;
     async function checkAndTriggerAutoTableUpdate(chat) {
         if (!chat || !chat.memoryTables || !chat.memoryTables.autoUpdateEnabled) return;
         ensureMemoryTableAutoUpdateState(chat);
+        if (stopMemoryTableAutoUpdateForInactiveOwner(chat)) {
+            refreshMemoryTableAutoUpdateControls(chat, getBoundTemplates(chat).length > 0);
+            return;
+        }
         if (chat.memoryTables.autoUpdateState === 'failed') {
             refreshMemoryTableAutoUpdateControls(chat, getBoundTemplates(chat).length > 0);
             return;

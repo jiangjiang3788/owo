@@ -2325,14 +2325,14 @@ for (const [file, label] of [
 }
 
 if (fs.existsSync(docsRootPath)) {
-  const allowedRootEntries = new Set(['0.1', '0.2', '0.3', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
+  const allowedRootEntries = new Set(['0.1', '0.2', '0.3', '0.4', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
   const extraRootEntries = fs.readdirSync(docsRootPath).filter(name => !allowedRootEntries.has(name));
   if (extraRootEntries.length) error(`docs 根路径存在多余文件或目录：${extraRootEntries.join(', ')}`);
 }
 
 if (fs.existsSync(docsRootReadmePath)) {
   const docsRootText = read(docsRootReadmePath);
-  for (const token of ['docs/0.1', 'docs/0.2', 'docs/0.3', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '0.3` 版本线已在 `v0.3.0` 正式开启']) {
+  for (const token of ['docs/0.1', 'docs/0.2', 'docs/0.3', 'docs/0.4', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '0.4` 版本线已在 `v0.4.0` 正式开启']) {
     if (!docsRootText.includes(token)) error(`docs/README.md 缺少文档根路径说明：${token}`);
   }
 }

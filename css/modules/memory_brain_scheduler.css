@@ -1,0 +1,67 @@
+/* Memory Brain scheduler UI owner (v0.3.7) */
+.memory-brain-scheduler-section { border-color: rgba(139, 92, 246, 0.22); }
+.memory-brain-scheduler-panel { display: grid; gap: 14px; }
+.memory-brain-scheduler-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.memory-brain-scheduler-summary > div,
+.memory-brain-cost-card,
+.memory-brain-schedule-item,
+.memory-brain-run-card,
+.memory-brain-floating-card {
+    border: 1px solid rgba(120, 99, 185, 0.18);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.86), rgba(246,241,255,0.74));
+    box-shadow: 0 10px 30px rgba(87, 65, 143, 0.08);
+}
+.memory-brain-scheduler-summary > div { padding: 12px; display: grid; gap: 4px; }
+.memory-brain-scheduler-summary span,
+.memory-brain-run-card span,
+.memory-brain-schedule-top span { color: rgba(72, 57, 116, 0.62); font-size: 12px; }
+.memory-brain-scheduler-summary strong { color: #513a85; font-size: 15px; }
+.memory-brain-scheduler-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.memory-brain-scheduler-controls label { display: grid; gap: 5px; font-size: 12px; color: rgba(65, 48, 99, 0.68); }
+.memory-brain-scheduler-controls select {
+    min-width: 120px;
+    border: 1px solid rgba(120, 99, 185, 0.25);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.86);
+    color: #4f3b78;
+}
+.memory-brain-cost-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.memory-brain-cost-card { padding: 12px; }
+.memory-brain-cost-card[data-active="true"] { outline: 2px solid rgba(139, 92, 246, 0.42); background: linear-gradient(145deg, #fff, #f0e8ff); }
+.memory-brain-cost-card div,
+.memory-brain-schedule-top,
+.memory-brain-run-card div,
+.memory-brain-floating-card div { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.memory-brain-cost-card strong,
+.memory-brain-schedule-item strong,
+.memory-brain-run-card strong,
+.memory-brain-floating-card strong { color: #4d367c; }
+.memory-brain-cost-card p,
+.memory-brain-schedule-item p,
+.memory-brain-run-card p,
+.memory-brain-floating-card p { margin: 7px 0; color: rgba(55, 43, 84, 0.78); line-height: 1.55; }
+.memory-brain-cost-card small,
+.memory-brain-run-card small,
+.memory-brain-floating-card small { color: rgba(76, 59, 111, 0.58); }
+.memory-brain-scheduler-columns { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 12px; }
+.memory-brain-scheduler-columns h3,
+.memory-brain-scheduler-panel > section h3 { margin: 0 0 8px; color: #493273; font-size: 16px; }
+.memory-brain-schedule-queue,
+.memory-brain-floating-list,
+.memory-brain-run-list { display: grid; gap: 9px; }
+.memory-brain-schedule-item,
+.memory-brain-run-card,
+.memory-brain-floating-card { padding: 11px; }
+.memory-brain-schedule-item[data-status="queued-over-budget"] { opacity: 0.74; }
+.memory-brain-schedule-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.memory-brain-schedule-meta em { padding: 4px 8px; border-radius: 999px; background: rgba(111, 76, 180, 0.08); color: rgba(72, 53, 117, 0.72); font-style: normal; font-size: 12px; }
+@media (max-width: 760px) {
+    .memory-brain-scheduler-summary,
+    .memory-brain-cost-grid,
+    .memory-brain-scheduler-columns { grid-template-columns: 1fr; }
+    .memory-brain-scheduler-controls { display: grid; grid-template-columns: 1fr; }
+    .memory-brain-scheduler-controls button,
+    .memory-brain-scheduler-controls select { width: 100%; }
+}

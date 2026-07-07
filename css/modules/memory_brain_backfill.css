@@ -1,0 +1,27 @@
+/* Memory Brain history backfill module owner: features/memoryBrain (v0.4.2) */
+.memory-brain-backfill-actions { align-items: stretch; }
+.memory-brain-backfill-actions .memory-brain-limit-field { min-width: 118px; }
+.memory-brain-backfill-actions select { min-height: 34px; border: 1px solid rgba(141,105,78,.2); border-radius: 12px; background: rgba(255,255,255,.78); color: #6e4630; padding: 0 10px; }
+.memory-brain-backfill-section { border: 1px solid rgba(121, 93, 75, .16); }
+.memory-brain-backfill-panel { display: grid; gap: 14px; }
+.memory-brain-backfill-summary { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.memory-brain-backfill-summary div { padding: 12px; border-radius: 18px; background: rgba(255, 250, 244, .86); border: 1px solid rgba(141, 105, 78, .12); box-shadow: 0 8px 22px rgba(99, 66, 42, .05); }
+.memory-brain-backfill-summary strong { display: block; font-size: 22px; color: #6d4632; }
+.memory-brain-backfill-summary span { color: #987260; font-size: 12px; }
+.memory-brain-backfill-grid { display: grid; gap: 12px; }
+.memory-brain-backfill-job { padding: 14px; border-radius: 18px; background: rgba(255, 255, 255, .76); border: 1px solid rgba(150, 105, 76, .14); }
+.memory-brain-backfill-job[data-status="running"] { border-color: rgba(116, 145, 87, .34); background: rgba(249, 255, 242, .86); }
+.memory-brain-backfill-job[data-status="paused"] { border-color: rgba(190, 147, 76, .35); background: rgba(255, 250, 236, .86); }
+.memory-brain-backfill-job[data-status="failed"] { border-color: rgba(180, 93, 76, .35); background: rgba(255, 244, 241, .86); }
+.memory-brain-backfill-job-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.memory-brain-backfill-job h3 { margin: 0; font-size: 15px; color: #5d3c2e; }
+.memory-brain-backfill-job-top span { flex: 0 0 auto; font-size: 12px; color: #966a52; background: rgba(250, 235, 220, .86); padding: 4px 8px; border-radius: 999px; }
+.memory-brain-backfill-job-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 8px; color: #8f6a56; font-size: 12px; }
+.memory-brain-backfill-job-meta strong, .memory-brain-backfill-job-meta em { font-style: normal; padding: 4px 8px; border-radius: 999px; background: rgba(250, 235, 220, .66); }
+.memory-brain-backfill-job p { margin: 0 0 6px; color: #7b5b4a; font-size: 13px; line-height: 1.55; }
+.memory-brain-backfill-job small { color: #a47d67; }
+.memory-brain-backfill-error { color: #a45143 !important; }
+@media (max-width: 720px) {
+  .memory-brain-backfill-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .memory-brain-backfill-job-top { flex-direction: column; }
+}

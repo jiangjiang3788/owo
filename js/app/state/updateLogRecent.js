@@ -1,15 +1,19 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
-    { version: "0.3.0", date: "2026-07-06", notes: [
-        "开启长期记忆脑 v0.3 主线：新增 memoryBrain 架构骨架、App 入口、docs/0.3 和旧记忆来源扫描。",
-        "新记忆脑默认影子模式，只读扫描旧聊天、回忆日记、记忆表格和向量记忆，不参与正式聊天注入。",
-        "明确替换路线：先时间线、事实、家族、graph、长期模型和注入影子对照稳定后，再让记忆脑成为唯一注入 owner。"
-    ] },
-    { version: "0.2.17", date: "2026-07-06", notes: [
-        "控制台改为真正的单宿主：数据管理只提供入口，悬浮球内查看唯一控制台。",
-        "主要操作补齐 recordOperation：切模型、GitHub 备份恢复、API 预设、存储分析、图片压缩等都会进控制台。",
-        "操作记录走 platform/observability/operationTraceService，敏感 token/key 会打码，详情继续按真实换行展示。"
-    ] },
+    { version: "0.4.1", date: "2026-07-07", notes: ["历史大整理切片层：基于 archiveSources 生成带 overlap 的 archiveChunks、archiveCursors 和 archiveChunkRuns，支持最近切片批次回滚；仍不跑 AI、不总结历史、不迁移旧记忆、不正式注入 prompt。"] },
+    { version: "0.4.0", date: "2026-07-07", notes: ["历史大整理入口：新增历史源扫描器，扫描全部单人/群聊的消息数量、时间范围、旧日记/表格/向量数量和预计切片数，写入 memoryBrain.archiveSources / archiveScanRuns / batches；不跑 AI、不总结、不迁移、不正式注入，为几万条历史回填做索引。"] },
+    { version: "0.3.10", date: "2026-07-07", notes: ["旧记忆 owner 守门：Memory Brain 在 v0.9 前继续只读/影子，正式 prompt 只使用当前选择的旧记忆 owner；档案/表格模式不再空内容回退到日记，日记/表格/向量自动整理三选一互斥，修复档案记忆下日记总结偶发污染输出格式的问题。"] },
+    { version: "0.3.9", date: "2026-07-07", notes: ["AI Pipeline 基础设施：新增 provider/model/task routing、response normalizer、message sanitizer 和 AI Response 批次控制台，为后续历史大整理准备统一 AI 入口。"] },
+    { version: "0.3.8", date: "2026-07-07", notes: ["记忆脑进入产品化收口层：新增记忆小屋 UI、今日浮现、切换前安全门、memoryBrain 导出包和 manifest-only 导出记录；继续影子模式，不接正式 prompt，不改旧记忆三件套。"] },
+    { version: "0.3.7", date: "2026-07-07", notes: ["记忆脑进入调度生命机制层：新增省钱/均衡/深度成本档、shadow scheduleQueue、schedulerRuns、浮现/衰减权重维护和批次回滚；继续影子模式，不接正式 prompt 注入，不改旧记忆三件套。"] },
+    { version: "0.3.6", date: "2026-07-07", notes: ["记忆脑进入注入预览层：基于 events / facts / families / edges / models 生成 shadow injection package，写入 memoryBrain.injectionPreviews / memoryBrain.batches；和旧 memoryJournals / vectorMemory / memoryTables 做只读对照；继续影子模式，不接正式 prompt 注入。"] },
+    { version: "0.3.5", date: "2026-07-07", notes: ["记忆脑进入长期模型层：基于 events / facts / families / edges 生成用户画像、AI 自我、世界观和项目脑，写入 memoryBrain.models / memoryBrain.batches；支持版本历史、单模型撤回、批次回滚和本地 fallback；继续影子模式，不接正式 prompt 注入。"] },
+    { version: "0.3.4", date: "2026-07-07", notes: ["记忆脑进入 Graph 关系层：facts / families 连接人物、主题、目的、情绪、项目和多个家族，写入 memoryBrain.edges / fact.edgeIds / family.edgeIds / memoryBrain.batches；支持轻量关系卡片和 graph 批次回滚；继续影子模式。"] },
+    { version: "0.3.3", date: "2026-07-07", notes: ["记忆脑进入记忆家族层：facts 通过 embedding/关键词相似度自动成团，写入 memoryBrain.families / fact.familyIds / memoryBrain.batches；支持 AI 命名、关键词 fallback、家族卡片和批次回滚；继续影子模式，不做 graph，不替换旧记忆系统，不接正式 prompt 注入。"] },
+    { version: "0.3.2", date: "2026-07-07", notes: ["记忆脑进入原子事实层：从事件时间线提取 fact candidates，写入 memoryBrain.facts / memoryBrain.batches，保留证据、置信度、来源范围和批次回滚；继续影子模式，不替换旧记忆系统，不接正式 prompt 注入，不写旧 memory_table / vector_memory / journal。"] },
+    { version: "0.3.1", date: "2026-07-06", notes: ["记忆脑进入事件时间线 MVP：手动整理最近聊天，写入 memoryBrain.events / memoryBrain.batches 影子批次；控制台记录输入、AI 输出、解析、应用和错误。"] },
+    { version: "0.3.0", date: "2026-07-06", notes: ["开启长期记忆脑 v0.3 主线：新增 memoryBrain 架构骨架、App 入口、docs/0.3 和旧来源扫描；默认影子模式，只读扫描旧记忆来源，不参与正式聊天注入；明确先时间线、事实、家族、graph、长期模型和注入影子对照稳定后再接管。"] },
+    { version: "0.2.17", date: "2026-07-06", notes: ["控制台改为真正的单宿主：数据管理只提供入口，悬浮球内查看唯一控制台；主要操作补齐 recordOperation，敏感 token/key 会打码，详情继续按真实换行展示。"] },
     { version: "0.2.16", date: "2026-07-06", notes: [
         "控制台同源双宿主：悬浮球里直接查看控制台，不再跳转到数据管理页。",
         "数据管理里的控制台去掉打开/收起二次按钮，直接复用同一个控制台 renderer。",

@@ -3,6 +3,28 @@
 let generatingChatId = null;
 const autoJournalRetryTimers = {};
 
+function getLegacyMemoryOwnerSemanticsForJournal() {
+    return window.OwoApp && window.OwoApp.core && window.OwoApp.core.memory && window.OwoApp.core.memory.legacyMemoryOwnerSemantics;
+}
+
+function isJournalMemoryOwnerActive(chat) {
+    const owner = getLegacyMemoryOwnerSemanticsForJournal();
+    return owner && typeof owner.isJournalOwner === 'function'
+        ? owner.isJournalOwner(chat)
+        : !chat || !chat.memoryMode || chat.memoryMode === 'journal';
+}
+
+function stopAutoJournalForInactiveOwner(chat) {
+    if (!chat || isJournalMemoryOwnerActive(chat)) return false;
+    const owner = getLegacyMemoryOwnerSemanticsForJournal();
+    if (owner && typeof owner.ensureRuntimeOwnerState === 'function') owner.ensureRuntimeOwnerState(chat);
+    else {
+        chat.autoJournalPending = false;
+        if (chat.autoJournalState === 'running' || chat.autoJournalState === 'queued') chat.autoJournalState = 'idle';
+    }
+    return true;
+}
+
 // @compat canonical: OwoApp.core.memory.journalSemantics
 const journalSemantics = window.OwoApp.core.memory.journalSemantics;
 // @compat canonical: OwoApp.features.journal.service
@@ -1348,6 +1370,10 @@ async function flushPendingAutoJournal(chatId) {
     if (!chat) return;
 
     ensureAutoJournalState(chat);
+    if (stopAutoJournalForInactiveOwner(chat)) {
+        refreshAutoJournalButton(chat, getAutoJournalChatType(chat));
+        return;
+    }
     if (!chat.autoJournalPending) {
         return;
     }
@@ -1368,6 +1394,11 @@ async function processAutoJournal(chat, options = {}) {
     if (!chat) return { status: 'noop', generatedCount: 0 };
 
     ensureAutoJournalState(chat);
+
+    if (stopAutoJournalForInactiveOwner(chat)) {
+        refreshAutoJournalButton(chat, options.chatType);
+        return { status: 'wrong-memory-owner', generatedCount: 0 };
+    }
 
     if (!options.force && !chat.autoJournalEnabled) {
         refreshAutoJournalButton(chat, options.chatType);
@@ -1472,6 +1503,12 @@ async function applyAutoJournalToggleDecision(chat, enabled, options = {}) {
     if (!chat) return { status: 'noop' };
 
     ensureAutoJournalState(chat);
+    if (enabled && stopAutoJournalForInactiveOwner(chat)) {
+        chat.autoJournalEnabled = false;
+        refreshAutoJournalButton(chat, options.chatType);
+        if (typeof showToast === 'function') showToast('当前不是日记记忆模式，自动日记总结已暂停');
+        return { status: 'wrong-memory-owner' };
+    }
     chat.autoJournalEnabled = enabled;
 
     if (!enabled) {
@@ -1538,6 +1575,11 @@ async function retryAutoJournalForChat(chat, options = {}) {
     if (!chat) return { status: 'noop' };
 
     ensureAutoJournalState(chat);
+    if (stopAutoJournalForInactiveOwner(chat)) {
+        refreshAutoJournalButton(chat, options.chatType || getAutoJournalChatType(chat));
+        if (typeof showToast === 'function') showToast('当前不是日记记忆模式，不能重试自动日记总结');
+        return { status: 'wrong-memory-owner', generatedCount: 0 };
+    }
     chat.autoJournalState = 'idle';
 
     return processAutoJournal(chat, {
@@ -1554,6 +1596,11 @@ async function summarizeUntilLatest(chat, options = {}) {
     if (!chat) return { status: 'noop', generatedCount: 0 };
 
     ensureAutoJournalState(chat);
+    if (stopAutoJournalForInactiveOwner(chat)) {
+        refreshAutoJournalButton(chat, options.chatType || getAutoJournalChatType(chat));
+        if (typeof showToast === 'function') showToast('当前不是日记记忆模式，不能按日记总结到最新');
+        return { status: 'wrong-memory-owner', generatedCount: 0 };
+    }
 
     if (chat.autoJournalState === 'running' || (typeof isGenerating !== 'undefined' && isGenerating)) {
         showToast('正在总结中，请稍候...');
@@ -1677,6 +1724,10 @@ async function summarizeUntilLatest(chat, options = {}) {
  */
 async function checkAndTriggerAutoJournal(chat) {
     if (!chat || !chat.autoJournalEnabled) return;
+    if (stopAutoJournalForInactiveOwner(chat)) {
+        refreshAutoJournalButton(chat, getAutoJournalChatType(chat));
+        return;
+    }
 
     ensureAutoJournalState(chat);
 
