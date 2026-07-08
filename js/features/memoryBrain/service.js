@@ -1,4 +1,4 @@
-// --- Memory Brain service owner (v0.4.7) ---
+// --- Memory Brain service owner (v0.6.4) ---
 // 编排记忆脑 App 的扫描、状态读取、事件/事实/家族入口和控制台记录；不直接渲染 DOM。
 (function registerMemoryBrainService(global) {
     const app = global.OwoApp;
@@ -28,7 +28,22 @@
         const factLifecycleCards = feature.factLifecycleService && feature.factLifecycleService.getFactLifecycleCards ? feature.factLifecycleService.getFactLifecycleCards(options) : null;
         const familyGraphRebuildCards = feature.familyGraphRebuildService && feature.familyGraphRebuildService.getFamilyGraphRebuildCards ? feature.familyGraphRebuildService.getFamilyGraphRebuildCards(options) : null;
         const historyModelRebuildCards = feature.historyModelRebuildService && feature.historyModelRebuildService.getHistoryModelRebuildCards ? feature.historyModelRebuildService.getHistoryModelRebuildCards(options) : null;
-        return model.buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards, eventBackfillCards, factBackfillCards, factLifecycleCards, familyGraphRebuildCards, historyModelRebuildCards);
+        const cutoverCards = feature.cutoverRehearsalService && feature.cutoverRehearsalService.getCutoverRehearsalCards ? feature.cutoverRehearsalService.getCutoverRehearsalCards(options) : null;
+        const ownerGateCards = feature.ownerGateService && feature.ownerGateService.getOwnerGateCards ? feature.ownerGateService.getOwnerGateCards(options) : null;
+        const reviewInboxCards = feature.reviewInboxService && feature.reviewInboxService.getReviewInboxCards ? feature.reviewInboxService.getReviewInboxCards(options) : null;
+        const factCorrectionCards = feature.factCorrectionService && feature.factCorrectionService.getFactCorrectionCards ? feature.factCorrectionService.getFactCorrectionCards(options) : null;
+        const factConflictCards = feature.factConflictService && feature.factConflictService.getFactConflictCards ? feature.factConflictService.getFactConflictCards(options) : null;
+        const familyAdjustmentCards = feature.familyAdjustmentService && feature.familyAdjustmentService.getFamilyAdjustmentCards ? feature.familyAdjustmentService.getFamilyAdjustmentCards(options) : null;
+        const modelCorrectionCards = feature.modelCorrectionService && feature.modelCorrectionService.getModelCorrectionCards ? feature.modelCorrectionService.getModelCorrectionCards(options) : null;
+        const propagationCards = feature.correctionPropagationService && feature.correctionPropagationService.getCorrectionPropagationCards ? feature.correctionPropagationService.getCorrectionPropagationCards(options) : null;
+        const trustScoreCards = feature.trustScoreService && feature.trustScoreService.getTrustScoreCards ? feature.trustScoreService.getTrustScoreCards(options) : null;
+        const trustedGateCards = feature.trustedGateService && feature.trustedGateService.getTrustedGateCards ? feature.trustedGateService.getTrustedGateCards(options) : null;
+        const formalAdapterCards = feature.formalInjectionAdapterService && feature.formalInjectionAdapterService.getFormalInjectionAdapterCards ? feature.formalInjectionAdapterService.getFormalInjectionAdapterCards(options) : null;
+        const realtimeTraceCards = feature.realtimeInjectionTraceService && feature.realtimeInjectionTraceService.getRealtimeInjectionTraceCards ? feature.realtimeInjectionTraceService.getRealtimeInjectionTraceCards(options) : null;
+        const legacyReadOnlyCards = feature.legacyReadOnlyService && feature.legacyReadOnlyService.getLegacyReadOnlyCards ? feature.legacyReadOnlyService.getLegacyReadOnlyCards(options) : null;
+        const ownerRecoveryCards = feature.ownerRecoveryService && feature.ownerRecoveryService.getOwnerRecoveryCards ? feature.ownerRecoveryService.getOwnerRecoveryCards(options) : null;
+        const uiGroupCards = platformApi.getUiGroupCards ? platformApi.getUiGroupCards(options) : [];
+        return model.buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards, eventBackfillCards, factBackfillCards, factLifecycleCards, familyGraphRebuildCards, historyModelRebuildCards, cutoverCards, ownerGateCards, formalAdapterCards, realtimeTraceCards, legacyReadOnlyCards, ownerRecoveryCards, reviewInboxCards, factCorrectionCards, factConflictCards, familyAdjustmentCards, modelCorrectionCards, propagationCards, trustScoreCards, trustedGateCards, uiGroupCards);
     }
 
     function scanHistoryArchive(options = {}) {
@@ -50,6 +65,36 @@
     function rollbackLatestFamilyGraphRebuildBatch(options = {}) { return feature.familyGraphRebuildService.rollbackLatestFamilyGraphRebuildBatch(options); }
     function rebuildFullHistoryModels(options = {}) { return feature.historyModelRebuildService.rebuildFullHistoryModels(options); }
     function rollbackLatestHistoryModelBatch(options = {}) { return feature.historyModelRebuildService.rollbackLatestHistoryModelBatch(options); }
+    function runCutoverRehearsal(options = {}) { return feature.cutoverRehearsalService.runCutoverRehearsal(options); }
+    function rollbackLatestCutoverRehearsalBatch(options = {}) { return feature.cutoverRehearsalService.rollbackLatestCutoverRehearsalBatch(options); }
+    function requestOwnerSwitch(requestedOwner, options = {}) { return feature.ownerGateService.requestOwnerSwitch(requestedOwner, options); }
+    function rollbackLatestOwnerSwitchBatch(options = {}) { return feature.ownerGateService.rollbackLatestOwnerSwitchBatch(options); }
+    function updateUiGroupOpen(groupId, open, options = {}) { return feature.ownerGateService.updateUiGroupOpen(groupId, open, options); }
+    function buildReviewInbox(options = {}) { return feature.reviewInboxService.buildReviewInbox(options); }
+    function rollbackLatestReviewInboxBatch(options = {}) { return feature.reviewInboxService.rollbackLatestReviewInboxBatch(options); }
+    function updateReviewItemStatus(itemId, status, options = {}) { return feature.reviewInboxService.updateReviewItemStatus(itemId, status, options); }
+    function correctFact(options = {}) { return feature.factCorrectionService.correctFact(options); }
+    function rollbackLatestFactCorrectionBatch(options = {}) { return feature.factCorrectionService.rollbackLatestFactCorrectionBatch(options); }
+    function resolveFactConflict(options = {}) { return feature.factConflictService.resolveFactConflict(options); }
+    function rollbackLatestConflictResolutionBatch(options = {}) { return feature.factConflictService.rollbackLatestConflictResolutionBatch(options); }
+    function adjustFamily(options = {}) { return feature.familyAdjustmentService.adjustFamily(options); }
+    function rollbackLatestFamilyAdjustmentBatch(options = {}) { return feature.familyAdjustmentService.rollbackLatestFamilyAdjustmentBatch(options); }
+    function correctModel(options = {}) { return feature.modelCorrectionService.correctModel(options); }
+    function rollbackLatestModelCorrectionBatch(options = {}) { return feature.modelCorrectionService.rollbackLatestModelCorrectionBatch(options); }
+    function applyCorrectionPropagation(options = {}) { return feature.correctionPropagationService.applyCorrectionPropagation(options); }
+    function rollbackLatestCorrectionPropagationBatch(options = {}) { return feature.correctionPropagationService.rollbackLatestCorrectionPropagationBatch(options); }
+    function runMemoryTrustScore(options = {}) { return feature.trustScoreService.runMemoryTrustScore(options); }
+    function rollbackLatestTrustScoreBatch(options = {}) { return feature.trustScoreService.rollbackLatestTrustScoreBatch(options); }
+    function runTrustedMemoryGate(options = {}) { return feature.trustedGateService.runTrustedMemoryGate(options); }
+    function runFormalInjectionAdapter(options = {}) { return feature.formalInjectionAdapterService.runFormalInjectionAdapter(options); }
+    function runRealtimeInjectionTrace(options = {}) { return feature.realtimeInjectionTraceService.runRealtimeInjectionTrace(options); }
+    function rollbackLatestRealtimeInjectionTraceBatch(options = {}) { return feature.realtimeInjectionTraceService.rollbackLatestRealtimeInjectionTraceBatch(options); }
+    function runLegacyReadOnlyDowngrade(options = {}) { return feature.legacyReadOnlyService.runLegacyReadOnlyDowngrade(options); }
+    function rollbackLatestLegacyReadOnlyBatch(options = {}) { return feature.legacyReadOnlyService.rollbackLatestLegacyReadOnlyBatch(options); }
+    function runOwnerRecoveryAction(action, options = {}) { return feature.ownerRecoveryService.runOwnerRecoveryAction(action, options); }
+    function rollbackLatestOwnerRecoveryBatch(options = {}) { return feature.ownerRecoveryService.rollbackLatestOwnerRecoveryBatch(options); }
+    function rollbackLatestTrustedMemoryGateBatch(options = {}) { return feature.trustedGateService.rollbackLatestTrustedMemoryGateBatch(options); }
+    function rollbackLatestFormalInjectionAdapterBatch(options = {}) { return feature.formalInjectionAdapterService.rollbackLatestFormalInjectionAdapterBatch(options); }
 
     function scanLegacySources(options = {}) {
         const report = getPlatformApi().rememberLegacyScan(options);
@@ -95,7 +140,11 @@
             'v0.4.3：历史事件回填。对 running 的 event-backfill 任务调用 memory-event 模型，生成 0～多条历史事件并推进断点状态。',
             'v0.4.4：历史事实回填。对历史事件建立 fact-backfill 任务，调用 memory-fact 模型拆出原子事实。',
             'v0.4.5：事实生命周期。标记重复、冲突、过时事实，所有变更 batch 化可回滚。',
-            'v0.4.6：全量家族 / graph 重建。基于清理后的 active facts 重建 family 与 graph，批次可回滚。'
+            'v0.4.6：全量家族 / graph 重建。基于清理后的 active facts 重建 family 与 graph，批次可回滚。',
+            'v0.4.7：全历史长期模型重建。基于 active facts、families、graph 重建 6 类长期模型。',
+            'v0.4.8：新旧注入对照 / 接管演练。比较旧正式 owner 与 Memory Brain shadow 注入，生成 cutover report。',
+            'v0.4.9：单一 owner 切换门。建立 legacy / memoryBrain / off 三态安全门和 UI 分组折叠设置，但不接正式 prompt。',
+            'v0.5.0：可信记忆审查收件箱。汇总低置信、重复、冲突、过时事实和待确认长期模型。'
         ].join('\n');
     }
 
@@ -147,6 +196,8 @@
     function getFactLifecycleCards(options = {}) { return feature.factLifecycleService.getFactLifecycleCards(options); }
     function getFamilyGraphRebuildCards(options = {}) { return feature.familyGraphRebuildService.getFamilyGraphRebuildCards(options); }
     function getHistoryModelRebuildCards(options = {}) { return feature.historyModelRebuildService.getHistoryModelRebuildCards(options); }
+    function getCutoverRehearsalCards(options = {}) { return feature.cutoverRehearsalService.getCutoverRehearsalCards(options); }
+    function getOwnerGateCards(options = {}) { return feature.ownerGateService.getOwnerGateCards(options); }
     function retireFact(factId, options = {}) { return feature.factExtractionService.retireFact(factId, options); }
     function retireFamily(familyId, options = {}) { return feature.familyService.retireFamily(familyId, options); }
     function retireEdge(edgeId, options = {}) { return feature.graphService.retireEdge(edgeId, options); }
@@ -172,7 +223,7 @@
     function getRoutingReport() {
         return {
             owner: 'features/memoryBrain/service',
-            release: 'v0.4.7',
+            release: 'v0.6.4',
             platformOwner: 'platform/memoryBrain.publicApi',
             consoleOwner: 'platform/observability.operationTraceService',
             legacyMode: 'read-only-source',
@@ -193,14 +244,28 @@
             factLifecycleOwner: 'features/memoryBrain/factLifecycleService',
             familyGraphRebuildOwner: 'features/memoryBrain/familyGraphRebuildService',
             historyModelRebuildOwner: 'features/memoryBrain/historyModelRebuildService',
+            cutoverRehearsalOwner: 'features/memoryBrain/cutoverRehearsalService',
+            ownerGateOwner: 'features/memoryBrain/ownerGateService',
+            reviewInboxOwner: 'features/memoryBrain/reviewInboxService',
+            factCorrectionOwner: 'features/memoryBrain/factCorrectionService',
+            factConflictOwner: 'features/memoryBrain/factConflictService',
+            familyAdjustmentOwner: 'features/memoryBrain/familyAdjustmentService',
+            modelCorrectionOwner: 'features/memoryBrain/modelCorrectionService',
+            correctionPropagationOwner: 'features/memoryBrain/correctionPropagationService',
+            trustScoreOwner: 'features/memoryBrain/trustScoreService',
+            trustedGateOwner: 'features/memoryBrain/trustedGateService',
+            formalInjectionAdapterOwner: 'features/memoryBrain/formalInjectionAdapterService',
+            realtimeInjectionTraceOwner: 'features/memoryBrain/realtimeInjectionTraceService',
+            legacyReadOnlyOwner: 'features/memoryBrain/legacyReadOnlyService',
+            ownerRecoveryOwner: 'features/memoryBrain/ownerRecoveryService',
             shadowMode: true,
-            activeWrites: ['memoryBrain.events', 'memoryBrain.facts', 'memoryBrain.families', 'memoryBrain.edges', 'memoryBrain.models', 'memoryBrain.injectionPreviews', 'memoryBrain.scheduleQueue', 'memoryBrain.schedulerRuns', 'memoryBrain.exports', 'memoryBrain.archiveSources', 'memoryBrain.archiveScanRuns', 'memoryBrain.archiveChunks', 'memoryBrain.archiveCursors', 'memoryBrain.archiveChunkRuns', 'memoryBrain.backfillJobs', 'memoryBrain.backfillRuns', 'memoryBrain.historyEventBackfillRuns', 'memoryBrain.historyFactBackfillRuns', 'memoryBrain.factLifecycleRuns', 'memoryBrain.factMerges', 'memoryBrain.conflicts', 'memoryBrain.obsoleteFacts', 'memoryBrain.familyGraphRebuildRuns', 'memoryBrain.historyModelRebuildRuns', 'memoryBrain.batches']
+            activeWrites: ['memoryBrain.events', 'memoryBrain.facts', 'memoryBrain.families', 'memoryBrain.edges', 'memoryBrain.models', 'memoryBrain.injectionPreviews', 'memoryBrain.scheduleQueue', 'memoryBrain.schedulerRuns', 'memoryBrain.exports', 'memoryBrain.archiveSources', 'memoryBrain.archiveScanRuns', 'memoryBrain.archiveChunks', 'memoryBrain.archiveCursors', 'memoryBrain.archiveChunkRuns', 'memoryBrain.backfillJobs', 'memoryBrain.backfillRuns', 'memoryBrain.historyEventBackfillRuns', 'memoryBrain.historyFactBackfillRuns', 'memoryBrain.factLifecycleRuns', 'memoryBrain.factMerges', 'memoryBrain.conflicts', 'memoryBrain.obsoleteFacts', 'memoryBrain.familyGraphRebuildRuns', 'memoryBrain.historyModelRebuildRuns', 'memoryBrain.cutoverReports', 'memoryBrain.cutoverRehearsalRuns', 'memoryBrain.ownerState', 'memoryBrain.ownerSwitchRuns', 'memoryBrain.settings.uiGroupsOpen', 'memoryBrain.reviewInboxItems', 'memoryBrain.reviewInboxRuns', 'memoryBrain.factCorrections', 'memoryBrain.factCorrectionRuns', 'memoryBrain.factConflictResolutions', 'memoryBrain.factConflictRuns', 'memoryBrain.familyAdjustments', 'memoryBrain.familyAdjustmentRuns', 'memoryBrain.modelCorrections', 'memoryBrain.modelCorrectionRuns', 'memoryBrain.correctionPropagations', 'memoryBrain.correctionPropagationRuns', 'memoryBrain.trustScoreRecords', 'memoryBrain.trustScoreRuns', 'memoryBrain.trustedMemoryGateReports', 'memoryBrain.trustedMemoryGateRuns', 'memoryBrain.formalInjectionAdapterReports', 'memoryBrain.formalInjectionAdapterRuns', 'memoryBrain.realtimeInjectionTraceReports', 'memoryBrain.realtimeInjectionTraceRuns', 'memoryBrain.legacyReadOnlyReports', 'memoryBrain.legacyReadOnlyRuns', 'memoryBrain.ownerRecoveryReports', 'memoryBrain.ownerRecoveryRuns', 'memoryBrain.settings.shadowInjectionEnabled', 'memoryBrain.batches']
         };
     }
 
     feature.service = {
-        getDashboard, scanHistoryArchive, prepareArchiveChunks, prepareBackfillQueue, startBackfillQueue, pauseBackfillQueue, resumeBackfillQueue, retryFailedBackfillJobs, runHistoryEventBackfill, runHistoryFactBackfill, runFactLifecycleReview, rebuildFamilyGraph, rebuildFullHistoryModels, scanLegacySources, getReplacementAnswer, getHistorySortingAnswer, getFullPlanText, copyPlanningText,
-        summarizeRecentChat, extractFactsFromLatestEvent, organizeFamilies, buildGraph, buildLongTermModels, buildShadowInjectionPreview, updateCostProfile, buildMaintenancePlan, runMaintenanceCycle, getMemoryPalace, copyExportBundle, getTimelineEvents, getEventById, getFactCards, getFamilyCards, getGraphCards, getModelCards, getInjectionPreviewCards, getSchedulerCards, getArchiveCards, getArchiveChunkCards, getBackfillCards, getHistoryEventBackfillCards, getHistoryFactBackfillCards, getFactLifecycleCards, getFamilyGraphRebuildCards, getHistoryModelRebuildCards, getExportCards,
-        retireFact, retireFamily, retireEdge, retireModel, retireInjectionPreview, rollbackLatestFactBatch, rollbackLatestFamilyBatch, rollbackLatestGraphBatch, rollbackLatestModelBatch, rollbackLatestInjectionPreviewBatch, rollbackLatestMaintenanceBatch, rollbackLatestExportBatch, rollbackLatestArchiveChunkBatch, rollbackLatestBackfillBatch, rollbackLatestHistoryEventBatch, rollbackLatestHistoryFactBatch, rollbackLatestFactLifecycleBatch, rollbackLatestFamilyGraphRebuildBatch, rollbackLatestHistoryModelBatch, openConsole, recordOperation, getRoutingReport
+        getDashboard, scanHistoryArchive, prepareArchiveChunks, prepareBackfillQueue, startBackfillQueue, pauseBackfillQueue, resumeBackfillQueue, retryFailedBackfillJobs, runHistoryEventBackfill, runHistoryFactBackfill, runFactLifecycleReview, rebuildFamilyGraph, rebuildFullHistoryModels, runCutoverRehearsal, requestOwnerSwitch, buildReviewInbox, updateReviewItemStatus, correctFact, rollbackLatestFactCorrectionBatch, resolveFactConflict, rollbackLatestConflictResolutionBatch, adjustFamily, rollbackLatestFamilyAdjustmentBatch, correctModel, rollbackLatestModelCorrectionBatch, applyCorrectionPropagation, rollbackLatestCorrectionPropagationBatch, runMemoryTrustScore, rollbackLatestTrustScoreBatch, runTrustedMemoryGate, runFormalInjectionAdapter, runRealtimeInjectionTrace, runLegacyReadOnlyDowngrade, runOwnerRecoveryAction, rollbackLatestOwnerRecoveryBatch, rollbackLatestLegacyReadOnlyBatch, rollbackLatestRealtimeInjectionTraceBatch, rollbackLatestTrustedMemoryGateBatch, rollbackLatestFormalInjectionAdapterBatch, scanLegacySources, getReplacementAnswer, getHistorySortingAnswer, getFullPlanText, copyPlanningText,
+        summarizeRecentChat, extractFactsFromLatestEvent, organizeFamilies, buildGraph, buildLongTermModels, buildShadowInjectionPreview, updateCostProfile, buildMaintenancePlan, runMaintenanceCycle, getMemoryPalace, copyExportBundle, getTimelineEvents, getEventById, getFactCards, getFamilyCards, getGraphCards, getModelCards, getInjectionPreviewCards, getSchedulerCards, getArchiveCards, getArchiveChunkCards, getBackfillCards, getHistoryEventBackfillCards, getHistoryFactBackfillCards, getFactLifecycleCards, getFamilyGraphRebuildCards, getHistoryModelRebuildCards, getCutoverRehearsalCards, getOwnerGateCards, getReviewInboxCards: function getReviewInboxCards(options) { return feature.reviewInboxService.getReviewInboxCards(options || {}); }, getFactCorrectionCards: function getFactCorrectionCards(options) { return feature.factCorrectionService.getFactCorrectionCards(options || {}); }, getFactConflictCards: function getFactConflictCards(options) { return feature.factConflictService.getFactConflictCards(options || {}); }, getFamilyAdjustmentCards: function getFamilyAdjustmentCards(options) { return feature.familyAdjustmentService.getFamilyAdjustmentCards(options || {}); }, getModelCorrectionCards: function getModelCorrectionCards(options) { return feature.modelCorrectionService.getModelCorrectionCards(options || {}); }, getCorrectionPropagationCards: function getCorrectionPropagationCards(options) { return feature.correctionPropagationService.getCorrectionPropagationCards(options || {}); }, getTrustScoreCards: function getTrustScoreCards(options) { return feature.trustScoreService.getTrustScoreCards(options || {}); }, getTrustedGateCards: function getTrustedGateCards(options) { return feature.trustedGateService.getTrustedGateCards(options || {}); }, getFormalInjectionAdapterCards: function getFormalInjectionAdapterCards(options) { return feature.formalInjectionAdapterService.getFormalInjectionAdapterCards(options || {}); }, getRealtimeInjectionTraceCards: function getRealtimeInjectionTraceCards(options) { return feature.realtimeInjectionTraceService.getRealtimeInjectionTraceCards(options || {}); }, getLegacyReadOnlyCards: function getLegacyReadOnlyCards(options) { return feature.legacyReadOnlyService.getLegacyReadOnlyCards(options || {}); }, getOwnerRecoveryCards: function getOwnerRecoveryCards(options) { return feature.ownerRecoveryService.getOwnerRecoveryCards(options || {}); }, getExportCards,
+        retireFact, retireFamily, retireEdge, retireModel, retireInjectionPreview, rollbackLatestFactBatch, rollbackLatestFamilyBatch, rollbackLatestGraphBatch, rollbackLatestModelBatch, rollbackLatestInjectionPreviewBatch, rollbackLatestMaintenanceBatch, rollbackLatestExportBatch, rollbackLatestArchiveChunkBatch, rollbackLatestBackfillBatch, rollbackLatestHistoryEventBatch, rollbackLatestHistoryFactBatch, rollbackLatestFactLifecycleBatch, rollbackLatestFamilyGraphRebuildBatch, rollbackLatestHistoryModelBatch, rollbackLatestCutoverRehearsalBatch, rollbackLatestOwnerSwitchBatch, rollbackLatestReviewInboxBatch, rollbackLatestFactCorrectionBatch, rollbackLatestConflictResolutionBatch, rollbackLatestFamilyAdjustmentBatch, rollbackLatestModelCorrectionBatch, rollbackLatestCorrectionPropagationBatch, rollbackLatestTrustScoreBatch, rollbackLatestTrustedMemoryGateBatch, rollbackLatestFormalInjectionAdapterBatch, rollbackLatestRealtimeInjectionTraceBatch, rollbackLatestLegacyReadOnlyBatch, updateUiGroupOpen, openConsole, recordOperation, getRoutingReport
     };
 })(window);

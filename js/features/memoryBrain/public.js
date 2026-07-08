@@ -1,4 +1,4 @@
-// --- Memory Brain public facade (v0.4.7) ---
+// --- Memory Brain public facade (v0.6.4) ---
 // public facade 只导出稳定 API，不写业务逻辑。
 (function registerMemoryBrainPublic(global) {
     const app = global.OwoApp;
@@ -19,6 +19,17 @@
         runFactLifecycleReview: function runFactLifecycleReview(options) { return feature.service.runFactLifecycleReview(options || {}); },
         rebuildFamilyGraph: function rebuildFamilyGraph(options) { return feature.service.rebuildFamilyGraph(options || {}); },
         rebuildFullHistoryModels: function rebuildFullHistoryModels(options) { return feature.service.rebuildFullHistoryModels(options || {}); },
+        runCutoverRehearsal: function runCutoverRehearsal(options) { return feature.service.runCutoverRehearsal(options || {}); },
+        requestOwnerSwitch: function requestOwnerSwitch(owner, options) { return feature.service.requestOwnerSwitch(owner || 'legacy', options || {}); },
+        buildReviewInbox: function buildReviewInbox(options) { return feature.service.buildReviewInbox(options || {}); },
+        updateReviewItemStatus: function updateReviewItemStatus(itemId, status, options) { return feature.service.updateReviewItemStatus(itemId, status || 'open', options || {}); },
+        correctFact: function correctFact(options) { return feature.service.correctFact(options || {}); },
+        resolveFactConflict: function resolveFactConflict(options) { return feature.service.resolveFactConflict(options || {}); },
+        adjustFamily: function adjustFamily(options) { return feature.service.adjustFamily(options || {}); },
+        correctModel: function correctModel(options) { return feature.service.correctModel(options || {}); },
+        applyCorrectionPropagation: function applyCorrectionPropagation(options) { return feature.service.applyCorrectionPropagation(options || {}); },
+        runMemoryTrustScore: function runMemoryTrustScore(options) { return feature.service.runMemoryTrustScore(options || {}); },
+        runTrustedMemoryGate: function runTrustedMemoryGate(options) { return feature.service.runTrustedMemoryGate(options || {}); },
         summarizeRecentChat: function summarizeRecentChat(options) { return feature.service.summarizeRecentChat(options || {}); },
         extractFactsFromLatestEvent: function extractFactsFromLatestEvent(options) { return feature.service.extractFactsFromLatestEvent(options || {}); },
         organizeFamilies: function organizeFamilies(options) { return feature.service.organizeFamilies(options || {}); },
@@ -40,6 +51,25 @@
         rollbackLatestFactLifecycleBatch: function rollbackLatestFactLifecycleBatch(options) { return feature.service.rollbackLatestFactLifecycleBatch(options || {}); },
         rollbackLatestFamilyGraphRebuildBatch: function rollbackLatestFamilyGraphRebuildBatch(options) { return feature.service.rollbackLatestFamilyGraphRebuildBatch(options || {}); },
         rollbackLatestHistoryModelBatch: function rollbackLatestHistoryModelBatch(options) { return feature.service.rollbackLatestHistoryModelBatch(options || {}); },
+        rollbackLatestCutoverRehearsalBatch: function rollbackLatestCutoverRehearsalBatch(options) { return feature.service.rollbackLatestCutoverRehearsalBatch(options || {}); },
+        rollbackLatestOwnerSwitchBatch: function rollbackLatestOwnerSwitchBatch(options) { return feature.service.rollbackLatestOwnerSwitchBatch(options || {}); },
+        rollbackLatestReviewInboxBatch: function rollbackLatestReviewInboxBatch(options) { return feature.service.rollbackLatestReviewInboxBatch(options || {}); },
+        rollbackLatestFactCorrectionBatch: function rollbackLatestFactCorrectionBatch(options) { return feature.service.rollbackLatestFactCorrectionBatch(options || {}); },
+        rollbackLatestConflictResolutionBatch: function rollbackLatestConflictResolutionBatch(options) { return feature.service.rollbackLatestConflictResolutionBatch(options || {}); },
+        rollbackLatestFamilyAdjustmentBatch: function rollbackLatestFamilyAdjustmentBatch(options) { return feature.service.rollbackLatestFamilyAdjustmentBatch(options || {}); },
+        rollbackLatestModelCorrectionBatch: function rollbackLatestModelCorrectionBatch(options) { return feature.service.rollbackLatestModelCorrectionBatch(options || {}); },
+        rollbackLatestCorrectionPropagationBatch: function rollbackLatestCorrectionPropagationBatch(options) { return feature.service.rollbackLatestCorrectionPropagationBatch(options || {}); },
+        rollbackLatestTrustScoreBatch: function rollbackLatestTrustScoreBatch(options) { return feature.service.rollbackLatestTrustScoreBatch(options || {}); },
+        rollbackLatestTrustedMemoryGateBatch: function rollbackLatestTrustedMemoryGateBatch(options) { return feature.service.rollbackLatestTrustedMemoryGateBatch(options || {}); },
+        runFormalInjectionAdapter: function runFormalInjectionAdapter(options) { return feature.service.runFormalInjectionAdapter(options || {}); },
+        runRealtimeInjectionTrace: function runRealtimeInjectionTrace(options) { return feature.service.runRealtimeInjectionTrace(options || {}); },
+        runLegacyReadOnlyDowngrade: function runLegacyReadOnlyDowngrade(options) { return feature.service.runLegacyReadOnlyDowngrade(options || {}); },
+        runOwnerRecoveryAction: function runOwnerRecoveryAction(action, options) { return feature.service.runOwnerRecoveryAction(action || 'disable-shadow', options || {}); },
+        rollbackLatestRealtimeInjectionTraceBatch: function rollbackLatestRealtimeInjectionTraceBatch(options) { return feature.service.rollbackLatestRealtimeInjectionTraceBatch(options || {}); },
+        rollbackLatestLegacyReadOnlyBatch: function rollbackLatestLegacyReadOnlyBatch(options) { return feature.service.rollbackLatestLegacyReadOnlyBatch(options || {}); },
+        rollbackLatestOwnerRecoveryBatch: function rollbackLatestOwnerRecoveryBatch(options) { return feature.service.rollbackLatestOwnerRecoveryBatch(options || {}); },
+        rollbackLatestFormalInjectionAdapterBatch: function rollbackLatestFormalInjectionAdapterBatch(options) { return feature.service.rollbackLatestFormalInjectionAdapterBatch(options || {}); },
+        updateUiGroupOpen: function updateUiGroupOpen(groupId, open, options) { return feature.service.updateUiGroupOpen(groupId, !!open, options || {}); },
         getTimelineEvents: function getTimelineEvents(options) { return feature.service.getTimelineEvents(options || {}); },
         getFactCards: function getFactCards(options) { return feature.service.getFactCards(options || {}); },
         getFamilyCards: function getFamilyCards(options) { return feature.service.getFamilyCards(options || {}); },
@@ -55,6 +85,20 @@
         getFactLifecycleCards: function getFactLifecycleCards(options) { return feature.service.getFactLifecycleCards(options || {}); },
         getFamilyGraphRebuildCards: function getFamilyGraphRebuildCards(options) { return feature.service.getFamilyGraphRebuildCards(options || {}); },
         getHistoryModelRebuildCards: function getHistoryModelRebuildCards(options) { return feature.service.getHistoryModelRebuildCards(options || {}); },
+        getCutoverRehearsalCards: function getCutoverRehearsalCards(options) { return feature.service.getCutoverRehearsalCards(options || {}); },
+        getOwnerGateCards: function getOwnerGateCards(options) { return feature.service.getOwnerGateCards(options || {}); },
+        getReviewInboxCards: function getReviewInboxCards(options) { return feature.service.getReviewInboxCards(options || {}); },
+        getFactCorrectionCards: function getFactCorrectionCards(options) { return feature.service.getFactCorrectionCards(options || {}); },
+        getFactConflictCards: function getFactConflictCards(options) { return feature.service.getFactConflictCards(options || {}); },
+        getFamilyAdjustmentCards: function getFamilyAdjustmentCards(options) { return feature.service.getFamilyAdjustmentCards(options || {}); },
+        getModelCorrectionCards: function getModelCorrectionCards(options) { return feature.service.getModelCorrectionCards(options || {}); },
+        getCorrectionPropagationCards: function getCorrectionPropagationCards(options) { return feature.service.getCorrectionPropagationCards(options || {}); },
+        getTrustScoreCards: function getTrustScoreCards(options) { return feature.service.getTrustScoreCards(options || {}); },
+        getTrustedGateCards: function getTrustedGateCards(options) { return feature.service.getTrustedGateCards(options || {}); },
+        getFormalInjectionAdapterCards: function getFormalInjectionAdapterCards(options) { return feature.service.getFormalInjectionAdapterCards(options || {}); },
+        getRealtimeInjectionTraceCards: function getRealtimeInjectionTraceCards(options) { return feature.service.getRealtimeInjectionTraceCards(options || {}); },
+        getLegacyReadOnlyCards: function getLegacyReadOnlyCards(options) { return feature.service.getLegacyReadOnlyCards(options || {}); },
+        getOwnerRecoveryCards: function getOwnerRecoveryCards(options) { return feature.service.getOwnerRecoveryCards(options || {}); },
         getDashboard: function getDashboard(options) { return feature.service.getDashboard(options || {}); },
         copyPlanningText: function copyPlanningText() { return feature.service.copyPlanningText(); },
         openConsole: function openConsole() { return feature.service.openConsole(); },
@@ -63,9 +107,9 @@
             return {
                 feature: 'memoryBrain',
                 ready: true,
-                release: 'v0.4.7',
-                stableApis: ['render', 'scanLegacySources', 'scanHistoryArchive', 'prepareArchiveChunks', 'prepareBackfillQueue', 'startBackfillQueue', 'pauseBackfillQueue', 'resumeBackfillQueue', 'retryFailedBackfillJobs', 'runHistoryEventBackfill', 'runHistoryFactBackfill', 'runFactLifecycleReview', 'rebuildFamilyGraph', 'rebuildFullHistoryModels', 'summarizeRecentChat', 'extractFactsFromLatestEvent', 'organizeFamilies', 'buildGraph', 'buildLongTermModels', 'buildShadowInjectionPreview', 'updateCostProfile', 'buildMaintenancePlan', 'runMaintenanceCycle', 'rollbackLatestMaintenanceBatch', 'getMemoryPalace', 'copyExportBundle', 'getExportCards', 'rollbackLatestExportBatch', 'rollbackLatestArchiveChunkBatch', 'rollbackLatestBackfillBatch', 'rollbackLatestHistoryEventBatch', 'rollbackLatestHistoryFactBatch', 'rollbackLatestFactLifecycleBatch', 'rollbackLatestFamilyGraphRebuildBatch', 'rollbackLatestHistoryModelBatch', 'getTimelineEvents', 'getFactCards', 'getFamilyCards', 'getGraphCards', 'getModelCards', 'getInjectionPreviewCards', 'getSchedulerCards', 'getArchiveCards', 'getArchiveChunkCards', 'getBackfillCards', 'getHistoryEventBackfillCards', 'getHistoryFactBackfillCards', 'getFactLifecycleCards', 'getFamilyGraphRebuildCards', 'getHistoryModelRebuildCards', 'getDashboard', 'copyPlanningText', 'openConsole'],
-                note: 'v0.4.7 增加全历史长期模型重建；继续影子模式，不改旧记忆、不正式注入。'
+                release: 'v0.6.4',
+                stableApis: ['render', 'scanLegacySources', 'scanHistoryArchive', 'prepareArchiveChunks', 'prepareBackfillQueue', 'startBackfillQueue', 'pauseBackfillQueue', 'resumeBackfillQueue', 'retryFailedBackfillJobs', 'runHistoryEventBackfill', 'runHistoryFactBackfill', 'runFactLifecycleReview', 'rebuildFamilyGraph', 'rebuildFullHistoryModels', 'runCutoverRehearsal', 'requestOwnerSwitch', 'buildReviewInbox', 'updateReviewItemStatus', 'correctFact', 'resolveFactConflict', 'adjustFamily', 'correctModel', 'applyCorrectionPropagation', 'runMemoryTrustScore', 'runTrustedMemoryGate', 'runFormalInjectionAdapter', 'runRealtimeInjectionTrace', 'runLegacyReadOnlyDowngrade', 'runOwnerRecoveryAction', 'summarizeRecentChat', 'extractFactsFromLatestEvent', 'organizeFamilies', 'buildGraph', 'buildLongTermModels', 'buildShadowInjectionPreview', 'updateCostProfile', 'buildMaintenancePlan', 'runMaintenanceCycle', 'rollbackLatestMaintenanceBatch', 'getMemoryPalace', 'copyExportBundle', 'getExportCards', 'rollbackLatestExportBatch', 'rollbackLatestArchiveChunkBatch', 'rollbackLatestBackfillBatch', 'rollbackLatestHistoryEventBatch', 'rollbackLatestHistoryFactBatch', 'rollbackLatestFactLifecycleBatch', 'rollbackLatestFamilyGraphRebuildBatch', 'rollbackLatestHistoryModelBatch', 'rollbackLatestCutoverRehearsalBatch', 'rollbackLatestOwnerSwitchBatch', 'rollbackLatestReviewInboxBatch', 'rollbackLatestFactCorrectionBatch', 'rollbackLatestConflictResolutionBatch', 'rollbackLatestFamilyAdjustmentBatch', 'rollbackLatestModelCorrectionBatch', 'rollbackLatestCorrectionPropagationBatch', 'rollbackLatestTrustScoreBatch', 'rollbackLatestTrustedMemoryGateBatch', 'rollbackLatestFormalInjectionAdapterBatch', 'rollbackLatestRealtimeInjectionTraceBatch', 'rollbackLatestLegacyReadOnlyBatch', 'rollbackLatestOwnerRecoveryBatch', 'updateUiGroupOpen', 'getTimelineEvents', 'getFactCards', 'getFamilyCards', 'getGraphCards', 'getModelCards', 'getInjectionPreviewCards', 'getSchedulerCards', 'getArchiveCards', 'getArchiveChunkCards', 'getBackfillCards', 'getHistoryEventBackfillCards', 'getHistoryFactBackfillCards', 'getFactLifecycleCards', 'getFamilyGraphRebuildCards', 'getHistoryModelRebuildCards', 'getCutoverRehearsalCards', 'getOwnerGateCards', 'getReviewInboxCards', 'getFactCorrectionCards', 'getFactConflictCards', 'getFamilyAdjustmentCards', 'getModelCorrectionCards', 'getCorrectionPropagationCards', 'getTrustScoreCards', 'getTrustedGateCards', 'getFormalInjectionAdapterCards', 'getRealtimeInjectionTraceCards', 'getLegacyReadOnlyCards', 'getOwnerRecoveryCards', 'getDashboard', 'copyPlanningText', 'openConsole'],
+                note: 'v0.6.4 增加一键关闭 / 回退演练；继续 blocked-until-v0.9，不改旧记忆、不正式注入。'
             };
         }
     };

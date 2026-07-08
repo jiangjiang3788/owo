@@ -1151,6 +1151,14 @@
         }).join('\n');
     }
 
+    function isMemoryTableXmlDiagnosticError(error) {
+        return !!(error && error.memoryTableDiagnostic);
+    }
+
+    function showMemoryTableXmlDiagnosticToast(prefix) {
+        showToast(`${prefix || '表格记忆'}返回的 XML 格式不完整，已跳过本次自动更新。可在请求控制台查看“表格记忆 XML 诊断”。`);
+    }
+
     function recordMemoryTableOperation(label, status, data, error) {
         try {
             const ops = window.OwoApp && window.OwoApp.platform && window.OwoApp.platform.observability
@@ -1171,6 +1179,24 @@
         } catch (traceError) {
             console.warn('[MemoryTable] operation trace failed:', traceError);
         }
+    }
+
+    async function repairMemoryTableXmlWithModel(rawContent, diagnostic) {
+        const repairPrompt = `你需要修复一段用于“结构化记忆表”的 XML。
+
+要求：
+1. 只输出完整 XML，不要解释。
+2. 根节点必须是 <memory_updates>...</memory_updates>。
+3. 必须闭合所有 <memory_update>、<field>、<row> 标签。
+4. 字段正文里的 <、>、& 必须转义为 &lt;、&gt;、&amp;。
+5. 不要新增事实，不要改写字段含义，只修复格式。
+
+诊断摘要：
+${diagnostic ? JSON.stringify({ stage: diagnostic.stage, parserError: diagnostic.parserError, warnings: diagnostic.warnings }, null, 2) : '无'}
+
+原始内容：
+${String(rawContent || '')}`;
+        return requestSummaryContent(repairPrompt, 0);
     }
 
     async function updateMemoryTablesFromApi(options = {}) {
@@ -1243,7 +1269,19 @@ ${historyText}`;
 
         try {
             const rawContent = await requestSummaryContent(prompt, 0.2);
-            const changedFields = applyMemoryUpdatesFromXml(chat, rawContent, { source: options.source || 'api' });
+            let changedFields;
+            try {
+                changedFields = applyMemoryUpdatesFromXml(chat, rawContent, { source: options.source || 'api' });
+            } catch (parseError) {
+                if (!isMemoryTableXmlDiagnosticError(parseError)) throw parseError;
+                recordMemoryTableOperation('表格记忆 XML 自动修复请求', 'operation', {
+                    source: options.source || 'api',
+                    isAutoUpdate: !!options.isAutoUpdate,
+                    parserError: parseError.memoryTableDiagnostic && parseError.memoryTableDiagnostic.parserError
+                }, parseError);
+                const repairedContent = await repairMemoryTableXmlWithModel(rawContent, parseError.memoryTableDiagnostic);
+                changedFields = applyMemoryUpdatesFromXml(chat, repairedContent, { source: (options.source || 'api') + ':repair' });
+            }
             if (!options.isAutoUpdate && !options.skipCursorSync) {
                 const endIndex = options.end || (Array.isArray(chat.history) ? chat.history.length : 0);
                 if (endIndex > 0) {
@@ -1363,7 +1401,8 @@ ${historyText}`;
             chat.memoryTables.autoUpdatePending = false;
             await saveCharacter(chat.id);
             refreshMemoryTableAutoUpdateControls(chat, getBoundTemplates(chat).length > 0);
-            if (typeof showApiError === 'function') showApiError(error);
+            if (isMemoryTableXmlDiagnosticError(error)) showMemoryTableXmlDiagnosticToast('表格自动更新');
+            else if (typeof showApiError === 'function') showApiError(error);
             else showToast(error.message || '表格自动更新失败');
             return { status: 'failed', updatedCount, error };
         }
@@ -1429,7 +1468,8 @@ ${historyText}`;
             chat.memoryTables.autoUpdatePending = false;
             await saveCharacter(chat.id);
             refreshMemoryTableAutoUpdateControls(chat, getBoundTemplates(chat).length > 0);
-            if (typeof showApiError === 'function') showApiError(error);
+            if (isMemoryTableXmlDiagnosticError(error)) showMemoryTableXmlDiagnosticToast('表格更新到最新');
+            else if (typeof showApiError === 'function') showApiError(error);
             else showToast(error.message || '更新到最新失败');
             return { status: 'failed', changedFields: [], error };
         }

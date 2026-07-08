@@ -1,0 +1,25 @@
+/* Memory Brain review inbox styles · v0.5.0 */
+.memory-brain-review-actions { align-items: flex-end; }
+.memory-brain-review-panel { display: grid; gap: 14px; }
+.memory-brain-review-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
+.memory-brain-review-stats span { border: 1px solid rgba(120, 92, 70, 0.18); border-radius: 14px; padding: 10px; background: rgba(255, 250, 244, 0.72); font-size: 12px; color: rgba(74, 55, 44, 0.72); }
+.memory-brain-review-stats strong { display: block; font-size: 19px; color: #5f3b2e; margin-top: 3px; }
+.memory-brain-review-grid { display: grid; gap: 12px; }
+.memory-brain-review-item { border: 1px solid rgba(120, 92, 70, 0.18); border-radius: 18px; padding: 14px; background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,247,238,.82)); box-shadow: 0 8px 22px rgba(80, 55, 35, 0.06); }
+.memory-brain-review-item[data-severity="high"] { border-color: rgba(194, 77, 64, 0.32); }
+.memory-brain-review-item[data-severity="medium"] { border-color: rgba(190, 133, 50, 0.3); }
+.memory-brain-review-item-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.memory-brain-review-item-head strong { color: #6c3f30; }
+.memory-brain-review-item-head span, .memory-brain-review-item-head em { border-radius: 999px; background: rgba(120, 92, 70, 0.1); padding: 3px 8px; font-size: 11px; font-style: normal; color: rgba(67, 48, 38, .72); }
+.memory-brain-review-item h3 { margin: 8px 0 6px; font-size: 15px; color: #4c3028; }
+.memory-brain-review-item p { margin: 0; line-height: 1.55; color: rgba(50, 37, 31, .84); white-space: pre-wrap; }
+.memory-brain-review-item small { display: block; margin-top: 8px; color: rgba(65, 47, 39, .6); line-height: 1.45; }
+.memory-brain-review-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; font-size: 11px; color: rgba(66, 48, 39, .65); }
+.memory-brain-review-meta span { background: rgba(255,255,255,.72); border: 1px solid rgba(120, 92, 70, .12); border-radius: 10px; padding: 4px 7px; }
+.memory-brain-review-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.memory-brain-review-actions button { border: none; border-radius: 12px; padding: 8px 10px; background: rgba(99, 67, 49, .12); color: #5a382d; }
+.memory-brain-review-actions button:hover { background: rgba(99, 67, 49, .18); }
+.memory-brain-review-runs, .memory-brain-review-batches, .memory-brain-review-resolved-list { display: grid; gap: 8px; }
+.memory-brain-review-run, .memory-brain-review-batch, .memory-brain-review-resolved { display: grid; grid-template-columns: minmax(80px, auto) 1fr auto; gap: 8px; align-items: center; border: 1px solid rgba(120,92,70,.14); background: rgba(255,255,255,.62); border-radius: 13px; padding: 9px 10px; font-size: 12px; }
+.memory-brain-review-run em, .memory-brain-review-batch em, .memory-brain-review-resolved em { font-style: normal; color: rgba(66,48,39,.58); }
+@media (max-width: 520px) { .memory-brain-review-run, .memory-brain-review-batch, .memory-brain-review-resolved { grid-template-columns: 1fr; } }

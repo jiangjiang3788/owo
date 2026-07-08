@@ -1,0 +1,33 @@
+/* Memory Brain v0.5.3 family adjustment UI */
+.memory-brain-family-adjust-panel { display: grid; gap: 14px; }
+.memory-brain-family-adjust-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.memory-brain-family-adjust-stats span { border: 1px solid rgba(140, 108, 72, .18); border-radius: 14px; padding: 10px 12px; background: rgba(255, 250, 240, .72); color: #6d5540; }
+.memory-brain-family-adjust-stats strong { display: block; font-size: 20px; color: #3f2e23; }
+.memory-brain-family-adjust-form { display: grid; gap: 10px; padding: 12px; border-radius: 16px; border: 1px solid rgba(140, 108, 72, .18); background: linear-gradient(135deg, rgba(255, 250, 242, .95), rgba(248, 238, 226, .72)); }
+.memory-brain-family-adjust-form label { display: grid; gap: 5px; color: #5d4838; font-weight: 600; font-size: 13px; }
+.memory-brain-family-adjust-form input,
+.memory-brain-family-adjust-form select,
+.memory-brain-family-adjust-form textarea { width: 100%; box-sizing: border-box; border: 1px solid rgba(120, 90, 60, .22); border-radius: 12px; padding: 9px 10px; background: rgba(255,255,255,.86); color: #3f2e23; font: inherit; }
+.memory-brain-family-adjust-help { font-size: 12px; color: #8b6a50; }
+.memory-brain-family-adjust-candidates,
+.memory-brain-family-adjust-records,
+.memory-brain-family-adjust-runs,
+.memory-brain-family-adjust-batches { display: grid; gap: 10px; }
+.memory-brain-family-adjust-candidate,
+.memory-brain-family-adjust-record,
+.memory-brain-family-adjust-run,
+.memory-brain-family-adjust-batch { border: 1px solid rgba(140, 108, 72, .18); border-radius: 16px; padding: 12px; background: rgba(255,255,255,.72); box-shadow: 0 10px 24px rgba(95, 69, 42, .07); }
+.memory-brain-family-adjust-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.memory-brain-family-adjust-head strong { color: #7c4d24; }
+.memory-brain-family-adjust-head span { color: #3f2e23; font-weight: 700; text-align: right; }
+.memory-brain-family-adjust-ids { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; color: #7c5f46; font-size: 12px; margin: 8px 0; }
+.memory-brain-family-adjust-ids code { background: rgba(125, 84, 40, .08); border-radius: 8px; padding: 3px 6px; }
+.memory-brain-family-adjust-candidate button { border: 0; border-radius: 999px; padding: 8px 12px; background: #7c4d24; color: #fffaf1; font-weight: 700; }
+.memory-brain-family-adjust-record strong,
+.memory-brain-family-adjust-run strong,
+.memory-brain-family-adjust-batch strong { display: block; color: #3f2e23; }
+.memory-brain-family-adjust-record span,
+.memory-brain-family-adjust-run span,
+.memory-brain-family-adjust-batch span,
+.memory-brain-family-adjust-run em,
+.memory-brain-family-adjust-batch em { display: block; color: #7a6654; font-size: 12px; margin-top: 4px; }

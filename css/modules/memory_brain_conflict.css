@@ -1,0 +1,31 @@
+/* Memory Brain fact conflict UI · v0.5.2 */
+.memory-brain-conflict-panel { display: grid; gap: 14px; }
+.memory-brain-conflict-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.memory-brain-conflict-stats span { border: 1px solid rgba(120, 80, 40, .16); border-radius: 999px; padding: 7px 10px; background: rgba(255, 250, 240, .72); color: #7a5a36; }
+.memory-brain-conflict-form { display: grid; gap: 10px; padding: 12px; border: 1px solid rgba(160, 90, 70, .18); border-radius: 18px; background: rgba(255, 250, 246, .88); box-shadow: 0 10px 28px rgba(92, 62, 35, .06); }
+.memory-brain-conflict-form label { display: grid; gap: 5px; font-size: 12px; color: #7a6144; }
+.memory-brain-conflict-form input,
+.memory-brain-conflict-form select,
+.memory-brain-conflict-form textarea { width: 100%; border: 1px solid rgba(120, 80, 40, .18); border-radius: 12px; padding: 9px 10px; background: rgba(255,255,255,.92); color: #4f3725; font: inherit; }
+.memory-brain-conflict-form textarea { resize: vertical; min-height: 72px; }
+.memory-brain-conflict-help { color: #9b7650; font-size: 12px; line-height: 1.6; }
+.memory-brain-conflict-groups,
+.memory-brain-conflict-records,
+.memory-brain-conflict-runs,
+.memory-brain-conflict-batches { display: grid; gap: 10px; }
+.memory-brain-conflict-group,
+.memory-brain-conflict-record,
+.memory-brain-conflict-run,
+.memory-brain-conflict-batch { border: 1px solid rgba(120, 80, 40, .14); border-radius: 16px; padding: 12px; background: rgba(255,255,255,.74); }
+.memory-brain-conflict-group { border-color: rgba(190, 90, 60, .26); background: rgba(255, 247, 242, .82); }
+.memory-brain-conflict-group-head,
+.memory-brain-conflict-run,
+.memory-brain-conflict-batch { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+.memory-brain-conflict-group p,
+.memory-brain-conflict-record p { margin: 6px 0; line-height: 1.55; color: #5d4632; }
+.memory-brain-conflict-group ul { margin: 8px 0 0; padding: 0; display: grid; gap: 8px; list-style: none; }
+.memory-brain-conflict-group li { display: grid; gap: 4px; border-radius: 12px; padding: 8px; background: rgba(255,255,255,.76); border: 1px solid rgba(120,80,40,.1); }
+.memory-brain-conflict-group li code { color: #7e4a36; font-size: 11px; }
+.memory-brain-conflict-group li p { margin: 0; }
+.memory-brain-conflict-group li em { color: #9b7650; font-size: 11px; }
+.memory-brain-conflict-group button { margin-top: 10px; border: 0; border-radius: 999px; padding: 8px 12px; background: #7a4e3a; color: #fffaf3; }

@@ -2058,6 +2058,16 @@ function renderTutorialContent(container) {
         }
     });
 
+    const globalToastSwitch = document.getElementById('setting-bg-toast-enabled');
+    if (globalToastSwitch) {
+        globalToastSwitch.checked = db.globalToastEnabled !== false;
+        globalToastSwitch.addEventListener('change', event => {
+            db.globalToastEnabled = !!event.target.checked;
+            saveData();
+            showToast(event.target.checked ? '全局消息弹窗通知已开启' : '全局消息弹窗通知已关闭');
+        });
+    }
+
     const saveHandler = () => { if(window.GitHubMgr) window.GitHubMgr.saveConfig(); };
     document.getElementById('gh-token-input').addEventListener('change', saveHandler);
     document.getElementById('gh-repo-input').addEventListener('change', saveHandler);

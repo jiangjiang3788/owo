@@ -1,4 +1,4 @@
-// --- Memory Brain core public facade (v0.4.7) ---
+// --- Memory Brain core public facade (v0.6.3) ---
 // 只导出纯语义能力，不承载运行时流程。
 (function registerMemoryBrainCorePublic(app) {
     const core = app.core;
@@ -12,6 +12,7 @@
     function injections() { return core.memoryBrain.injectionSemantics; }
     function weights() { return core.memoryBrain.weightSemantics; }
     function products() { return core.memoryBrain.productSemantics; }
+    function cutovers() { return core.memoryBrain.cutoverComparisonSemantics; }
     function archives() { return core.memoryBrain.archiveSourceSemantics; }
     function chunks() { return core.memoryBrain.archiveChunkSemantics; }
     function backfills() { return core.memoryBrain.backfillQueueSemantics; }
@@ -19,6 +20,19 @@
     function historyFacts() { return core.memoryBrain.historyFactBackfillSemantics; }
     function factLifecycle() { return core.memoryBrain.factLifecycleSemantics; }
     function historyModels() { return core.memoryBrain.historyModelRebuildSemantics; }
+    function ownerSwitches() { return core.memoryBrain.ownerSwitchSemantics; }
+    function uiGroups() { return core.memoryBrain.uiGroupSemantics; }
+    function reviews() { return core.memoryBrain.reviewInboxSemantics; }
+    function corrections() { return core.memoryBrain.factCorrectionSemantics; }
+    function conflicts() { return core.memoryBrain.conflictResolutionSemantics; }
+    function familyAdjustments() { return core.memoryBrain.familyAdjustmentSemantics; }
+    function modelCorrections() { return core.memoryBrain.modelCorrectionSemantics; }
+    function correctionPropagations() { return core.memoryBrain.correctionPropagationSemantics; }
+    function trustScores() { return core.memoryBrain.trustScoreSemantics; }
+    function trustedGates() { return core.memoryBrain.trustedGateSemantics; }
+    function formalAdapters() { return core.memoryBrain.formalInjectionAdapterSemantics; }
+    function realtimeTraces() { return core.memoryBrain.realtimeInjectionTraceSemantics; }
+    function legacyReadOnly() { return core.memoryBrain.legacyReadOnlySemantics; }
 
     core.memoryBrain.publicApi = {
         getLayers: function getLayers() { return core.memoryBrain.types.LAYERS.slice(); },
@@ -84,17 +98,62 @@
         ensureHistoricalFactSources: function ensureHistoricalFactSources(drafts, event, job) { return historyFacts().ensureHistoricalFactSources(drafts || [], event || {}, job || {}); },
         compactHistoryFactBackfillRunForList: function compactHistoryFactBackfillRunForList(run) { return historyFacts().compactHistoryFactBackfillRunForList(run || {}); },
         buildFactLifecyclePlan: function buildFactLifecyclePlan(factsList, options) { return factLifecycle().buildFactLifecyclePlan(factsList || [], options || {}); },
+        buildReviewInboxPlan: function buildReviewInboxPlan(snapshot, options) { return reviews().buildReviewInboxPlan(snapshot || {}, options || {}); },
+        compactReviewInboxItemForList: function compactReviewInboxItemForList(item) { return reviews().compactReviewInboxItemForList(item || {}); },
+        compactReviewInboxRunForList: function compactReviewInboxRunForList(run) { return reviews().compactReviewInboxRunForList(run || {}); },
+        buildFactCorrectionPlan: function buildFactCorrectionPlan(snapshot, input) { return corrections().buildFactCorrectionPlan(snapshot || {}, input || {}); },
+        normalizeFactCorrectionDraft: function normalizeFactCorrectionDraft(input, fact) { return corrections().normalizeCorrectionDraft(input || {}, fact || {}); },
+        compactFactCorrectionForList: function compactFactCorrectionForList(item) { return corrections().compactFactCorrectionForList(item || {}); },
+        compactFactCorrectionRunForList: function compactFactCorrectionRunForList(run) { return corrections().compactFactCorrectionRunForList(run || {}); },
+        collectConflictGroups: function collectConflictGroups(snapshot) { return conflicts().collectConflictGroups(snapshot || {}); },
+        buildConflictResolutionPlan: function buildConflictResolutionPlan(snapshot, input) { return conflicts().buildConflictResolutionPlan(snapshot || {}, input || {}); },
+        compactConflictGroupForList: function compactConflictGroupForList(group) { return conflicts().compactConflictGroupForList(group || {}); },
+        compactConflictResolutionForList: function compactConflictResolutionForList(item) { return conflicts().compactConflictResolutionForList(item || {}); },
+        compactConflictRunForList: function compactConflictRunForList(run) { return conflicts().compactConflictRunForList(run || {}); },
+        collectFamilyAdjustmentCandidates: function collectFamilyAdjustmentCandidates(snapshot, options) { return familyAdjustments().collectFamilyAdjustmentCandidates(snapshot || {}, options || {}); },
+        buildFamilyAdjustmentPlan: function buildFamilyAdjustmentPlan(snapshot, input) { return familyAdjustments().buildFamilyAdjustmentPlan(snapshot || {}, input || {}); },
+        compactFamilyAdjustmentCandidateForList: function compactFamilyAdjustmentCandidateForList(item) { return familyAdjustments().compactFamilyAdjustmentCandidateForList(item || {}); },
+        compactFamilyAdjustmentForList: function compactFamilyAdjustmentForList(item) { return familyAdjustments().compactFamilyAdjustmentForList(item || {}); },
+        compactFamilyAdjustmentRunForList: function compactFamilyAdjustmentRunForList(run) { return familyAdjustments().compactFamilyAdjustmentRunForList(run || {}); },
+        buildModelCorrectionPlan: function buildModelCorrectionPlan(snapshot, input) { return modelCorrections().buildModelCorrectionPlan(snapshot || {}, input || {}); },
+        normalizeModelCorrectionDraft: function normalizeModelCorrectionDraft(input, model) { return modelCorrections().normalizeModelCorrectionDraft(input || {}, model || {}); },
+        compactModelCorrectionForList: function compactModelCorrectionForList(item) { return modelCorrections().compactModelCorrectionForList(item || {}); },
+        compactModelCorrectionRunForList: function compactModelCorrectionRunForList(run) { return modelCorrections().compactModelCorrectionRunForList(run || {}); },
+        compactModelCorrectionOption: function compactModelCorrectionOption(model) { return modelCorrections().compactModelOption(model || {}); },
+        buildCorrectionPropagationPlan: function buildCorrectionPropagationPlan(snapshot, input) { return correctionPropagations().buildCorrectionPropagationPlan(snapshot || {}, input || {}); },
+        compactPropagationForList: function compactPropagationForList(item) { return correctionPropagations().compactPropagationForList(item || {}); },
+        compactPropagationRunForList: function compactPropagationRunForList(run) { return correctionPropagations().compactPropagationRunForList(run || {}); },
+        buildMemoryTrustScorePlan: function buildMemoryTrustScorePlan(snapshot, input) { return trustScores().buildMemoryTrustScorePlan(snapshot || {}, input || {}); },
+        compactTrustRecordForList: function compactTrustRecordForList(record) { return trustScores().compactTrustRecordForList(record || {}); },
+        compactTrustRunForList: function compactTrustRunForList(run) { return trustScores().compactTrustRunForList(run || {}); },
+        buildTrustedMemoryGateReport: function buildTrustedMemoryGateReport(snapshot, input) { return trustedGates().buildTrustedMemoryGateReport(snapshot || {}, input || {}); },
+        compactTrustedGateCheckForList: function compactTrustedGateCheckForList(check) { return trustedGates().compactTrustedGateCheckForList(check || {}); },
+        compactTrustedGateReportForList: function compactTrustedGateReportForList(report) { return trustedGates().compactTrustedGateReportForList(report || {}); },
+        compactTrustedGateRunForList: function compactTrustedGateRunForList(run) { return trustedGates().compactTrustedGateRunForList(run || {}); },
+        buildFormalInjectionAdapterPackage: function buildFormalInjectionAdapterPackage(input) { return formalAdapters().buildFormalInjectionAdapterPackage(input || {}); },
+        compactFormalInjectionAdapterForList: function compactFormalInjectionAdapterForList(report) { return formalAdapters().compactFormalInjectionAdapterForList(report || {}); },
+        buildRealtimeInjectionTraceReport: function buildRealtimeInjectionTraceReport(input) { return realtimeTraces().buildRealtimeInjectionTraceReport(input || {}); },
+        compactRealtimeInjectionTraceForList: function compactRealtimeInjectionTraceForList(report) { return realtimeTraces().compactRealtimeInjectionTraceForList(report || {}); },
+        buildLegacyReadOnlyPlan: function buildLegacyReadOnlyPlan(input) { return legacyReadOnly().buildLegacyReadOnlyPlan(input || {}); },
+        compactLegacyReadOnlyPlanForList: function compactLegacyReadOnlyPlanForList(report) { return legacyReadOnly().compactLegacyReadOnlyPlanForList(report || {}); },
         compactFactLifecycleRunForList: function compactFactLifecycleRunForList(run) { return factLifecycle().compactFactLifecycleRunForList(run || {}); },
         compactFactLifecycleIssueForList: function compactFactLifecycleIssueForList(issue, factsById) { return factLifecycle().compactFactLifecycleIssueForList(issue || {}, factsById || new Map()); },
         buildHistoryModelEvidence: function buildHistoryModelEvidence(snapshot, options) { return historyModels().buildHistoryModelEvidence(snapshot || {}, options || {}); },
         buildHistoryModelRebuildPrompt: function buildHistoryModelRebuildPrompt(evidence, options) { return historyModels().buildHistoryModelRebuildPrompt(evidence || {}, options || {}); },
         compactHistoryModelRebuildRunForList: function compactHistoryModelRebuildRunForList(run) { return historyModels().compactHistoryModelRebuildRunForList(run || {}); },
+        buildCutoverComparisonReport: function buildCutoverComparisonReport(input) { return cutovers().buildCutoverComparisonReport(input || {}); },
+        compactCutoverReportForList: function compactCutoverReportForList(report) { return cutovers().compactCutoverReportForList(report || {}); },
+        normalizeOwnerState: function normalizeOwnerState(state) { return ownerSwitches().normalizeOwnerState(state || {}); },
+        evaluateOwnerSwitch: function evaluateOwnerSwitch(state, requestedOwner, options) { return ownerSwitches().evaluateOwnerSwitch(state || {}, requestedOwner || 'legacy', options || {}); },
+        compactOwnerGateForList: function compactOwnerGateForList(ownerState, runs) { return ownerSwitches().compactOwnerGateForList(ownerState || {}, runs || []); },
+        normalizeUiGroupPrefs: function normalizeUiGroupPrefs(prefs) { return uiGroups().normalizeGroupPrefs(prefs || {}); },
+        buildUiGroupCards: function buildUiGroupCards(prefs) { return uiGroups().buildGroupCards(prefs || {}); },
         buildCutoverSafetyReport: function buildCutoverSafetyReport(snapshot) { return products().buildCutoverSafetyReport(snapshot || {}); },
         buildMemoryExportManifest: function buildMemoryExportManifest(snapshot, options) { return products().buildMemoryExportManifest(snapshot || {}, options || {}); },
         getPublicContract: function getPublicContract() {
             return {
                 owner: 'core/memoryBrain',
-                release: 'v0.4.7',
+                release: 'v0.6.3',
                 role: 'types/semantics',
                 stableApis: [
                     'getLayers', 'getMigrationStages', 'createDefaultState', 'normalizeState',
@@ -105,7 +164,7 @@
                     'buildLongTermModelPrompt', 'parseLongTermModelResponse', 'compactModelForList',
                     'buildMemoryInjectionPackage', 'compactInjectionPreviewForList',
                     'normalizeSchedulerSettings', 'getCostProfiles', 'collectWeightUpdates', 'buildMaintenancePlan', 'compactSchedulerForList',
-                    'buildMemoryPalace', 'buildArchiveSourceFromChat', 'buildArchiveScanReport', 'compactArchiveSourceForList', 'buildArchiveChunks', 'buildArchiveCursors', 'buildArchiveChunkRunReport', 'compactArchiveChunkForList', 'compactArchiveCursorForList', 'buildBackfillJobs', 'applyBackfillJobAction', 'buildBackfillRunReport', 'compactBackfillJobForList', 'compactBackfillRunForList', 'buildHistoricalEventBackfillPrompt', 'parseHistoricalEventBackfillResponse', 'ensureHistoricalEventSources', 'compactHistoryEventBackfillRunForList', 'buildHistoricalFactBackfillPrompt', 'parseHistoricalFactBackfillResponse', 'ensureHistoricalFactSources', 'compactHistoryFactBackfillRunForList', 'buildFactLifecyclePlan', 'compactFactLifecycleRunForList', 'compactFactLifecycleIssueForList', 'buildHistoryModelEvidence', 'buildHistoryModelRebuildPrompt', 'compactHistoryModelRebuildRunForList', 'buildCutoverSafetyReport', 'buildMemoryExportManifest'
+                    'buildMemoryPalace', 'buildArchiveSourceFromChat', 'buildArchiveScanReport', 'compactArchiveSourceForList', 'buildArchiveChunks', 'buildArchiveCursors', 'buildArchiveChunkRunReport', 'compactArchiveChunkForList', 'compactArchiveCursorForList', 'buildBackfillJobs', 'applyBackfillJobAction', 'buildBackfillRunReport', 'compactBackfillJobForList', 'compactBackfillRunForList', 'buildHistoricalEventBackfillPrompt', 'parseHistoricalEventBackfillResponse', 'ensureHistoricalEventSources', 'compactHistoryEventBackfillRunForList', 'buildHistoricalFactBackfillPrompt', 'parseHistoricalFactBackfillResponse', 'ensureHistoricalFactSources', 'compactHistoryFactBackfillRunForList', 'buildFactLifecyclePlan', 'buildReviewInboxPlan', 'compactReviewInboxItemForList', 'compactReviewInboxRunForList', 'buildFactCorrectionPlan', 'normalizeFactCorrectionDraft', 'compactFactCorrectionForList', 'compactFactCorrectionRunForList', 'collectConflictGroups', 'buildConflictResolutionPlan', 'compactConflictGroupForList', 'compactConflictResolutionForList', 'compactConflictRunForList', 'collectFamilyAdjustmentCandidates', 'buildFamilyAdjustmentPlan', 'compactFamilyAdjustmentCandidateForList', 'compactFamilyAdjustmentForList', 'compactFamilyAdjustmentRunForList', 'buildModelCorrectionPlan', 'normalizeModelCorrectionDraft', 'compactModelCorrectionForList', 'compactModelCorrectionRunForList', 'compactModelCorrectionOption', 'buildCorrectionPropagationPlan', 'compactPropagationForList', 'compactPropagationRunForList', 'buildMemoryTrustScorePlan', 'compactTrustRecordForList', 'compactTrustRunForList', 'buildTrustedMemoryGateReport', 'compactTrustedGateCheckForList', 'compactTrustedGateReportForList', 'compactTrustedGateRunForList', 'buildFormalInjectionAdapterPackage', 'compactFormalInjectionAdapterForList', 'buildRealtimeInjectionTraceReport', 'compactRealtimeInjectionTraceForList', 'buildLegacyReadOnlyPlan', 'compactLegacyReadOnlyPlanForList', 'compactFactLifecycleRunForList', 'compactFactLifecycleIssueForList', 'buildHistoryModelEvidence', 'buildHistoryModelRebuildPrompt', 'compactHistoryModelRebuildRunForList', 'buildCutoverComparisonReport', 'compactCutoverReportForList', 'normalizeOwnerState', 'evaluateOwnerSwitch', 'compactOwnerGateForList', 'normalizeUiGroupPrefs', 'buildUiGroupCards', 'buildCutoverSafetyReport', 'buildMemoryExportManifest'
                 ]
             };
         }

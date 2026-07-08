@@ -1,25 +1,19 @@
-// --- Memory Brain types owner (v0.4.7) ---
-// 只定义长期记忆脑的数据形状、层级和迁移阶段；不访问运行时、网络或持久化。
 (function registerMemoryBrainTypes(app) {
-    const core = app.core;
-    core.memoryBrain = core.memoryBrain || {};
-
-    const SCHEMA_VERSION = 1;
-    const RELEASE = 'v0.4.7';
-
-    const LAYERS = Object.freeze([
-        Object.freeze({ id: 'raw', name: '聊天原文层', goal: '所有发送、回复、附件和请求都可追溯。', status: 'legacy-source' }),
+    const core = app.core; core.memoryBrain = core.memoryBrain || {};
+    const SCHEMA_VERSION = 1, RELEASE = 'v0.6.4';
+    const LAYERS = Object.freeze([ Object.freeze({ id: 'raw', name: '聊天原文层', goal: '所有发送、回复、附件和请求都可追溯。', status: 'legacy-source' }),
         Object.freeze({ id: 'archive', name: '历史归档层', goal: '扫描全部聊天，建立可切片、可续跑的大历史来源索引。', status: 'active-v0.4.4' }),
         Object.freeze({ id: 'event', name: '事件摘要层', goal: '把一段对话整理成真实时间线事件。', status: 'active-v0.3.1' }),
         Object.freeze({ id: 'fact', name: '原子事实层', goal: '复合记忆拆成可多归属的事实单元，并标记重复、冲突和过时状态。', status: 'active-v0.4.5' }),
-        Object.freeze({ id: 'family', name: '记忆家族层', goal: '相似事实自动聚成主题家族并持续摘要。', status: 'active-v0.4.6' }),
+        Object.freeze({ id: 'review', name: '可信记忆审查层', goal: '把低置信、冲突、重复、过时和待确认模型汇入审查收件箱，并支持事实改写、冲突处理、家族调整、长期模型修正、影响传播、信任分和可信阶段 gate。', status: 'active-v0.5.7' }),
+        Object.freeze({ id: 'family', name: '记忆家族层', goal: '相似事实自动聚成主题家族，并支持合并、拆分、改名和回滚。', status: 'active-v0.5.3' }),
         Object.freeze({ id: 'graph', name: 'Graph 关系层', goal: '人、事、主题、目的、情绪、项目互相连接。', status: 'active-v0.4.6' }),
-        Object.freeze({ id: 'model', name: '长期模型层', goal: '形成用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性。', status: 'active-v0.4.7' }),
-        Object.freeze({ id: 'injection', name: '注入包层', goal: '每次聊天前选择应该想起什么，并可预览。', status: 'active-v0.3.6' }),
+        Object.freeze({ id: 'model', name: '长期模型层', goal: '形成用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性，并支持人工修正版本历史。', status: 'active-v0.5.4' }),
+        Object.freeze({ id: 'injection', name: '注入包层', goal: '每次聊天前选择应该想起什么，并可预览。', status: 'active-v0.4.9' }),
+        Object.freeze({ id: 'owner', name: '单一 owner 安全门', goal: 'legacy / memoryBrain / off 三态切换门，禁止双注入并保留回退路线。', status: 'active-v0.6.4' }),
         Object.freeze({ id: 'scheduler', name: '调度生命层', goal: '省钱/均衡/深度模式、整理队列、浮现和衰减。', status: 'active-v0.3.7' }),
         Object.freeze({ id: 'product', name: '记忆小屋收口层', goal: '把时间线、事实、家族、graph、模型、注入预览和导出路线收成长期可用 UI。', status: 'active-v0.3.8' })
     ]);
-
     const MIGRATION_STAGES = Object.freeze([
         Object.freeze({
             id: 'shadow',
@@ -53,7 +47,6 @@
             oldSystemMode: '正式注入',
             brainMode: '整理和对照'
         }),
-
         Object.freeze({
             id: 'graph',
             name: '关系成网',
@@ -134,7 +127,6 @@
             oldSystemMode: '正式注入',
             brainMode: '历史原子事实'
         }),
-
         Object.freeze({
             id: 'fact-lifecycle',
             name: '事实生命周期清理',
@@ -160,6 +152,41 @@
             brainMode: '全历史长期模型影子重建'
         }),
         Object.freeze({
+            id: 'cutover-rehearsal',
+            name: '新旧注入对照 / 接管演练',
+            targetVersion: 'v0.4.8',
+            goal: '对同一用户输入比较旧正式记忆 owner 和 Memory Brain shadow 注入包，生成漏召回、错召回、重复召回报告。',
+            oldSystemMode: '正式注入',
+            brainMode: '接管演练报告'
+        }),
+        Object.freeze({
+            id: 'owner-switch-gate',
+            name: '单一 owner 切换门',
+            targetVersion: 'v0.4.9',
+            goal: '建立 legacy / memoryBrain / off 三态 owner 安全门，记录切换演练和回退，但 v0.9 前不让 Memory Brain 正式进入 prompt。',
+            oldSystemMode: '正式注入',
+            brainMode: '只读切换门'
+        }),
+        Object.freeze({
+            id: 'trusted-review-inbox',
+            name: '可信记忆审查收件箱',
+            targetVersion: 'v0.5.0',
+            goal: '汇总低置信、冲突、重复、过时事实和待确认长期模型，让 Memory Brain 先可审查再可信纠错。',
+            oldSystemMode: '正式注入',
+            brainMode: '可信审查收件箱'
+        }),
+        Object.freeze({ id: 'fact-correction', name: '事实纠错 / 改写', targetVersion: 'v0.5.1', goal: '从审查收件箱或 Fact ID 手动改写事实，保留证据、版本历史和回滚批次。', oldSystemMode: '正式注入', brainMode: '可信事实改写' }),
+        Object.freeze({ id: 'fact-conflict-resolution', name: '冲突事实处理', targetVersion: 'v0.5.2', goal: '对 disputed facts 选择真实版本、条件保留、标记过时或忽略误报，并保留回滚批次。', oldSystemMode: '正式注入', brainMode: '可信冲突处理' }),
+        Object.freeze({ id: 'family-adjustment', name: '家族合并 / 拆分', targetVersion: 'v0.5.3', goal: '合并近似家族、拆分误聚家族、手动改名并保留成员变更和回滚批次。', oldSystemMode: '正式注入', brainMode: '可信家族调整' }),
+        Object.freeze({ id: 'model-correction', name: '长期模型人工修正', targetVersion: 'v0.5.4', goal: '用户可修正用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性，并保留版本历史。', oldSystemMode: '正式注入', brainMode: '可信模型修正' }),
+        Object.freeze({ id: 'correction-propagation', name: '纠错影响传播', targetVersion: 'v0.5.5', goal: '事实、冲突、家族和长期模型的纠错可以传播到 family / graph / model / review inbox，生成可回滚传播批次。', oldSystemMode: '正式注入', brainMode: '可信影响传播' }),
+        Object.freeze({ id: 'trust-score', name: '记忆信任分', targetVersion: 'v0.5.6', goal: '为事实、家族、graph 和长期模型生成可解释 trust score，用于后续审查、召回和接管 gate。', oldSystemMode: '正式注入', brainMode: '可信信任分' }),
+        Object.freeze({ id: 'trusted-memory-gate', name: '可信记忆 gate', targetVersion: 'v0.5.7', goal: '统一检查审查收件箱、事实纠错、冲突处理、家族调整、模型修正、影响传播和信任分，完成可信记忆阶段收口。', oldSystemMode: '正式注入', brainMode: '可信阶段 gate' }),
+        Object.freeze({ id: 'formal-injection-adapter', name: '正式注入 adapter', targetVersion: 'v0.6.0', goal: '建立唯一 memory block adapter，统一 legacy / Memory Brain / off 三态出口，但 v0.9 前只做演练，不接正式 prompt。', oldSystemMode: '正式注入', brainMode: 'adapter 演练' }),
+        Object.freeze({ id: 'realtime-injection-trace', name: '实时注入 trace', targetVersion: 'v0.6.2', goal: '解释每次候选注入为什么命中、为什么未命中、为什么裁剪，以及为什么仍被 blocked-until-v0.9 阻止正式接管。', oldSystemMode: '正式注入', brainMode: '实时 trace 演练' }),
+        Object.freeze({ id: 'legacy-readonly-downgrade', name: '旧系统只读降级', targetVersion: 'v0.6.3', goal: '把旧档案 / 日记 / 向量未来降为只读历史来源的条件做成演练报告；v0.9 前不真正降级、不改正式 prompt。', oldSystemMode: '正式注入', brainMode: '只读降级演练' }),
+        Object.freeze({ id: 'owner-recovery', name: '一键关闭 / 回退', targetVersion: 'v0.6.4', goal: '一键关闭 Memory Brain 影子候选、回退 legacy owner 演练，同时明确旧表格记忆仍可按当前 owner 总结。', oldSystemMode: '正式注入', brainMode: '影子候选开关 / 回退演练' }),
+        Object.freeze({
             id: 'cutover',
             name: '正式替换',
             targetVersion: 'v0.6+',
@@ -168,7 +195,6 @@
             brainMode: '正式注入'
         })
     ]);
-
     function createDefaultSettings() {
         return {
             release: RELEASE,
@@ -180,10 +206,11 @@
             costProfileId: 'balanced',
             autoApplyPolicy: 'auto-with-rollback',
             legacyBridgeMode: 'read-only-source',
-            currentStageId: 'history-model-rebuild'
+            currentStageId: 'owner-recovery',
+            shadowInjectionEnabled: true,
+            uiGroupsOpen: { history: true, quality: true, owner: true, daily: false, overview: false }
         };
     }
-
     function createDefaultMemoryBrainState() {
         return {
             schemaVersion: SCHEMA_VERSION,
@@ -211,6 +238,8 @@
             factLifecycleRuns: [],
             familyGraphRebuildRuns: [],
             historyModelRebuildRuns: [],
+            cutoverReports: [],
+            cutoverRehearsalRuns: [],
             factMerges: [],
             conflicts: [],
             obsoleteFacts: [],
@@ -218,16 +247,52 @@
             lastArchiveScan: null,
             lastArchiveChunkRun: null,
             lastHistoryModelRebuildRun: null,
+            lastCutoverRehearsalRun: null,
+            ownerState: null,
+            ownerSwitchRuns: [],
+            reviewInboxItems: [],
+            reviewInboxRuns: [],
+            factCorrections: [],
+            factCorrectionRuns: [],
+            factConflictResolutions: [],
+            factConflictRuns: [],
+            familyAdjustments: [],
+            familyAdjustmentRuns: [],
+            modelCorrections: [],
+            modelCorrectionRuns: [],
+            correctionPropagations: [],
+            correctionPropagationRuns: [],
+            trustScoreRecords: [],
+            trustScoreRuns: [],
+            trustedMemoryGateReports: [],
+            trustedMemoryGateRuns: [],
+            formalInjectionAdapterReports: [],
+            formalInjectionAdapterRuns: [],
+            realtimeInjectionTraceReports: [],
+            realtimeInjectionTraceRuns: [],
+            legacyReadOnlyReports: [],
+            legacyReadOnlyRuns: [],
+            ownerRecoveryReports: [],
+            ownerRecoveryRuns: [],
+            lastReviewInboxRun: null,
+            lastFactCorrectionRun: null,
+            lastFactConflictRun: null,
+            lastFamilyAdjustmentRun: null,
+            lastModelCorrectionRun: null,
+            lastCorrectionPropagationRun: null,
+            lastTrustScoreRun: null,
+            lastTrustedMemoryGateRun: null,
+            lastFormalInjectionAdapterRun: null,
+            lastRealtimeInjectionTraceRun: null,
+            lastLegacyReadOnlyRun: null,
+            lastOwnerRecoveryRun: null,
+            lastOwnerSwitchRun: null,
             lastLegacyScan: null,
             createdAt: null,
             updatedAt: null
         };
     }
-
-    function normalizeArray(value) {
-        return Array.isArray(value) ? value : [];
-    }
-
+    function normalizeArray(value) { return Array.isArray(value) ? value : []; }
     function normalizeMemoryBrainState(value) {
         const base = createDefaultMemoryBrainState();
         const source = value && typeof value === 'object' ? value : {};
@@ -257,6 +322,33 @@
             factLifecycleRuns: normalizeArray(source.factLifecycleRuns),
             familyGraphRebuildRuns: normalizeArray(source.familyGraphRebuildRuns),
             historyModelRebuildRuns: normalizeArray(source.historyModelRebuildRuns),
+            cutoverReports: normalizeArray(source.cutoverReports),
+            cutoverRehearsalRuns: normalizeArray(source.cutoverRehearsalRuns),
+            ownerSwitchRuns: normalizeArray(source.ownerSwitchRuns),
+            reviewInboxItems: normalizeArray(source.reviewInboxItems),
+            reviewInboxRuns: normalizeArray(source.reviewInboxRuns),
+            factCorrections: normalizeArray(source.factCorrections),
+            factCorrectionRuns: normalizeArray(source.factCorrectionRuns),
+            factConflictResolutions: normalizeArray(source.factConflictResolutions),
+            factConflictRuns: normalizeArray(source.factConflictRuns),
+            familyAdjustments: normalizeArray(source.familyAdjustments),
+            familyAdjustmentRuns: normalizeArray(source.familyAdjustmentRuns),
+            modelCorrections: normalizeArray(source.modelCorrections),
+            modelCorrectionRuns: normalizeArray(source.modelCorrectionRuns),
+            correctionPropagations: normalizeArray(source.correctionPropagations),
+            correctionPropagationRuns: normalizeArray(source.correctionPropagationRuns),
+            trustScoreRecords: normalizeArray(source.trustScoreRecords),
+            trustScoreRuns: normalizeArray(source.trustScoreRuns),
+            trustedMemoryGateReports: normalizeArray(source.trustedMemoryGateReports),
+            trustedMemoryGateRuns: normalizeArray(source.trustedMemoryGateRuns),
+            formalInjectionAdapterReports: normalizeArray(source.formalInjectionAdapterReports),
+            formalInjectionAdapterRuns: normalizeArray(source.formalInjectionAdapterRuns),
+            realtimeInjectionTraceReports: normalizeArray(source.realtimeInjectionTraceReports),
+            realtimeInjectionTraceRuns: normalizeArray(source.realtimeInjectionTraceRuns),
+            legacyReadOnlyReports: normalizeArray(source.legacyReadOnlyReports),
+            legacyReadOnlyRuns: normalizeArray(source.legacyReadOnlyRuns),
+            ownerRecoveryReports: normalizeArray(source.ownerRecoveryReports),
+            ownerRecoveryRuns: normalizeArray(source.ownerRecoveryRuns),
             factMerges: normalizeArray(source.factMerges),
             conflicts: normalizeArray(source.conflicts),
             obsoleteFacts: normalizeArray(source.obsoleteFacts),
@@ -264,27 +356,24 @@
             lastArchiveScan: source.lastArchiveScan || null,
             lastArchiveChunkRun: source.lastArchiveChunkRun || null,
             lastHistoryModelRebuildRun: source.lastHistoryModelRebuildRun || null,
+            lastCutoverRehearsalRun: source.lastCutoverRehearsalRun || null,
+            ownerState: source.ownerState || null,
+            lastOwnerSwitchRun: source.lastOwnerSwitchRun || null,
+            lastReviewInboxRun: source.lastReviewInboxRun || null,
+            lastFactCorrectionRun: source.lastFactCorrectionRun || null,
+            lastFactConflictRun: source.lastFactConflictRun || null,
+            lastFamilyAdjustmentRun: source.lastFamilyAdjustmentRun || null,
+            lastModelCorrectionRun: source.lastModelCorrectionRun || null,
+            lastCorrectionPropagationRun: source.lastCorrectionPropagationRun || null,
+            lastTrustScoreRun: source.lastTrustScoreRun || null,
+            lastTrustedMemoryGateRun: source.lastTrustedMemoryGateRun || null,
+            lastFormalInjectionAdapterRun: source.lastFormalInjectionAdapterRun || null,
+            lastRealtimeInjectionTraceRun: source.lastRealtimeInjectionTraceRun || null,
+            lastLegacyReadOnlyRun: source.lastLegacyReadOnlyRun || null,
+            lastOwnerRecoveryRun: source.lastOwnerRecoveryRun || null,
             lastLegacyScan: source.lastLegacyScan || null
         });
     }
-
-    function getLayerById(id) {
-        return LAYERS.find(layer => layer.id === id) || null;
-    }
-
-    function getStageById(id) {
-        return MIGRATION_STAGES.find(stage => stage.id === id) || MIGRATION_STAGES[0];
-    }
-
-    core.memoryBrain.types = {
-        SCHEMA_VERSION,
-        RELEASE,
-        LAYERS,
-        MIGRATION_STAGES,
-        createDefaultSettings,
-        createDefaultMemoryBrainState,
-        normalizeMemoryBrainState,
-        getLayerById,
-        getStageById
-    };
+    function getLayerById(id) { return LAYERS.find(layer => layer.id === id) || null; } function getStageById(id) { return MIGRATION_STAGES.find(stage => stage.id === id) || MIGRATION_STAGES[0]; }
+    core.memoryBrain.types = { SCHEMA_VERSION, RELEASE, LAYERS, MIGRATION_STAGES, createDefaultSettings, createDefaultMemoryBrainState, normalizeMemoryBrainState, getLayerById, getStageById };
 })(OwoApp);

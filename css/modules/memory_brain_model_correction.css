@@ -1,0 +1,109 @@
+/* Memory Brain v0.5.4 long-term model correction UI owner */
+.memory-brain-model-correction-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.memory-brain-model-correction-stats,
+.memory-brain-model-correction-head,
+.memory-brain-model-correction-record,
+.memory-brain-model-correction-run,
+.memory-brain-model-correction-batch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.memory-brain-model-correction-stats span {
+    flex: 1 1 120px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid rgba(120, 92, 70, .14);
+}
+.memory-brain-model-correction-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    padding: 12px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,245,235,.72));
+    border: 1px solid rgba(120, 92, 70, .14);
+}
+.memory-brain-model-correction-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(72, 52, 42, .78);
+}
+.memory-brain-model-correction-form input,
+.memory-brain-model-correction-form textarea {
+    width: 100%;
+    border: 1px solid rgba(120, 92, 70, .18);
+    border-radius: 12px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,.86);
+    color: #3f3029;
+    font: inherit;
+}
+.memory-brain-model-correction-form label:nth-child(4),
+.memory-brain-model-correction-form label:nth-child(5),
+.memory-brain-model-correction-form label:nth-child(6),
+.memory-brain-model-correction-form label:nth-child(7),
+.memory-brain-model-correction-form label:nth-child(8),
+.memory-brain-model-correction-form label:nth-child(9),
+.memory-brain-model-correction-form label:nth-child(10) {
+    grid-column: span 2;
+}
+.memory-brain-model-correction-help {
+    grid-column: 1 / -1;
+    font-size: 12px;
+    color: rgba(86, 62, 48, .72);
+}
+.memory-brain-model-correction-candidates,
+.memory-brain-model-correction-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 10px;
+}
+.memory-brain-model-correction-candidate,
+.memory-brain-model-correction-option {
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.78);
+    border: 1px solid rgba(120, 92, 70, .14);
+}
+.memory-brain-model-correction-candidate p,
+.memory-brain-model-correction-option p {
+    margin: 8px 0;
+    color: rgba(52, 39, 32, .78);
+    line-height: 1.55;
+}
+.memory-brain-model-correction-candidate code,
+.memory-brain-model-correction-option code {
+    display: block;
+    overflow-wrap: anywhere;
+    margin: 8px 0;
+    color: rgba(84, 59, 42, .72);
+}
+.memory-brain-model-correction-record,
+.memory-brain-model-correction-run,
+.memory-brain-model-correction-batch {
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 250, 246, .78);
+    border: 1px dashed rgba(120, 92, 70, .18);
+}
+.memory-brain-load-model-correction-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: rgba(122, 81, 54, .12);
+    color: #5c3f32;
+    font-weight: 600;
+}
+@media (max-width: 640px) {
+    .memory-brain-model-correction-form label:nth-child(n) { grid-column: 1 / -1; }
+}

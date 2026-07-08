@@ -425,6 +425,104 @@
       "role": "Memory Brain full-history long-term model rebuild UI",
       "status": "active",
       "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_cutover.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain cutover rehearsal UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_owner_gate.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain owner gate and grouped UI controls",
+      "status": "active",
+      "maxLines": 240
+    },
+    {
+      "path": "css/modules/memory_brain_review.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain trusted review inbox UI",
+      "status": "active",
+      "maxLines": 240
+    },
+    {
+      "path": "css/modules/memory_brain_correction.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain fact correction UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_conflict.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain fact conflict resolution UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_family_adjust.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain family merge split UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_model_correction.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain long-term model correction UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_propagation.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain correction propagation UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_trust.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain trust score UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_trusted_gate.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain trusted gate UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_formal_adapter.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain formal injection adapter UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_realtime_trace.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain realtime injection trace UI",
+      "status": "active",
+      "maxLines": 220
+    },
+    {
+      "path": "css/modules/memory_brain_legacy_readonly.css",
+      "owner": "features/memoryBrain",
+      "role": "legacy read-only downgrade UI module",
+      "status": "active",
+      "maxLines": 260
+    },
+    {
+      "path": "css/modules/memory_brain_owner_recovery.css",
+      "owner": "features/memoryBrain",
+      "role": "Memory Brain owner recovery / shadow off UI",
+      "status": "active",
+      "maxLines": 220
     }
   ]
 }

@@ -1,4 +1,4 @@
-// --- Memory Brain model owner (v0.4.7) ---
+// --- Memory Brain model owner (v0.6.4) ---
 // 只把 store/core 状态整理为展示模型，不访问 DOM。
 (function registerMemoryBrainModel(global) {
     const app = global.OwoApp;
@@ -15,6 +15,7 @@
             archive: asArray(snapshot.archiveSources).length + asArray(snapshot.archiveChunks).length + asArray(snapshot.backfillJobs).length,
             event: asArray(snapshot.events).length,
             fact: asArray(snapshot.facts).filter(fact => fact && fact.status !== 'retired').length,
+            review: asArray(snapshot.reviewInboxItems).filter(item => item && item.status !== 'dismissed' && item.status !== 'confirmed').length,
             family: asArray(snapshot.families).filter(family => family && family.status !== 'retired').length,
             graph: asArray(snapshot.edges).length,
             model: asArray(snapshot.models).length,
@@ -49,7 +50,22 @@
             { version: 'v0.4.4', title: '历史事实回填', result: '从历史事件批量抽取原子事实，并保留证据范围。', status: 'done' },
             { version: 'v0.4.5', title: '去重 / 冲突 / 过时事实', result: '标记 duplicate / obsolete / disputed / merged，准备可信记忆。', status: 'done' },
             { version: 'v0.4.6', title: '全量家族 / graph 重建', result: '基于全历史 active facts 重建 family 和 graph。', status: 'done' },
-            { version: 'v0.4.7', title: '全历史长期模型重建', result: '用清理后的事实、家族和 graph 重建长期模型。', status: 'active' }
+            { version: 'v0.4.7', title: '全历史长期模型重建', result: '用清理后的事实、家族和 graph 重建长期模型。', status: 'done' },
+            { version: 'v0.4.8', title: '新旧注入对照 / 接管演练', result: '对同一输入比较旧正式记忆 owner 和 Memory Brain shadow 注入包，生成 cutover report。', status: 'done' },
+            { version: 'v0.4.9', title: '单一 owner 切换门', result: '建立 legacy / memoryBrain / off 三态安全门和 UI 分组折叠，仍不接正式 prompt。', status: 'done' },
+            { version: 'v0.5.0', title: '记忆审查收件箱', result: '汇总低置信、冲突、重复、过时和待确认模型，进入可信记忆阶段。', status: 'done' },
+            { version: 'v0.5.1', title: '事实纠错 / 改写', result: '人工改写事实，保留证据、版本历史和批次回滚。', status: 'done' },
+            { version: 'v0.5.2', title: '冲突事实处理', result: '对 disputed facts 选择真实版本、条件保留、标记过时或忽略误报，并保留回滚。', status: 'done' },
+            { version: 'v0.5.3', title: '家族合并 / 拆分', result: '合并近似家族、拆分误聚家族、手动改名，并保留成员变更和回滚批次。', status: 'done' },
+            { version: 'v0.5.4', title: '长期模型人工修正', result: '人工修正用户画像、AI 自我、世界观、项目脑、互动偏好和关系连续性，并保留模型版本历史。', status: 'done' },
+            { version: 'v0.5.5', title: '纠错影响传播', result: '把事实改写、冲突处理、家族调整和模型修正传播到 family / graph / model / review inbox，并保留回滚批次。', status: 'done' },
+            { version: 'v0.5.6', title: '记忆信任分', result: '为事实、家族、graph 和长期模型生成可解释 trust score，辅助审查、召回和接管 gate。', status: 'done' },
+            { version: 'v0.5.7', title: '可信记忆 gate', result: '统一 fixture / runtime gate，收口可信记忆阶段，继续不正式接管 prompt。', status: 'done' },
+            { version: 'v0.6.0', title: '正式注入 adapter', result: '建立唯一 memory block adapter，统一 legacy / Memory Brain / off 三态出口，但仍 blocked-until-v0.9，不接正式 prompt。', status: 'done' },
+            { version: 'v0.6.1', title: '召回策略调参', result: '结合关键词、信任分、权重、时间新鲜度和 graph 连接度优化影子注入候选。', status: 'done' },
+            { version: 'v0.6.2', title: '实时注入 trace', result: '解释为什么命中、未命中、裁剪，以及为什么仍由 legacy 正式注入。', status: 'done' },
+            { version: 'v0.6.3', title: '旧系统只读降级', result: '演练旧档案 / 日记 / 向量未来降为只读历史来源，仍不改正式 prompt。', status: 'done' },
+            { version: 'v0.6.4', title: '一键关闭 / 回退', result: '一键关闭 Memory Brain 影子注入候选、回退 legacy owner 演练，并明确旧表格记忆仍可总结。', status: 'active' }
         ];
     }
 
@@ -77,6 +93,14 @@
         return asArray(snapshot.injectionPreviews).filter(preview => preview && preview.status !== 'retired')
             .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
             .slice(0, 10).map(preview => api && typeof api.compactInjectionPreviewForList === 'function' ? api.compactInjectionPreviewForList(preview) : preview);
+    }
+
+
+    function compactCutoverReports(snapshot) {
+        const api = getCorePublic();
+        return asArray(snapshot.cutoverReports).filter(report => report && report.status !== 'retired')
+            .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+            .slice(0, 8).map(report => api && typeof api.compactCutoverReportForList === 'function' ? api.compactCutoverReportForList(report) : report);
     }
 
     function compactModels(snapshot) {
@@ -112,15 +136,15 @@
             .slice(0, 8).map(item => ({ id: item.id, createdAt: item.createdAt, mode: item.mode, counts: item.counts || {}, storedData: item.storedData || 'manifest-only', safetySummary: item.manifest && item.manifest.safetySummary || '' }));
     }
 
-    function buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards, eventBackfillCards, factBackfillCards, factLifecycleCards, familyGraphRebuildCards, historyModelRebuildCards) {
+    function buildDashboard(snapshot, legacyScan, replacementPlan, archiveCards, chunkCards, backfillCards, eventBackfillCards, factBackfillCards, factLifecycleCards, familyGraphRebuildCards, historyModelRebuildCards, cutoverCards, ownerGateCards, formalAdapterCards, realtimeTraceCards, legacyReadOnlyCards, ownerRecoveryCards, reviewInboxCards, factCorrectionCards, factConflictCards, familyAdjustmentCards, modelCorrectionCards, propagationCards, trustScoreCards, trustedGateCards, uiGroupCards) {
         const settings = snapshot.settings || {};
         const scan = legacyScan || snapshot.lastLegacyScan || null;
         const activeFacts = asArray(snapshot.facts).filter(fact => fact && fact.status !== 'retired');
         const activeFamilies = asArray(snapshot.families).filter(family => family && family.status !== 'retired');
         return {
-            release: snapshot.release || 'v0.4.7',
+            release: snapshot.release || 'v0.6.3',
             mode: settings.mode || 'shadow',
-            currentStageId: settings.currentStageId || 'history-model-rebuild',
+            currentStageId: settings.currentStageId || 'owner-recovery',
             thresholdText: Math.round((settings.familySimilarityThreshold || 0.7) * 100) + '%',
             familySummaryMinFacts: settings.familySummaryMinFacts || 5,
             processingMode: settings.processingMode || 'balanced',
@@ -157,6 +181,48 @@
             factLifecycleBatchCount: countBatches(snapshot, 'fact-lifecycle'),
             familyGraphRebuildBatchCount: countBatches(snapshot, 'family-graph-rebuild'),
             historyModelRebuildBatchCount: countBatches(snapshot, 'history-long-term-model'),
+            cutoverReportCount: asArray(snapshot.cutoverReports).filter(report => report && report.status !== 'retired').length,
+            ownerSwitchRunCount: asArray(snapshot.ownerSwitchRuns).length,
+            formalInjectionAdapterReportCount: asArray(snapshot.formalInjectionAdapterReports).filter(item => item && item.status !== 'rolled-back').length,
+            formalInjectionAdapterRunCount: asArray(snapshot.formalInjectionAdapterRuns).length,
+            realtimeInjectionTraceReportCount: asArray(snapshot.realtimeInjectionTraceReports).filter(item => item && item.status !== 'rolled-back').length,
+            realtimeInjectionTraceRunCount: asArray(snapshot.realtimeInjectionTraceRuns).length,
+            realtimeInjectionTraceBatchCount: countBatches(snapshot, 'realtime-injection-trace'),
+            legacyReadOnlyReportCount: asArray(snapshot.legacyReadOnlyReports).filter(item => item && item.status !== 'rolled-back').length,
+            legacyReadOnlyRunCount: asArray(snapshot.legacyReadOnlyRuns).length,
+            legacyReadOnlyBatchCount: countBatches(snapshot, 'legacy-readonly-downgrade'),
+            ownerRecoveryReportCount: asArray(snapshot.ownerRecoveryReports).filter(item => item && item.status !== 'rolled-back').length,
+            ownerRecoveryRunCount: asArray(snapshot.ownerRecoveryRuns).length,
+            ownerRecoveryBatchCount: countBatches(snapshot, 'owner-recovery'),
+            formalInjectionAdapterBatchCount: countBatches(snapshot, 'formal-injection-adapter'),
+            reviewInboxCount: asArray(snapshot.reviewInboxItems).filter(item => item && item.status !== 'dismissed' && item.status !== 'confirmed').length,
+            factCorrectionCount: asArray(snapshot.factCorrections).filter(item => item && item.status !== 'rolled-back').length,
+            factCorrectionRunCount: asArray(snapshot.factCorrectionRuns).length,
+            factCorrectionBatchCount: countBatches(snapshot, 'fact-correction'),
+            factConflictCount: asArray(snapshot.conflicts).filter(item => item && item.status !== 'resolved' && item.status !== 'dismissed' && item.status !== 'rolled-back').length,
+            factConflictResolutionCount: asArray(snapshot.factConflictResolutions).filter(item => item && item.status !== 'rolled-back').length,
+            factConflictRunCount: asArray(snapshot.factConflictRuns).length,
+            factConflictBatchCount: countBatches(snapshot, 'fact-conflict-resolution'),
+            familyAdjustmentCount: asArray(snapshot.familyAdjustments).filter(item => item && item.status !== 'rolled-back').length,
+            familyAdjustmentRunCount: asArray(snapshot.familyAdjustmentRuns).length,
+            familyAdjustmentBatchCount: countBatches(snapshot, 'family-adjustment'),
+            modelCorrectionCount: asArray(snapshot.modelCorrections).filter(item => item && item.status !== 'rolled-back').length,
+            modelCorrectionRunCount: asArray(snapshot.modelCorrectionRuns).length,
+            modelCorrectionBatchCount: countBatches(snapshot, 'model-correction'),
+            correctionPropagationCount: asArray(snapshot.correctionPropagations).filter(item => item && item.status !== 'rolled-back').length,
+            correctionPropagationRunCount: asArray(snapshot.correctionPropagationRuns).length,
+            correctionPropagationBatchCount: countBatches(snapshot, 'correction-propagation'),
+            trustScoreCount: asArray(snapshot.trustScoreRecords).filter(item => item && item.status !== 'rolled-back').length,
+            trustScoreRunCount: asArray(snapshot.trustScoreRuns).length,
+            trustedGateReportCount: asArray(snapshot.trustedMemoryGateReports).filter(item => item && item.status !== 'rolled-back').length,
+            trustedGateRunCount: asArray(snapshot.trustedMemoryGateRuns).length,
+            trustedGateBatchCount: countBatches(snapshot, 'trusted-memory-gate'),
+            trustScoreBatchCount: countBatches(snapshot, 'memory-trust-score'),
+            reviewInboxRunCount: asArray(snapshot.reviewInboxRuns).length,
+            reviewInboxBatchCount: countBatches(snapshot, 'memory-review-inbox'),
+            ownerSwitchBatchCount: countBatches(snapshot, 'owner-switch-gate'),
+            cutoverRehearsalRunCount: asArray(snapshot.cutoverRehearsalRuns).length,
+            cutoverRehearsalBatchCount: countBatches(snapshot, 'cutover-rehearsal'),
             palaceCards: compactPalace(snapshot),
             exportCards: compactExports(snapshot),
             archiveCards: archiveCards || { totalText: {}, sources: [], runs: [] },
@@ -167,6 +233,21 @@
             factLifecycleCards: factLifecycleCards || { totalText: {}, runs: [], batches: [], issues: [] },
             familyGraphRebuildCards: familyGraphRebuildCards || { totalText: {}, runs: [], batches: [] },
             historyModelRebuildCards: historyModelRebuildCards || { totalText: {}, runs: [], batches: [], activeModelCount: 0 },
+            cutoverCards: cutoverCards || { totalText: {}, reports: compactCutoverReports(snapshot), runs: [], batches: [] },
+            ownerGateCards: ownerGateCards || { ownerState: snapshot.ownerState || {}, modes: [], runs: [], safety: {} },
+            formalAdapterCards: formalAdapterCards || { reports: [], runs: [], ownerState: snapshot.ownerState || null },
+            realtimeTraceCards: realtimeTraceCards || { reports: [], runs: [], lastRun: null },
+            legacyReadOnlyCards: legacyReadOnlyCards || { reports: [], runs: [], lastRun: null },
+            ownerRecoveryCards: ownerRecoveryCards || { reports: [], runs: [], shadowInjectionEnabled: true },
+            reviewInboxCards: reviewInboxCards || { totalText: {}, openItems: [], resolvedItems: [], runs: [], batches: [] },
+            factCorrectionCards: factCorrectionCards || { totalText: {}, candidates: [], corrections: [], runs: [], batches: [] },
+            factConflictCards: factConflictCards || { totalText: {}, groups: [], resolutions: [], runs: [], batches: [] },
+            familyAdjustmentCards: familyAdjustmentCards || { totalText: {}, candidates: [], adjustments: [], runs: [], batches: [], familyOptions: [] },
+            modelCorrectionCards: modelCorrectionCards || { totalText: {}, candidates: [], modelOptions: [], corrections: [], runs: [], batches: [] },
+            propagationCards: propagationCards || { totalText: {}, pendingSources: [], impactCards: [], propagations: [], runs: [], batches: [] },
+            trustScoreCards: trustScoreCards || { totalText: {}, latestRecords: [], lowRecords: [], runs: [], batches: [], stats: {} },
+            trustedGateCards: trustedGateCards || { checks: [], reports: [], runs: [], batches: [], readinessScore: 0 },
+            uiGroupCards: uiGroupCards || [],
             timelineEvents: compactEvents(snapshot),
             factCards: compactFacts(snapshot),
             familyCards: compactFamilies(snapshot),
@@ -182,5 +263,5 @@
         };
     }
 
-    feature.model = { buildDashboard, buildLayerCards, buildReplacementCards, buildPlanCards, compactEvents, compactFacts, compactFamilies, compactGraph, compactModels, compactInjectionPreviews, compactScheduler, compactPalace, compactExports, formatNumber };
+    feature.model = { buildDashboard, buildLayerCards, buildReplacementCards, buildPlanCards, compactEvents, compactFacts, compactFamilies, compactGraph, compactModels, compactInjectionPreviews, compactCutoverReports, compactScheduler, compactPalace, compactExports, formatNumber };
 })(window);

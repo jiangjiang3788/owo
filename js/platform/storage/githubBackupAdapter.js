@@ -50,6 +50,28 @@
         return Object.assign({ Authorization: `token ${config.token}` }, extra || {});
     }
 
+    function isNetworkFailure(error) {
+        const message = String(error && error.message || error || '');
+        return /Failed to fetch|Load failed|NetworkError|Network request failed|fetch/i.test(message);
+    }
+
+    function describeFetchError(error) {
+        if (!isNetworkFailure(error)) return error;
+        const next = new Error(`GitHub 连接失败：浏览器无法访问 api.github.com。请检查网络/代理、GitHub 是否可访问、Token 权限是否仍有效，再重试。原始错误：${error && error.message ? error.message : error}`);
+        next.name = 'GitHubNetworkError';
+        next.code = 'github-network-failed';
+        next.cause = error;
+        return next;
+    }
+
+    async function githubFetch(url, options) {
+        try {
+            return await fetch(url, options);
+        } catch (error) {
+            throw describeFetchError(error);
+        }
+    }
+
     async function readJsonResponse(response, fallbackMessage) {
         try {
             const data = await response.json();
@@ -61,7 +83,7 @@
 
     async function checkStatus(config) {
         const conf = assertConfig(config, false);
-        const res = await fetch(`https://api.github.com/repos/${conf.repo}`, { headers: authHeaders(conf) });
+        const res = await githubFetch(`https://api.github.com/repos/${conf.repo}`, { headers: authHeaders(conf) });
         if (!res.ok) throw new Error(await readJsonResponse(res, `连接失败: ${res.status}`));
         const data = await res.json();
         return {
@@ -78,7 +100,7 @@
     }
 
     async function getExistingSha(config, repoPath) {
-        const res = await fetch(githubContentsUrl(config.repo, repoPath), { headers: authHeaders(config) });
+        const res = await githubFetch(githubContentsUrl(config.repo, repoPath), { headers: authHeaders(config) });
         if (!res.ok) return null;
         const data = await res.json();
         return data && data.sha ? data.sha : null;
@@ -87,7 +109,7 @@
     async function uploadOneFile(config, repoPath, content, message, sha) {
         const body = { message: message || 'Backup', content };
         if (sha) body.sha = sha;
-        const res = await fetch(githubContentsUrl(config.repo, repoPath), {
+        const res = await githubFetch(githubContentsUrl(config.repo, repoPath), {
             method: 'PUT',
             headers: authHeaders(config, {
                 'Content-Type': 'application/json',
@@ -157,7 +179,7 @@
     }
 
     async function fetchGithubList(config, repoPath) {
-        const res = await fetch(githubContentsUrl(config.repo, repoPath), { headers: authHeaders(config) });
+        const res = await githubFetch(githubContentsUrl(config.repo, repoPath), { headers: authHeaders(config) });
         if (!res.ok) throw new Error(await readJsonResponse(res, `获取列表失败: ${res.status}`));
         return res.json();
     }
@@ -178,7 +200,7 @@
     }
 
     async function downloadRaw(config, repoPath) {
-        const res = await fetch(githubContentsUrl(config.repo, repoPath), {
+        const res = await githubFetch(githubContentsUrl(config.repo, repoPath), {
             headers: authHeaders(config, { Accept: 'application/vnd.github.v3.raw' })
         });
         if (!res.ok) throw new Error(await readJsonResponse(res, `下载失败: ${res.status}`));
@@ -213,6 +235,8 @@
         sanitizeToken,
         normalizeConfig,
         encodeRepoPath,
+        isNetworkFailure,
+        describeFetchError,
         checkStatus,
         uploadBackup,
         findLatestBackup,

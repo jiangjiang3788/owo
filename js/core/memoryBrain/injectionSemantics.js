@@ -1,4 +1,4 @@
-// --- Memory Brain injection semantics owner (v0.3.6) ---
+// --- Memory Brain injection semantics owner (v0.6.1) ---
 // 只负责 snapshot + 当前输入 → 影子注入包的纯语义；不访问 DOM、网络、运行时状态、features、platform 或正式 prompt。
 (function registerMemoryBrainInjectionSemantics(app) {
     const core = app.core;
@@ -58,30 +58,64 @@
             return Array.isArray(value) ? value.join(' ') : value;
         }).join(' ');
     }
+    function numberScore(value, fallback) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return fallback || 0;
+        return Math.max(0, Math.min(1, number > 1 ? number / 100 : number));
+    }
+    function freshnessScore(item) {
+        const time = Date.parse(item && (item.updatedAt || item.lastWeightAt || item.createdAt || item.source && item.source.createdAt) || '');
+        if (!Number.isFinite(time)) return 0.04;
+        const days = Math.max(0, (Date.now() - time) / 86400000);
+        if (days <= 7) return 0.16;
+        if (days <= 30) return 0.11;
+        if (days <= 180) return 0.06;
+        return 0.02;
+    }
+    function trustScore(item, fallback) {
+        const level = asText(item && item.trustLevel).toLowerCase();
+        if (level === 'high' || level === '高可信') return 0.16;
+        if (level === 'medium' || level === '中可信') return 0.09;
+        if (level === 'low' || level === '低可信') return -0.12;
+        if (level === 'risky' || level === 'high-risk' || level === '高风险') return -0.22;
+        return numberScore(item && item.trustScore, fallback || 0.58) * 0.14 - 0.04;
+    }
+    function weightScore(item) {
+        return Math.max(numberScore(item && item.weight, 0), numberScore(item && item.activation, 0)) * 0.12;
+    }
+    function lifecyclePenalty(item) {
+        const status = asText(item && (item.lifecycleStatus || item.status)).toLowerCase();
+        if (/retired|duplicate|obsolete|merged/.test(status)) return -1;
+        if (/disputed|needs-edit|low-trust/.test(status)) return -0.35;
+        if (item && item.sourceStale) return -0.18;
+        if (item && item.needsRebuildReason) return -0.14;
+        return 0;
+    }
     function scoreFact(fact, queryTokens) {
         const text = itemText(fact, ['content', 'subject', 'predicate', 'object', 'factType', 'keywords', 'labels', 'evidenceQuote']);
-        return Math.min(1, tokenScore(queryTokens, text) + normalizeConfidence(fact && fact.confidence, 0.62) * 0.28 + (rawArray(fact && fact.familyIds).length ? 0.08 : 0));
+        const graphBoost = Math.min(0.12, rawArray(fact && fact.familyIds).length * 0.035 + rawArray(fact && fact.edgeIds).length * 0.02);
+        return Math.max(0, Math.min(1, tokenScore(queryTokens, text) * 0.62 + normalizeConfidence(fact && fact.confidence, 0.62) * 0.22 + trustScore(fact, 0.62) + weightScore(fact) + freshnessScore(fact) + graphBoost + lifecyclePenalty(fact)));
     }
     function scoreFamily(family, queryTokens) {
         const text = itemText(family, ['title', 'name', 'summary', 'keywords', 'labels', 'memoryTone']);
-        return Math.min(1, tokenScore(queryTokens, text) + normalizeConfidence(family && family.confidence, 0.68) * 0.22 + Math.min(0.14, rawArray(family && family.factIds).length * 0.02));
+        return Math.max(0, Math.min(1, tokenScore(queryTokens, text) * 0.58 + normalizeConfidence(family && family.confidence, 0.68) * 0.18 + trustScore(family, 0.66) + weightScore(family) + freshnessScore(family) + Math.min(0.16, rawArray(family && family.factIds).length * 0.018) + lifecyclePenalty(family)));
     }
     function scoreEdge(edge, queryTokens) {
         const text = itemText(edge, ['sourceLabel', 'targetLabel', 'relationLabel', 'relation', 'reason', 'keywords', 'labels']);
-        return Math.min(1, tokenScore(queryTokens, text) + normalizeConfidence(edge && edge.weight, 0.62) * 0.26);
+        return Math.max(0, Math.min(1, tokenScore(queryTokens, text) * 0.6 + normalizeConfidence(edge && edge.weight, 0.62) * 0.2 + trustScore(edge, 0.58) + freshnessScore(edge) + lifecyclePenalty(edge)));
     }
     function scoreEvent(event, queryTokens) {
         const text = itemText(event, ['title', 'summary', 'emotion', 'keywords', 'openThreads']);
-        return Math.min(1, tokenScore(queryTokens, text) + normalizeConfidence(event && event.importance, 0.56) * 0.2);
+        return Math.max(0, Math.min(1, tokenScore(queryTokens, text) * 0.62 + normalizeConfidence(event && event.importance, 0.56) * 0.16 + weightScore(event) + freshnessScore(event) + (rawArray(event && event.openThreads).length ? 0.08 : 0) + lifecyclePenalty(event)));
     }
     function scoreModel(model, queryTokens) {
         const text = itemText(model, ['type', 'title', 'summary', 'stableTraits', 'preferences', 'boundaries', 'relationshipNotes', 'projectDecisions', 'openQuestions', 'keywords', 'labels']);
-        return Math.min(1, tokenScore(queryTokens, text) + normalizeConfidence(model && model.confidence, 0.7) * 0.24 + 0.16);
+        return Math.max(0, Math.min(1, tokenScore(queryTokens, text) * 0.54 + normalizeConfidence(model && model.confidence, 0.7) * 0.2 + trustScore(model, 0.7) + freshnessScore(model) + 0.14 + lifecyclePenalty(model)));
     }
     function rank(list, scorer, queryTokens, limit, floor) {
         return rawArray(list).map(item => Object.assign({ __score: scorer(item, queryTokens) }, item))
-            .filter(item => item && item.status !== 'retired' && item.__score >= (floor || 0.18))
-            .sort((a, b) => b.__score - a.__score || String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || '')))
+            .filter(item => item && item.status !== 'retired' && lifecyclePenalty(item) > -1 && item.__score >= (floor || 0.18))
+            .sort((a, b) => b.__score - a.__score || String(b.trustUpdatedAt || b.updatedAt || b.createdAt || '').localeCompare(String(a.trustUpdatedAt || a.updatedAt || a.createdAt || '')))
             .slice(0, limit || 8);
     }
     function line(prefix, item, text, score) {
@@ -121,7 +155,24 @@
             score: Math.round((Number(item && item.__score) || 0) * 100)
         }));
     }
+    function buildDisabledInjectionPackage(query, snapshot, options) {
+        const queryText = clampText(query, 1200);
+        const queryTokens = tokenize(queryText);
+        const memoryBlock = '【Memory Brain 影子注入预览已关闭】\n说明：v0.6.4 一键关闭只禁用 Memory Brain 影子候选；正式聊天仍由当前旧记忆 owner 注入，表格记忆在 memoryMode=table 时仍可总结。';
+        return {
+            layer: 'injection', kind: 'shadow-injection-preview', mode: 'shadow-disabled', status: 'disabled',
+            query: { text: queryText, tokens: queryTokens.slice(0, 32) },
+            selected: { modelIds: [], factIds: [], familyIds: [], edgeIds: [], eventIds: [] },
+            selectedCards: { models: [], facts: [], families: [], edges: [], events: [] },
+            memoryBlock,
+            blockCharCount: memoryBlock.length,
+            policy: { previewOnly: true, formalPromptInjection: false, shadowInjectionEnabled: false, singleOwnerRequiredBeforeCutover: true, retrievalStrategy: 'disabled-by-owner-recovery' },
+            diagnostics: ['shadow_injection_disabled_by_owner_recovery', 'legacy_owner_still_handles_formal_prompt', 'table_memory_summary_preserved_when_memoryMode_table']
+        };
+    }
     function buildMemoryInjectionPackage(query, snapshot, options = {}) {
+        const settings = snapshot && snapshot.settings || {};
+        if (settings.shadowInjectionEnabled === false && !options.ignoreShadowOff) return buildDisabledInjectionPackage(query, snapshot, options);
         const queryText = clampText(query, 1200);
         const queryTokens = tokenize(queryText);
         const activeModels = rawArray(snapshot && snapshot.models).filter(model => model && model.status === 'active');
@@ -132,7 +183,7 @@
             edges: rank(snapshot && snapshot.edges, scoreEdge, queryTokens, Number(options.maxEdges) || 10, queryTokens.length ? 0.22 : 0.14),
             events: rank(snapshot && snapshot.events, scoreEvent, queryTokens, Number(options.maxEvents) || 4, queryTokens.length ? 0.22 : 0.05)
         };
-        const diagnostics = [];
+        const diagnostics = ['retrieval_strategy_v0_6_1_keywords_trust_weight_recentness'];
         if (!queryText) diagnostics.push('empty_query_used_recent_or_manual_preview');
         if (!selected.models.length) diagnostics.push('no_active_long_term_models_selected');
         if (!selected.facts.length) diagnostics.push('no_relevant_facts_selected');
@@ -151,7 +202,7 @@
             },
             memoryBlock,
             blockCharCount: memoryBlock.length,
-            policy: { previewOnly: true, formalPromptInjection: false, singleOwnerRequiredBeforeCutover: true },
+            policy: { previewOnly: true, formalPromptInjection: false, singleOwnerRequiredBeforeCutover: true, retrievalStrategy: 'keywords+trust+weight+recentness+graph' },
             diagnostics
         };
     }
@@ -178,5 +229,5 @@
         };
     }
 
-    core.memoryBrain.injectionSemantics = { tokenize, buildMemoryInjectionPackage, compactInjectionPreviewForList };
+    core.memoryBrain.injectionSemantics = { tokenize, buildMemoryInjectionPackage, buildDisabledInjectionPackage, compactInjectionPreviewForList };
 })(OwoApp);

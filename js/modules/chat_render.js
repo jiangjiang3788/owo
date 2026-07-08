@@ -1603,7 +1603,9 @@ function addMessageBubble(message, targetChatId, targetChatType) {
             }
             
             // === 后台消息弹窗通知开关检查 ===
-            const isToastEnabled = senderChat.bgToastEnabled !== undefined ? senderChat.bgToastEnabled : (db.globalToastEnabled !== false);
+            const globalToastEnabled = db.globalToastEnabled !== false;
+            const chatToastEnabled = senderChat.bgToastEnabled !== undefined ? senderChat.bgToastEnabled : true;
+            const isToastEnabled = globalToastEnabled && chatToastEnabled;
             if (isToastEnabled) {
                 showToast({
                     avatar: senderAvatar,
