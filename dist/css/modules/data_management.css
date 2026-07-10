@@ -1,0 +1,250 @@
+/* Data Management App (v0.2.17) */
+.data-management-content {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 18px;
+    gap: 14px;
+    overflow-y: auto;
+}
+.dm-hero-card,
+.dm-fold {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.05);
+}
+.dm-hero-card { padding: 18px; }
+.dm-hero-card h2 { margin: 0 0 6px; font-size: 20px; }
+.dm-hero-card p,
+.dm-note { margin: 0; color: #777; font-size: 13px; line-height: 1.6; }
+.dm-fold { padding: 0; overflow: hidden; }
+.dm-fold summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 15px 16px;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.dm-fold summary::-webkit-details-marker { display: none; }
+.dm-fold summary::after { content: '›'; transform: rotate(90deg); color: #aaa; transition: transform .2s; }
+.dm-fold:not([open]) summary::after { transform: rotate(0deg); }
+.dm-fold-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.dm-action-row { display: flex; gap: 10px; width: 100%; }
+.dm-action-row.two > * { flex: 1; }
+.dm-console-mount {
+    min-height: 420px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #f7f7f7;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+.dm-empty-note { padding: 16px; color: #777; }
+
+.dm-tutorial-mount,
+.dm-storage-mount {
+    width: 100%;
+    box-sizing: border-box;
+}
+.dm-tutorial-mount {
+    max-height: none;
+}
+.dm-storage-mount #storage-chart-container {
+    min-height: 260px;
+}
+.dm-storage-mount .storage-console-widget {
+    position: static;
+    margin-top: 14px;
+}
+
+.data-management--busy { opacity: .72; pointer-events: none; }
+.home-action-dock {
+    min-height: 18px;
+    pointer-events: auto;
+    margin: 0 20px 8px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+.home-action-dock .icon-img { width: 54px; height: 54px; border-radius: 15px; margin-bottom: 6px; }
+.home-action-dock .app-name { font-size: 12px; }
+.appearance-hub-section { margin-bottom: 14px; }
+.appearance-hub-details {
+    border-radius: 16px;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(0,0,0,0.06);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.appearance-hub-details summary {
+    padding: 14px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+}
+.appearance-hub-details summary::-webkit-details-marker { display:none; }
+.appearance-hub-details summary::after { content:'›'; transform: rotate(90deg); color:#aaa; }
+.appearance-hub-details:not([open]) summary::after { transform: rotate(0deg); }
+.appearance-hub-body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.appearance-hub-body p { margin: 0; color: #777; font-size: 12px; line-height: 1.5; }
+.appearance-hub-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.appearance-hub-actions .btn { flex: 1; min-width: 120px; }
+
+.dm-inline-panel {
+    border-radius: 16px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 12px;
+}
+.dm-embedded-tutorial,
+.dm-embedded-storage {
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+}
+.dm-embedded-tutorial .tutorial-item,
+.dm-embedded-tutorial .tutorial-modern-item,
+.dm-embedded-tutorial .tutorial-rabbit-card {
+    margin-left: 0;
+    margin-right: 0;
+}
+.dm-embedded-storage .content {
+    padding: 0 !important;
+}
+.dm-merged-note {
+    margin: 0;
+    color: #888;
+    font-size: 12px;
+    line-height: 1.5;
+}
+/* v0.2.14：旧内容直接合并到数据管理 App */
+.dm-tutorial-host { gap: 12px; }
+.dm-embedded-tutorial {
+    width: 100%;
+    min-height: 520px;
+    border-radius: 16px;
+    overflow: visible;
+}
+.dm-embedded-tutorial.tutorial-modern-layout,
+.dm-embedded-tutorial.tutorial-rabbit-layout {
+    padding-bottom: 12px;
+}
+.dm-storage-mount {
+    width: 100%;
+    min-height: 360px;
+}
+.dm-storage-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.dm-storage-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.dm-storage-actions .btn { flex: 1; min-width: 140px; }
+.dm-storage-status,
+.dm-storage-total,
+.dm-storage-list {
+    background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 12px;
+}
+.dm-storage-status-title { font-weight: 700; color: #333; margin-bottom: 8px; }
+.dm-storage-quota {
+    height: 8px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: #eee;
+    margin: 8px 0 4px;
+}
+.dm-storage-quota > div { height: 100%; background: #8bc34a; border-radius: inherit; }
+.dm-storage-status p { margin: 0 0 8px; color: #777; font-size: 12px; }
+.dm-storage-chart {
+    width: 100%;
+    height: 260px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.dm-storage-total { text-align: center; }
+.dm-storage-total span { display: block; color: #888; font-size: 13px; margin-bottom: 4px; }
+.dm-storage-total strong { color: #333; font-size: 22px; }
+.dm-storage-list { display: flex; flex-direction: column; gap: 8px; }
+.dm-storage-row {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+}
+.dm-storage-dot { width: 10px; height: 10px; border-radius: 999px; }
+.dm-storage-name { font-weight: 600; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-storage-size, .dm-storage-percent { color: #777; font-variant-numeric: tabular-nums; }
+
+/* v0.2.14 inline storage panel overrides */
+.dm-storage-quota {
+    height: auto;
+    background: rgba(255,255,255,0.88);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 12px;
+    margin: 0;
+}
+.dm-storage-progress {
+    height: 8px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: #eee;
+    margin-bottom: 6px;
+}
+.dm-storage-progress span {
+    display: block;
+    height: 100%;
+    background: #8bc34a;
+    border-radius: inherit;
+}
+.dm-storage-quota p { margin: 0; color: #777; font-size: 12px; }
+
+/* v0.2.17: Data Management 只保留控制台入口；真正控制台 UI 在悬浮球中承载。 */
+.dm-console-entry {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.05);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.dm-console-entry h3 { margin: 0 0 6px; font-size: 17px; color: #333; }
+.dm-console-entry p { margin: 0; color: #777; font-size: 13px; line-height: 1.55; }
+.dm-console-entry .btn { flex: 0 0 auto; }
+@media (max-width: 520px) {
+    .dm-console-entry { flex-direction: column; align-items: stretch; }
+    .dm-console-entry .btn { width: 100%; }
+}
+
+/* v0.2.17：数据管理只保留悬浮球控制台入口，不再内嵌重复控制台面板 */
+.dm-console-entry {
+    align-items: stretch;
+}
+.dm-console-entry .btn {
+    width: 100%;
+    border-radius: 14px;
+    min-height: 44px;
+    font-weight: 700;
+}

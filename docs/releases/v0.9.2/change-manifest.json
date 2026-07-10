@@ -1,0 +1,27 @@
+{
+  "version": "0.9.2",
+  "added": [
+    "js/core/chat/runtimeModeSemantics.js",
+    "js/core/chat/preparedRequestSemantics.js",
+    "js/features/chatRuntime/service.js",
+    "js/features/chatRuntime/public.js",
+    "tools/chat-runtime-cutover-gate.js",
+    "docs/architecture/decisions/ADR-001-single-chat-builder.md",
+    "docs/architecture/decisions/ADR-002-chat-runtime-cutover.md"
+  ],
+  "modified": [
+    "js/features/aiRuntime/service.js",
+    "js/features/aiRuntime/public.js",
+    "js/modules/chat_ai.js",
+    "js/app/namespace.js",
+    "js/app/state/initialState.js",
+    "js/app/state/globalSettingsDefaults.js",
+    "index.html",
+    "script-manifest.json"
+  ],
+  "removedOrMerged": [
+    "root release notes and validation files",
+    "docs/0.1 through docs/0.9 version trees",
+    "obsolete Memory Brain summary JSON files"
+  ]
+}

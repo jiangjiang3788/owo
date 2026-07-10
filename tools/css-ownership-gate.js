@@ -141,12 +141,12 @@ if (!fs.existsSync(mapPath)) {
     }
   }
 
-  const ownershipDoc = path.join(root, 'docs/css-ownership.md');
-  if (!fs.existsSync(ownershipDoc)) error('缺少 docs/css-ownership.md');
+  const ownershipDoc = path.join(root, 'docs/operations/css-ownership.md');
+  if (!fs.existsSync(ownershipDoc)) error('缺少 docs/operations/css-ownership.md');
   else {
     const docText = read(ownershipDoc);
     for (const token of ['css/shared/theme-tokens.css', 'tools/css-ownership-map.json', 'node tools/css-ownership-gate.js']) {
-      if (!docText.includes(token)) error(`docs/css-ownership.md 缺少说明：${token}`);
+      if (!docText.includes(token)) error(`docs/operations/css-ownership.md 缺少说明：${token}`);
     }
   }
 }

@@ -1,0 +1,196 @@
+/* Debug console renderer (v0.2.17 owner: features/debugConsole) */
+.request-console-host {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #f7f7f7;
+}
+.request-console-header,
+.request-console-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.72);
+}
+.request-console-title { min-width: 0; }
+.request-console-header strong {
+    display: block;
+    font-size: 15px;
+    line-height: 1.2;
+}
+.request-console-header span,
+.request-console-title span {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: min(52vw, 520px);
+    font-size: 11px;
+    color: #777;
+}
+.request-console-header-actions,
+.request-console-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.request-console-header-actions button,
+.request-console-toolbar button,
+.request-console-mini-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: rgba(0,0,0,0.07);
+    color: #333;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.request-console-count {
+    min-width: 42px;
+    text-align: right;
+    color: #666;
+    font-size: 11px;
+}
+.request-console-toolbar .request-console-count {
+    margin-right: auto;
+    text-align: left;
+}
+.request-console-note {
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #777;
+    background: rgba(0,0,0,0.025);
+}
+.request-console-list {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    overflow-y: auto;
+}
+.request-console-empty {
+    padding: 22px 16px;
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+}
+.request-trace-card {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(0,0,0,0.045);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.request-trace-card--success { background: rgba(36,143,81,0.08); }
+.request-trace-card--diagnostic,
+.request-trace-card--warning { background: rgba(255,188,66,0.12); }
+.request-trace-card--http_error,
+.request-trace-card--error,
+.request-trace-card--cat-error { background: rgba(205,64,64,0.10); }
+.request-trace-card--cat-message,
+.request-trace-card--cat-reply { background: rgba(83,135,190,0.08); }
+.request-trace-card--kind-operation,
+.request-trace-card--kind-event { background: rgba(150,150,150,0.10); }
+.request-trace-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 700;
+}
+.request-trace-category {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.76);
+    color: #555;
+    font-size: 10px;
+    font-weight: 700;
+    vertical-align: middle;
+}
+.request-trace-meta,
+.request-trace-endpoint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 3px;
+    font-size: 11px;
+    color: #707070;
+}
+.request-trace-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.request-trace-status {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.78);
+    font-size: 11px;
+    color: #555;
+}
+.request-console-header--detail { flex: 0 0 auto; }
+.request-console-toolbar--detail .request-console-detail-title {
+    min-width: 0;
+    margin-right: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #555;
+    font-weight: 700;
+    font-size: 12px;
+}
+.request-console-full-detail {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    overflow-wrap: anywhere;
+    margin: 0;
+    padding: 16px 18px 24px;
+    border-radius: 0;
+    background: rgba(31,31,31,0.94);
+    color: #f7f7f7;
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    tab-size: 2;
+}
+.request-console-detail-empty {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #777;
+}
+.quick-dock-console-mount.request-console-host .request-console-list,
+.quick-dock-console-mount.request-console-host .request-console-full-detail {
+    max-height: none;
+}
+@media (max-width: 520px) {
+    .request-trace-card { grid-template-columns: 1fr; }
+    .request-trace-actions { justify-content: flex-start; }
+    .request-console-header { align-items: flex-start; }
+    .request-console-title span { max-width: 62vw; }
+}

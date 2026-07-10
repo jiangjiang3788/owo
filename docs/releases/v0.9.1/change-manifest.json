@@ -1,0 +1,35 @@
+{
+  "version": "0.9.1",
+  "title": "Safe Restore Foundation",
+  "added": [
+    "js/platform/storage/backupIntegrity.js",
+    "js/platform/storage/restoreTransaction.js",
+    "tools/backup-restore-safety-gate.js",
+    "tools/script-manifest-gate.js",
+    "tools/trace-safety-gate.js",
+    "script-manifest.json",
+    "docs/0.9/release-v0.9.1-plan.md"
+  ],
+  "modified": [
+    "js/platform/storage/backupAdapter.js",
+    "js/core/ai/taskContracts.js",
+    "js/features/aiRuntime/service.js",
+    "js/platform/ai/requestTraceStore.js",
+    "js/app/namespace.js",
+    "index.html",
+    "tools/arch-check.js"
+  ],
+  "behaviorChanges": [
+    "backup export format 3.1 adds checksum",
+    "restore validates and commits atomically",
+    "unknown AI task types are rejected",
+    "trace payloads are redacted and truncated"
+  ],
+  "preserved": [
+    "chat prompt behavior",
+    "world book behavior",
+    "journal behavior",
+    "structured archive behavior",
+    "vector memory behavior"
+  ]
+}

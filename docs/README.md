@@ -1,75 +1,35 @@
-# OWO Docs
+# OWO 项目文档
 
-当前文档只保留 **0.1 / 0.2 / 0.3 / 0.4 / 0.5 / 0.6 / 0.7 / 根路径 gate 入口** 四类路径。
+所有说明性文档统一放在 `docs/`。项目根目录只保留运行文件、构建配置和版本号。
 
-## 根路径结构
+## 当前结构
 
 ```text
 docs/
-  0.1/
-  0.2/
-  0.3/
-  0.4/
-  0.5/
-  0.6/
-  0.7/
-  css-ownership.md
-  release-plan.md
-  smoke-memory.md
-  VERSIONING.md
-  README.md
+├── architecture/
+│   ├── architecture.md
+│   ├── ownership/
+│   └── decisions/
+├── releases/
+│   ├── roadmap.md
+│   └── v0.x.x/
+├── operations/
+│   ├── versioning.md
+│   ├── smoke-memory.md
+│   ├── css-ownership.md
+│   ├── gates/
+│   └── testing/
+├── history/
+└── legal/
 ```
 
-## 分卷规则
+## 阅读顺序
 
-| 路径 | 含义 | 维护规则 |
-|---|---|---|
-| `docs/0.1/` | 0.1 历史架构整改档案 | 原 `caifen` 历史文档直接放在这里，不再套 `caifen` 子文件夹。 |
-| `docs/0.2/` | 0.2 功能收口档案 | `v0.2.x` release 文档和计划放在这里。 |
-| `docs/0.3/` | 0.3 长期记忆脑主线 | `v0.3.x` Memory Brain release 文档和计划放在这里。 |
-| `docs/0.4/` | 0.4 历史大整理主线 | `v0.4.x` 历史源扫描、切片、回填、去重和接管演练文档放在这里。 |
-| `docs/0.5/` | 0.5 可信记忆主线 | `v0.5.x` 记忆审查、纠错、冲突处理和可信 gate 文档放在这里。 |
-| `docs/0.6/` | 0.6 正式注入演练主线 | `v0.6.x` adapter、安全门、trace 和候选 gate 文档放在这里。 |
-| `docs/0.7/` | 0.7 长期陪伴人格主线 | `v0.7.x` 关系连续性、互动偏好、AI 自我日记、情绪节点和陪伴人格文档放在这里。 |
-| `docs/*.md` | 固定入口 / gate 兼容文档 | 只保留 `css-ownership.md`、`release-plan.md`、`smoke-memory.md`、`VERSIONING.md`、`README.md`。 |
+1. `architecture/architecture.md`：当前架构和所有权原则；
+2. `releases/roadmap.md`：当前实施顺序；
+3. `architecture/decisions/`：不能随意推翻的关键决策；
+4. `releases/v0.9.3/`：当前版本范围、验证和变更；
+5. `operations/`：Gate、版本和手工冒烟说明；
+6. `history/`：已退休设计的合并摘要。
 
-当前产品迭代：`v0.8.7`。
-
-## 后续版本规则
-
-`0.3` 版本线已在 `v0.3.0` 正式开启。0.3 记忆脑文档写入 `docs/0.3/`。
-
-`0.4` 版本线已在 `v0.4.0` 正式开启。后续 0.4 历史大整理文档写入 `docs/0.4/`。
-
-`0.5` 版本线已在 `v0.5.0` 正式开启。后续 0.5 可信记忆文档写入 `docs/0.5/`。
-
-`0.6` 版本线已在 `v0.6.0` 正式开启。后续 0.6 正式注入演练文档写入 `docs/0.6/`。
-
-`0.7` 版本线已在 `v0.7.0` 正式开启。后续 0.7 长期陪伴人格文档写入 `docs/0.7/`。
-
-`V27`、`V37`、`V38` 这类编号是 0.1 历史 gate 编号，不再作为产品版本号继续追加。产品功能版本统一使用 `v0.2.x` / `v0.3.x` / `v0.4.x` / `v0.5.x` / `v0.6.x` / `v0.7.x`。
-
-
-## v0.6 正式注入 adapter
-
-- `docs/0.6` 版本线已在 `v0.6.0` 正式开启，用于记录 Memory Brain 正式注入 adapter、安全门和 blocked-until-v0.9 约束。
-
-
-## v0.8
-
-- v0.8.0：夜间整理计划，只生成待确认候选，不自动写记忆。
-
-
-## docs/0.8
-
-`0.8` 版本线已在 `v0.8.0` 正式开启：Memory Brain 自我维护、夜间整理和 Dream Digest 文档放在 docs/0.8。
-
-
-## v0.8 自我维护收口
-
-- v0.8.2：长期模型周期重建。
-- v0.8.3：记忆衰减解释化。
-- v0.8.4：未完成线索复盘。
-- v0.8.5：周年与关系回忆增强。
-- v0.8.6：自我修复 Gate。
-- v0.8.7：低成本后台维护。
+当前产品版本：`v0.9.3`。

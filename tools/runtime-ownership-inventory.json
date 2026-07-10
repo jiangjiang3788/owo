@@ -1,5 +1,5 @@
 {
-  "version": "0.8.13",
+  "version": "0.9.3",
   "retired": [
     "js/core/memoryBrain",
     "js/platform/memoryBrain",
@@ -26,16 +26,33 @@
     ]
   },
   "canonicalCurrentOwners": {
-    "chatPrompt": "js/modules/chat_ai.js",
-    "aiRouting": "js/platform/ai/aiRouter.js",
+    "aiTaskContract": "js/core/ai/taskContracts.js",
+    "aiRoutingSemantics": "js/core/ai/routingSemantics.js",
+    "aiRuntime": "js/features/aiRuntime/service.js",
+    "aiRuntimePublic": "js/features/aiRuntime/public.js",
     "aiConfig": "js/platform/ai/aiConfigStore.js",
     "modelRegistry": "js/platform/ai/modelRegistry.js",
+    "providerRequest": "js/platform/ai/providerRequestAdapter.js",
+    "chatPrompt": "js/modules/chat_ai.js",
     "worldBookContext": "js/features/worldBook/contextService.js",
-    "legacyMemoryChoice": "js/core/memory/legacyMemoryOwnerSemantics.js"
+    "legacyMemoryChoice": "js/core/memory/legacyMemoryOwnerSemantics.js",
+    "runtimeCutoverSemantics": "js/core/ai/cutoverSemantics.js",
+    "outputContracts": "js/core/output/outputContracts.js",
+    "journalRuntime": "js/features/journalRuntime/service.js",
+    "journalOutputContracts": "js/core/journal/outputContracts.js",
+    "journalPromptAndWrite": "js/modules/journal.js"
+  },
+  "compatibilityBridges": {
+    "aiRouter.chat": "delegates to features.aiRuntime.publicApi.invokeTask",
+    "utils.fetchAiResponse": "delegates provider execution to features.aiRuntime.publicApi.executeProviderRequest",
+    "chat_ai provider fetch": "delegates to executeChatAiProviderRequest",
+    "journal legacy executor": "temporary adapter inside features/journalRuntime/service.js; removal target v0.10.x after Context/Prompt contract validation"
   },
   "nextContracts": [
-    "AiTask",
-    "ContextItem",
-    "invokeAiTask"
+    "ContextItem.v1",
+    "ContextProvider",
+    "PromptSection.v1",
+    "compilePrompt",
+    "ContextAccessPolicy"
   ]
 }

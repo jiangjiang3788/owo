@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * V27 memory regression gate.
- * Static companion check for docs/smoke-memory.md.
+ * Static companion check for docs/operations/smoke-memory.md.
  */
 const fs = require('fs');
 const path = require('path');
@@ -56,8 +56,8 @@ function assertNoForbidden(text, rules, label) {
 
 console.log('OWO V27 memory regression gate\n');
 
-const smokePath = path.join(root, 'docs/smoke-memory.md');
-const planPath = path.join(root, 'docs/0.1/v27-memory-regression-gate-plan.md');
+const smokePath = path.join(root, 'docs/operations/smoke-memory.md');
+const planPath = path.join(root, 'docs/operations/gates/memory-regression-gate.md');
 const smokeText = requireFile(smokePath, 'V27 memory smoke 文档');
 requireFile(planPath, 'V27 memory regression plan');
 
@@ -75,7 +75,7 @@ const requiredDocTokens = [
   'window.OwoApp.features.journal.publicApi',
   'window.OwoApp.features.worldBook.publicApi'
 ];
-for (const token of requiredDocTokens) assertIncludes(smokeText, token, 'docs/smoke-memory.md');
+for (const token of requiredDocTokens) assertIncludes(smokeText, token, 'docs/operations/smoke-memory.md');
 ok('memory smoke 文档包含必需测试 ID 和控制台 probes');
 
 const indexText = requireFile(path.join(root, 'index.html'), 'index.html');

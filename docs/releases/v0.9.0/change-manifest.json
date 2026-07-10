@@ -1,0 +1,29 @@
+{
+  "version": "0.9.0",
+  "type": "architecture-convergence",
+  "added": [
+    "js/core/ai/taskContracts.js",
+    "js/core/ai/routingSemantics.js",
+    "js/features/aiRuntime/service.js",
+    "js/features/aiRuntime/public.js",
+    "docs/0.9/README.md",
+    "docs/0.9/release-v0.9.0-plan.md"
+  ],
+  "changed": [
+    "js/platform/ai/aiConfigStore.js",
+    "js/platform/ai/modelRegistry.js",
+    "js/platform/ai/aiRouter.js",
+    "js/platform/ai/requestTraceStore.js",
+    "js/modules/chat_ai.js",
+    "js/utils.js",
+    "js/app/namespace.js",
+    "index.html"
+  ],
+  "behaviorPreserved": [
+    "existing chat prompt",
+    "world book injection",
+    "journal memory",
+    "structured archive memory",
+    "vector memory"
+  ]
+}

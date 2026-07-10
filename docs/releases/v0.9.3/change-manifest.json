@@ -1,0 +1,30 @@
+{
+  "version": "0.9.3",
+  "title": "Journal Runtime vertical slice",
+  "added": [
+    "js/core/ai/cutoverSemantics.js",
+    "js/core/output/outputContracts.js",
+    "js/core/journal/runtimeModeSemantics.js",
+    "js/core/journal/outputContracts.js",
+    "js/features/journalRuntime/service.js",
+    "js/features/journalRuntime/public.js",
+    "tools/journal-runtime-cutover-gate.js",
+    "docs/architecture/decisions/ADR-003-journal-single-write.md"
+  ],
+  "modified": [
+    "js/core/ai/taskContracts.js",
+    "js/core/chat/runtimeModeSemantics.js",
+    "js/modules/journal.js",
+    "js/features/journal/public.js",
+    "js/app/namespace.js",
+    "js/app/state/constants.js",
+    "js/app/state/initialState.js",
+    "js/app/state/globalSettingsDefaults.js",
+    "index.html",
+    "script-manifest.json"
+  ],
+  "removed": [],
+  "dataMigration": false,
+  "defaultMode": "shadow",
+  "rollback": "set journalRuntimeMode to legacy"
+}

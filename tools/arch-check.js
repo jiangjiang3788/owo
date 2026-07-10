@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /*
- * OWO architecture check for product release v0.8.13.
+ * OWO architecture check for product release v0.9.3.
  * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
  */
 const fs = require('fs');
 const path = require('path');
+const childProcess = require('child_process');
 
 const root = process.cwd();
 const MAX_SOFT_LINES = 300;
@@ -60,7 +61,14 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO architecture check · product release v0.8.13 · historical gates V1-V38.1\n');
+console.log('OWO architecture check · product release v0.9.3 · historical gates V1-V38.1\n');
+
+// 0. index script/style manifest gate
+const manifestGate = childProcess.spawnSync(process.execPath, [path.join(root, 'tools', 'script-manifest-gate.js')], { cwd: root, encoding: 'utf8' });
+if (manifestGate.stdout) process.stdout.write(manifestGate.stdout);
+if (manifestGate.stderr) process.stderr.write(manifestGate.stderr);
+if (manifestGate.status !== 0) error('script-manifest gate 未通过');
+
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -1561,11 +1569,11 @@ if (fs.existsSync(promptContextPath)) {
 
 
 // 27. V27 memory regression gate：只补 memory smoke 文档和静态 gate，不拆新业务
-const memorySmokeDocPath = path.join(root, 'docs/smoke-memory.md');
-const memoryV27PlanPath = path.join(root, 'docs/0.1/v27-memory-regression-gate-plan.md');
+const memorySmokeDocPath = path.join(root, 'docs/operations/smoke-memory.md');
+const memoryV27PlanPath = path.join(root, 'docs/operations/gates/memory-regression-gate.md');
 const memoryGatePath = path.join(root, 'tools/memory-regression-gate.js');
-if (!fs.existsSync(memorySmokeDocPath)) error('缺少 V27 memory smoke 文档：docs/smoke-memory.md');
-if (!fs.existsSync(memoryV27PlanPath)) error('缺少 V27 计划文档：docs/0.1/v27-memory-regression-gate-plan.md');
+if (!fs.existsSync(memorySmokeDocPath)) error('缺少 V27 memory smoke 文档：docs/operations/smoke-memory.md');
+if (!fs.existsSync(memoryV27PlanPath)) error('缺少 V27 计划文档：docs/operations/gates/memory-regression-gate.md');
 if (!fs.existsSync(memoryGatePath)) error('缺少 V27 memory regression gate：tools/memory-regression-gate.js');
 if (fs.existsSync(memorySmokeDocPath)) {
   const smokeText = read(memorySmokeDocPath);
@@ -1582,7 +1590,7 @@ if (fs.existsSync(memorySmokeDocPath)) {
     'window.OwoApp.features.worldBook.publicApi'
   ];
   for (const token of requiredSmokeTokens) {
-    if (!smokeText.includes(token)) error(`docs/smoke-memory.md 缺少 V27 smoke token：${token}`);
+    if (!smokeText.includes(token)) error(`docs/operations/smoke-memory.md 缺少 V27 smoke token：${token}`);
   }
 }
 if (fs.existsSync(memoryGatePath)) {
@@ -2182,8 +2190,8 @@ if (fs.existsSync(mainPath)) {
 // 37. V37 CSS ownership gate：只建立 CSS owner 表、公共变量和 gate，不大改选择器
 const cssOwnershipMapPath = path.join(root, 'tools/css-ownership-map.json');
 const cssOwnershipGatePath = path.join(root, 'tools/css-ownership-gate.js');
-const cssOwnershipDocPath = path.join(root, 'docs/css-ownership.md');
-const cssV37PlanPath = path.join(root, 'docs/0.1/v37-css-ownership-plan.md');
+const cssOwnershipDocPath = path.join(root, 'docs/operations/css-ownership.md');
+const cssV37PlanPath = path.join(root, 'docs/operations/gates/css-ownership-gate.md');
 const themeTokensPath = path.join(root, 'css/shared/theme-tokens.css');
 for (const [file, label] of [
   [cssOwnershipMapPath, 'V37 CSS ownership map'],
@@ -2238,7 +2246,7 @@ if (fs.existsSync(cssOwnershipGatePath)) {
 // 38. V38 legacy globals deprecation gate：旧 window.* 兼容入口保留但 deprecated，新代码禁止继续调用旧全局
 const legacyGlobalsGatePath = path.join(root, 'tools/legacy-globals-gate.js');
 const legacyDeprecationPath = path.join(root, 'js/app/legacyDeprecation.js');
-const legacyV38DocPath = path.join(root, 'docs/0.1/v38-legacy-globals-deprecation-plan.md');
+const legacyV38DocPath = path.join(root, 'docs/operations/gates/legacy-globals-gate.md');
 for (const [file, label] of [
   [legacyGlobalsGatePath, 'V38 legacy globals gate'],
   [legacyDeprecationPath, 'V38 legacy deprecation registry'],
@@ -2272,7 +2280,7 @@ if (fs.existsSync(legacyGlobalsGatePath)) {
 
 // 39. V38.1 placeholder feature gate：移除用户可见的占位功能入口，防止再出现“开发中”按钮
 const placeholderFeatureGatePath = path.join(root, 'tools/placeholder-feature-gate.js');
-const placeholderFeatureDocPath = path.join(root, 'docs/0.1/v38-1-remove-placeholder-features.md');
+const placeholderFeatureDocPath = path.join(root, 'docs/operations/gates/placeholder-features-gate.md');
 for (const [file, label] of [
   [placeholderFeatureGatePath, 'V38.1 placeholder feature gate'],
   [placeholderFeatureDocPath, 'V38.1 placeholder feature cleanup plan']
@@ -2295,71 +2303,49 @@ if (indexText) {
 }
 
 
-// 40. v0.2.12 docs routing gate：根路径只保留 0.1 / 0.2 / 固定入口
+// 40. v0.9.2 docs convergence gate：所有说明文档统一位于 docs/，历史逐版本计划已合并
 const docsRootPath = path.join(root, 'docs');
-const docsRootReadmePath = path.join(root, 'docs', 'README.md');
-const docsVersioningPath = path.join(root, 'docs', 'VERSIONING.md');
-const docsRootReleasePlanPath = path.join(root, 'docs', 'release-plan.md');
-const docsRootCssOwnershipPath = path.join(root, 'docs', 'css-ownership.md');
-const docsRootSmokeMemoryPath = path.join(root, 'docs', 'smoke-memory.md');
-const docsV01ReadmePath = path.join(root, 'docs', '0.1', 'README.md');
-const docsV02ReadmePath = path.join(root, 'docs', '0.2', 'README.md');
-const docsV02ReleasePlanPath = path.join(root, 'docs', '0.2', 'release-plan.md');
-const docsV0211PlanPath = path.join(root, 'docs', '0.2', 'release-v0.2.11-plan.md');
-const docsV0212PlanPath = path.join(root, 'docs', '0.2', 'release-v0.2.12-plan.md');
-const docsV01LedgerPath = path.join(root, 'docs', '0.1', 'refactor-ledger.md');
-for (const [file, label] of [
-  [docsRootReadmePath, 'docs root router'],
-  [docsVersioningPath, 'docs versioning rules'],
-  [docsRootReleasePlanPath, 'docs root release plan'],
-  [docsRootCssOwnershipPath, 'docs root css ownership gate'],
-  [docsRootSmokeMemoryPath, 'docs root memory smoke gate'],
-  [docsV01ReadmePath, 'docs v0.1 index'],
-  [docsV02ReadmePath, 'docs v0.2 index'],
-  [docsV02ReleasePlanPath, 'docs v0.2 release plan'],
-  [docsV0211PlanPath, 'v0.2.11 docs routing plan'],
-  [docsV0212PlanPath, 'v0.2.12 docs root allowlist plan'],
-  [docsV01LedgerPath, 'docs v0.1 ledger']
-]) {
-  if (!fs.existsSync(file)) error(`缺少 ${label}：${rel(file)}`);
+const docsRequiredFiles = [
+  'docs/README.md',
+  'docs/architecture/architecture.md',
+  'docs/architecture/ownership/ai-runtime.md',
+  'docs/architecture/ownership/safe-restore.md',
+  'docs/architecture/ownership/chat-runtime-cutover.md',
+  'docs/architecture/decisions/ADR-001-single-chat-builder.md',
+  'docs/architecture/decisions/ADR-002-chat-runtime-cutover.md',
+  'docs/releases/roadmap.md',
+  'docs/releases/v0.8.13/plan.md',
+  'docs/releases/v0.9.0/plan.md',
+  'docs/releases/v0.9.1/plan.md',
+  'docs/releases/v0.9.2/plan.md',
+  'docs/releases/v0.9.3/plan.md',
+  'docs/releases/v0.9.3/release-notes.md',
+  'docs/releases/v0.9.3/validation.md',
+  'docs/operations/versioning.md',
+  'docs/operations/css-ownership.md',
+  'docs/operations/smoke-memory.md',
+  'docs/history/legacy-architecture-summary.md',
+  'docs/history/memory-brain-retirement.md',
+  'docs/legal/third-party-notices.md'
+];
+for (const relPath of docsRequiredFiles) {
+  if (!fs.existsSync(path.join(root, relPath))) error(`文档收敛后缺少：${relPath}`);
 }
-
 if (fs.existsSync(docsRootPath)) {
-  const allowedRootEntries = new Set(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
+  const allowedRootEntries = new Set(['README.md', 'architecture', 'releases', 'operations', 'history', 'legal']);
   const extraRootEntries = fs.readdirSync(docsRootPath).filter(name => !allowedRootEntries.has(name));
-  if (extraRootEntries.length) error(`docs 根路径存在多余文件或目录：${extraRootEntries.join(', ')}`);
+  if (extraRootEntries.length) error(`docs 根路径存在未收敛条目：${extraRootEntries.join(', ')}`);
 }
-
-if (fs.existsSync(docsRootReadmePath)) {
-  const docsRootText = read(docsRootReadmePath);
-  for (const token of ['docs/0.1', 'docs/0.2', 'docs/0.3', 'docs/0.4', 'docs/0.5', 'docs/0.6', 'docs/0.7', 'docs/0.8', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '0.4` 版本线已在 `v0.4.0` 正式开启', '0.5` 版本线已在 `v0.5.0` 正式开启', '0.6` 版本线已在 `v0.6.0` 正式开启', '0.7` 版本线已在 `v0.7.0` 正式开启', '0.8` 版本线已在 `v0.8.0` 正式开启']) {
-    if (!docsRootText.includes(token)) error(`docs/README.md 缺少文档根路径说明：${token}`);
-  }
+for (const rootDoc of ['ARCHITECTURE.md', 'THIRD_PARTY_NOTICES.md', 'RELEASE_NOTES_v0.8.13.md', 'RELEASE_NOTES_v0.9.0.md', 'RELEASE_NOTES_v0.9.1.md', 'VALIDATION_v0.9.1.md']) {
+  if (fs.existsSync(path.join(root, rootDoc))) error(`根目录不应再散落说明文档：${rootDoc}`);
 }
-
-const docsV01NestedCaifenDir = path.join(root, 'docs', '0.1', 'caifen');
-if (fs.existsSync(docsV01NestedCaifenDir)) error('docs/0.1 里不要再套 caifen 子文件夹，历史文档应直接放在 docs/0.1/');
-const docsLegacyCaifenDir = path.join(root, 'docs', 'caifen');
-if (fs.existsSync(docsLegacyCaifenDir)) error('docs/caifen 已移除，不再保留 compatibility 子目录');
-const docsOtherDir = path.join(root, 'docs', 'other');
-if (fs.existsSync(docsOtherDir)) error('docs/other 已移除；确实需要新版本线时先更新 VERSIONING.md');
-const docsV03Dir = path.join(root, 'docs', '0.3');
-if (!fs.existsSync(docsV03Dir)) error('v0.3.0 已开启长期记忆脑主线，必须存在 docs/0.3');
-const docsV03Readme = path.join(docsV03Dir, 'README.md');
-const docsV03ReleasePlan = path.join(docsV03Dir, 'release-plan.md');
-const docsV030Plan = path.join(docsV03Dir, 'release-v0.3.0-plan.md');
-for (const requiredV03Doc of [docsV03Readme, docsV03ReleasePlan, docsV030Plan]) {
-  if (!fs.existsSync(requiredV03Doc)) error(`缺少 v0.3 文档：${rel(requiredV03Doc)}`);
+for (const legacyDir of ['0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9']) {
+  if (fs.existsSync(path.join(root, 'docs', legacyDir))) error(`旧版本文档目录应合并删除：docs/${legacyDir}`);
 }
-
-if (fs.existsSync(docsV02ReleasePlanPath)) {
-  const docsV02Text = read(docsV02ReleasePlanPath);
-  for (const token of ['v0.2.1', 'v0.2.8', 'v0.2.10', 'v0.2.11', 'v0.2.12', 'docs/0.1', 'docs/0.2']) {
-    if (!docsV02Text.includes(token)) error(`docs/0.2/release-plan.md 缺少 v0.2 文档路由 token：${token}`);
-  }
+const docsReadmeText = read(path.join(root, 'docs/README.md'));
+for (const token of ['architecture/', 'releases/', 'operations/', 'history/', 'legal/', 'v0.9.3']) {
+  if (!docsReadmeText.includes(token)) error(`docs/README.md 缺少收敛结构说明：${token}`);
 }
-
-
 
 // v0.8.13 retired Memory Brain gate: active runtime/UI/styles may not return.
 const retiredMemoryBrainPaths = [
@@ -2375,8 +2361,8 @@ for (const token of retiredRuntimeTokens) {
   if (indexText.includes(token)) error(`index.html 仍引用已退休 Memory Brain：${token}`);
 }
 const requiredRetirementFiles = [
-  'docs/0.8/release-v0.8.13-plan.md',
-  'docs/0.8/AI_CONTEXT_MEMORY_OWNERSHIP_MAP.md',
+  'docs/releases/v0.8.13/plan.md',
+  'docs/architecture/ownership/ai-context-memory.md',
   'tools/memory-brain-retirement-gate.js'
 ];
 for (const relPath of requiredRetirementFiles) {
@@ -2389,6 +2375,89 @@ if (initialStateText.includes('memoryBrain:')) error('initialState 不应再创�
 if (!initialStateText.includes('legacySnapshots')) error('initialState 缺少 legacySnapshots');
 if (constantsText.includes("'memoryBrain'")) error('globalSettingKeys 不应再持久化 memoryBrain');
 if (!loadRepairText.includes('retireMemoryBrainState')) error('loadRepair 缺少旧 payload 退休归档');
+
+// v0.9.0 unified AI Task Runtime gate.
+const aiRuntimeRequiredFiles = [
+  'js/core/ai/taskContracts.js',
+  'js/core/ai/routingSemantics.js',
+  'js/features/aiRuntime/service.js',
+  'js/features/aiRuntime/public.js',
+  'docs/README.md',
+  'docs/releases/v0.9.0/plan.md'
+];
+for (const relPath of aiRuntimeRequiredFiles) {
+  if (!fs.existsSync(path.join(root, relPath))) error(`v0.9.0 缺少 AI Runtime 文件：${relPath}`);
+}
+if (!indexText.includes('js/core/ai/taskContracts.js')) error('index.html 缺少 AI Task Contract');
+if (!indexText.includes('js/features/aiRuntime/public.js')) error('index.html 缺少 AI Runtime public facade');
+if (read(path.join(root, 'js/modules/chat_ai.js')).includes('chatAiRequestTraceStore.trackedFetch(providerRequest')) {
+  error('chat_ai.js 不应再直接用 requestTraceStore 执行 providerRequest');
+}
+if (!read(path.join(root, 'js/utils.js')).includes('runtime.executeProviderRequest')) {
+  error('utils.fetchAiResponse 尚未接入 AI Runtime 兼容桥');
+}
+
+// v0.9.2 private chat runtime cutover gate: one builder, three execution modes, no duplicate request.
+const chatRuntimeRequiredFiles = [
+  'js/core/chat/runtimeModeSemantics.js',
+  'js/core/chat/preparedRequestSemantics.js',
+  'js/features/chatRuntime/service.js',
+  'js/features/chatRuntime/public.js',
+  'tools/chat-runtime-cutover-gate.js',
+  'docs/architecture/decisions/ADR-001-single-chat-builder.md',
+  'docs/architecture/decisions/ADR-002-chat-runtime-cutover.md',
+  'docs/releases/v0.9.2/plan.md'
+];
+for (const relPath of chatRuntimeRequiredFiles) {
+  if (!fs.existsSync(path.join(root, relPath))) error(`v0.9.2 缺少 Chat Runtime 文件：${relPath}`);
+}
+if (indexText) {
+  requireScriptBefore(indexText, 'js/core/chat/runtimeModeSemantics.js', 'js/features/chatRuntime/service.js', 'mode semantics must load first');
+  requireScriptBefore(indexText, 'js/core/chat/preparedRequestSemantics.js', 'js/features/chatRuntime/service.js', 'prepared request contract must load first');
+  requireScriptBefore(indexText, 'js/features/aiRuntime/public.js', 'js/features/chatRuntime/service.js', 'Chat Runtime depends on AI Runtime');
+  requireScriptBefore(indexText, 'js/features/chatRuntime/public.js', 'js/modules/chat_ai.js', 'chat_ai consumes Chat Runtime');
+}
+const chatRuntimeText = read(path.join(root, 'js/features/chatRuntime/service.js'));
+for (const token of ['MODES.SHADOW', 'preflightPreparedTask', 'executePreparedTask', 'executeProviderRequest', 'networkCalls: 1']) {
+  if (!chatRuntimeText.includes(token)) error(`Chat Runtime 缺少 cutover token：${token}`);
+}
+const chatAiTextV092 = read(path.join(root, 'js/modules/chat_ai.js'));
+if (!chatAiTextV092.includes('chatAiConversationRuntime.executePreparedRequest')) error('私聊主请求未交给 Chat Runtime 切换 owner');
+if (!chatAiTextV092.includes("requestBuiltBy: 'chat_ai.single-builder'")) error('私聊请求缺少 single-builder 标记');
+for (const forbidden of ['generateUnifiedPrivateSystemPrompt', 'buildUnifiedPrivatePrompt', 'buildShadowPrivatePrompt']) {
+  if (chatAiTextV092.includes(forbidden)) error(`v0.9.2 禁止第二套 Prompt builder：${forbidden}`);
+}
+if (!read(path.join(root, 'js/app/state/constants.js')).includes("'chatRuntimeMode'")) error('chatRuntimeMode 必须进入 globalSettingKeys 才能持久化');
+
+// v0.9.3 journal runtime vertical slice: single prompt/write owner, versioned output, no shadow double request.
+const journalRuntimeRequiredFiles = [
+  'js/core/ai/cutoverSemantics.js',
+  'js/core/output/outputContracts.js',
+  'js/core/journal/runtimeModeSemantics.js',
+  'js/core/journal/outputContracts.js',
+  'js/features/journalRuntime/service.js',
+  'js/features/journalRuntime/public.js',
+  'tools/journal-runtime-cutover-gate.js',
+  'docs/architecture/decisions/ADR-003-journal-single-write.md',
+  'docs/releases/v0.9.3/plan.md'
+];
+for (const relPath of journalRuntimeRequiredFiles) {
+  if (!fs.existsSync(path.join(root, relPath))) error(`v0.9.3 缺少 Journal Runtime 文件：${relPath}`);
+}
+if (indexText) {
+  requireScriptBefore(indexText, 'js/core/ai/cutoverSemantics.js', 'js/core/journal/runtimeModeSemantics.js', 'generic cutover must load first');
+  requireScriptBefore(indexText, 'js/core/output/outputContracts.js', 'js/core/journal/outputContracts.js', 'output registry must load first');
+  requireScriptBefore(indexText, 'js/core/journal/outputContracts.js', 'js/features/journalRuntime/service.js', 'journal output contract must load first');
+  requireScriptBefore(indexText, 'js/features/journalRuntime/public.js', 'js/modules/journal.js', 'journal module consumes Journal Runtime');
+}
+const journalRuntimeTextV093 = read(path.join(root, 'js/features/journalRuntime/service.js'));
+for (const token of ['executeJournalTask', 'repairStructuredOutputOnce', 'sideEffectsCommitted: false', 'MODES.SHADOW']) {
+  if (!journalRuntimeTextV093.includes(token)) error(`Journal Runtime 缺少 token：${token}`);
+}
+const journalModuleTextV093 = read(path.join(root, 'js/modules/journal.js'));
+if (journalModuleTextV093.includes('fetchAiResponse(')) error('v0.9.3 journal.js 不得直接调用 fetchAiResponse');
+if ((journalModuleTextV093.match(/journalRuntime\.executeJournalTask\(/g) || []).length !== 2) error('日记生成与合并必须各通过一个 Journal Runtime 调用点');
+if (!read(path.join(root, 'js/app/state/constants.js')).includes("'journalRuntimeMode'")) error('journalRuntimeMode 必须进入 globalSettingKeys 才能持久化');
 
 if (hasError) {
   console.error('\n架构检查未通过。');

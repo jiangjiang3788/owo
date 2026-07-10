@@ -1,0 +1,31 @@
+/* V37 shared theme tokens: 公共 CSS 变量唯一 owner。
+ * 只放 :root 级别的公开 token，不写业务选择器。
+ */
+
+:root {
+    --bg-color: #e5eded;       /* 灰蓝：背景基础 */
+    --primary-color: #cee4f1;  /* 黑：主色调 */
+    --secondary-color: #b6b6b6;/* 灰：次要色 */
+    --accent-color: #e5eded;   /* 蓝：强调色 */
+    --text-color: #2a3032;     /* 黑：文本 */
+    --white-color: #2a3032;
+    --border-radius: 18px;
+    --phone-corner-radius: 0px;
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --top-pinned-bg: #e2e2e4;  /* 浅灰：置顶背景 */
+    --online-status-color: #4CAF50;
+    --kkt-icon-color: #000000; /* KKT图标黑 */
+    --chat-avatar-radius: 50%; /* 默认圆形 */
+    --app-font-scale: 1;       /* 全局字体缩放比例 */
+
+    /* --- 新增美化变量 --- */
+    --nav-icon-color: #999999;
+    --nav-active-icon-color: #2a3032;
+    --chat-bottom-bar-bg: #ffffff;
+    --func-icon-color: #000000;
+    --folder-pill-bg: #ffffff;
+    --folder-pill-text: #333333;
+    --folder-pill-active-bg: #1e1e1e;
+    --folder-pill-active-text: #ffffff;
+    --global-title-color: #000000;
+}
