@@ -1,3 +1,13 @@
+# v0.8.13 architecture baseline: Memory Brain retirement
+
+- The unused shadow-only `core/memoryBrain`, `platform/memoryBrain`, and `features/memoryBrain` stacks are retired.
+- Existing payloads are preserved under `legacySnapshots.memoryBrain` during loaded-data repair and are not executed.
+- Journal, structured archive/table memory, and vector memory remain unchanged in this release.
+- The next architecture line will converge AI task routing, context providers, prompt compilation, and a new shared memory gateway.
+- No new feature may reintroduce a `memoryBrain` runtime owner.
+
+---
+
 # OWO 架构与文档版本说明
 
 当前产品功能迭代版本：`v0.3.0`。

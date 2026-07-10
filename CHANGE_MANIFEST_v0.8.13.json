@@ -1,0 +1,32 @@
+{
+  "version": "0.8.13",
+  "base": "owo-v0.8.12-export-restore-dryrun-compatibility",
+  "scope": "Memory Brain retirement baseline only",
+  "removed": {
+    "js_memory_brain_files": 223,
+    "css_memory_brain_files": 48,
+    "screen_entries_removed": 1,
+    "active_specialized_gate_files_removed": 46
+  },
+  "preserved": [
+    "journal memory",
+    "structured archive/table memory",
+    "vector memory",
+    "existing chat prompt behavior",
+    "existing AI routing"
+  ],
+  "added": [
+    "legacySnapshots retirement migration",
+    "memory-brain-retirement-gate",
+    "AI/context/memory ownership map",
+    "v0.8.13 release notes"
+  ],
+  "validation": [
+    "all JavaScript syntax checks",
+    "all remaining project gates",
+    "architecture gate",
+    "Netlify static build",
+    "local HTML reference scan",
+    "legacy payload retirement runtime test"
+  ]
+}

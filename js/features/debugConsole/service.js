@@ -41,7 +41,7 @@
         if (category === 'message' || status === 'message' || status === 'user_message') return 'message';
         if (category === 'reply' || status === 'reply' || status === 'assistant_reply') return 'reply';
         if (category === 'response' || status === 'response' || category === 'ai-response-batch') return 'response';
-        if (category === 'memory' || String(trace.source || '').indexOf('memoryBrain') !== -1 || String(trace.label || '').indexOf('记忆脑') !== -1) return 'memory';
+        if (category === 'memory') return 'memory';
         if (category === 'scheduler' || String(trace.source || '').indexOf('Scheduler') !== -1 || String(trace.label || '').indexOf('调度') !== -1) return 'scheduler';
         if (category === 'operation' || status === 'operation') return 'operation';
         if (category === 'event' || status === 'event') return 'event';
@@ -58,7 +58,7 @@
     }
 
     function getCategoryLabel(category) {
-        return ({ message: 'Chat', reply: 'Chat', response: 'AI Response', request: 'AI Request', memory: 'Memory Brain', scheduler: 'Scheduler', error: 'Error', diagnostic: '诊断', operation: '操作', event: '事件' })[category] || '记录';
+        return ({ message: 'Chat', reply: 'Chat', response: 'AI Response', request: 'AI Request', memory: 'Memory', scheduler: 'Scheduler', error: 'Error', diagnostic: '诊断', operation: '操作', event: '事件' })[category] || '记录';
     }
 
     function formatScalar(value) {

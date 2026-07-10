@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * OWO architecture check for product release v0.3.0.
+ * OWO architecture check for product release v0.8.13.
  * Covers historical migration gates V1 through V38.1.
  * 用法：node tools/arch-check.js
  * 只依赖 Node 内置模块，适合当前无 package.json 的项目。
@@ -60,7 +60,7 @@ function requireScriptBefore(indexText, beforeScript, afterScript, reason) {
   }
 }
 
-console.log('OWO architecture check · product release v0.3.0 · historical gates V1-V38.1\n');
+console.log('OWO architecture check · product release v0.8.13 · historical gates V1-V38.1\n');
 
 // 1. 行数 gate
 for (const file of jsFiles) {
@@ -2073,7 +2073,7 @@ if (fs.existsSync(screenManifestPath)) {
     ...indexText.matchAll(/<[^>]*\bclass=["'][^"']*\bscreen\b[^"']*["'][^>]*\bid=["']([^"']+)["']/g),
     ...indexText.matchAll(/<[^>]*\bid=["']([^"']+)["'][^>]*\bclass=["'][^"']*\bscreen\b[^"']*["']/g)
   ].map(m => m[1]))];
-  if (htmlIds.length !== 71) error(`index.html 当前 screen 数量应为 71，实际为 ${htmlIds.length}`);
+  if (htmlIds.length !== 70) error(`index.html 当前 screen 数量应为 70，实际为 ${htmlIds.length}`);
   if (manifestIds.length !== htmlIds.length) error(`screenManifest 登记数量 ${manifestIds.length} 与 DOM screen 数量 ${htmlIds.length} 不一致`);
   for (const id of htmlIds) {
     if (!manifestIds.includes(id)) error(`screenManifest 缺少 DOM screen：${id}`);
@@ -2325,14 +2325,14 @@ for (const [file, label] of [
 }
 
 if (fs.existsSync(docsRootPath)) {
-  const allowedRootEntries = new Set(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
+  const allowedRootEntries = new Set(['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md']);
   const extraRootEntries = fs.readdirSync(docsRootPath).filter(name => !allowedRootEntries.has(name));
   if (extraRootEntries.length) error(`docs 根路径存在多余文件或目录：${extraRootEntries.join(', ')}`);
 }
 
 if (fs.existsSync(docsRootReadmePath)) {
   const docsRootText = read(docsRootReadmePath);
-  for (const token of ['docs/0.1', 'docs/0.2', 'docs/0.3', 'docs/0.4', 'docs/0.5', 'docs/0.6', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '0.4` 版本线已在 `v0.4.0` 正式开启', '0.5` 版本线已在 `v0.5.0` 正式开启', '0.6` 版本线已在 `v0.6.0` 正式开启']) {
+  for (const token of ['docs/0.1', 'docs/0.2', 'docs/0.3', 'docs/0.4', 'docs/0.5', 'docs/0.6', 'docs/0.7', 'docs/0.8', 'css-ownership.md', 'release-plan.md', 'smoke-memory.md', 'VERSIONING.md', 'README.md', '0.4` 版本线已在 `v0.4.0` 正式开启', '0.5` 版本线已在 `v0.5.0` 正式开启', '0.6` 版本线已在 `v0.6.0` 正式开启', '0.7` 版本线已在 `v0.7.0` 正式开启', '0.8` 版本线已在 `v0.8.0` 正式开启']) {
     if (!docsRootText.includes(token)) error(`docs/README.md 缺少文档根路径说明：${token}`);
   }
 }
@@ -2361,33 +2361,34 @@ if (fs.existsSync(docsV02ReleasePlanPath)) {
 
 
 
-// v0.3.0 Memory Brain ownership gate
-for (const relPath of [
-  'js/core/memoryBrain/types.js',
-  'js/core/memoryBrain/public.js',
-  'js/platform/memoryBrain/memoryBrainStore.js',
-  'js/platform/memoryBrain/public.js',
-  'js/features/memoryBrain/model.js',
-  'js/features/memoryBrain/service.js',
-  'js/features/memoryBrain/view.js',
-  'js/features/memoryBrain/public.js',
-  'css/modules/memory_brain.css'
-]) {
-  if (!fs.existsSync(path.join(root, relPath))) error(`缺少 Memory Brain 文件：${relPath}`);
+// v0.8.13 retired Memory Brain gate: active runtime/UI/styles may not return.
+const retiredMemoryBrainPaths = [
+  'js/core/memoryBrain',
+  'js/platform/memoryBrain',
+  'js/features/memoryBrain'
+];
+for (const relPath of retiredMemoryBrainPaths) {
+  if (fs.existsSync(path.join(root, relPath))) error(`已退休目录不应存在：${relPath}`);
 }
-if (indexText) {
-  requireScriptBefore(indexText, 'js/core/memoryBrain/types.js', 'js/platform/memoryBrain/memoryBrainStore.js', '保证 store 能读取纯类型');
-  requireScriptBefore(indexText, 'js/platform/memoryBrain/public.js', 'js/features/memoryBrain/service.js', '保证 feature 只走 platform facade');
-  requireScriptBefore(indexText, 'js/features/memoryBrain/service.js', 'js/features/memoryBrain/view.js', '保证 view 不承载用例编排');
+const retiredRuntimeTokens = ['memory-brain-screen', 'js/core/memoryBrain/', 'js/platform/memoryBrain/', 'js/features/memoryBrain/', 'css/modules/memory_brain'];
+for (const token of retiredRuntimeTokens) {
+  if (indexText.includes(token)) error(`index.html 仍引用已退休 Memory Brain：${token}`);
 }
-const memoryBrainServiceText = read(path.join(root, 'js/features/memoryBrain/service.js'));
-if (/memory_table|vector_memory|journal\.js/.test(memoryBrainServiceText)) {
-  error('features/memoryBrain/service.js 不应直接调用旧 memory_table/vector_memory/journal 文件；旧系统只能通过 platform scan 作为 read-only source');
+const requiredRetirementFiles = [
+  'docs/0.8/release-v0.8.13-plan.md',
+  'docs/0.8/AI_CONTEXT_MEMORY_OWNERSHIP_MAP.md',
+  'tools/memory-brain-retirement-gate.js'
+];
+for (const relPath of requiredRetirementFiles) {
+  if (!fs.existsSync(path.join(root, relPath))) error(`v0.8.13 缺少退休基线文件：${relPath}`);
 }
-const memoryBrainStoreText = read(path.join(root, 'js/platform/memoryBrain/memoryBrainStore.js'));
-for (const token of ["legacyMode: 'read-only-source'", 'noDualWrite: true', 'rememberLegacyScan']) {
-  if (!memoryBrainStoreText.includes(token)) error(`memoryBrainStore.js 缺少替换/双系统约束标记：${token}`);
-}
+const initialStateText = read(path.join(root, 'js/app/state/initialState.js'));
+const constantsText = read(path.join(root, 'js/app/state/constants.js'));
+const loadRepairText = read(path.join(root, 'js/platform/storage/loadRepair.js'));
+if (initialStateText.includes('memoryBrain:')) error('initialState 不应再创建 memoryBrain');
+if (!initialStateText.includes('legacySnapshots')) error('initialState 缺少 legacySnapshots');
+if (constantsText.includes("'memoryBrain'")) error('globalSettingKeys 不应再持久化 memoryBrain');
+if (!loadRepairText.includes('retireMemoryBrainState')) error('loadRepair 缺少旧 payload 退休归档');
 
 if (hasError) {
   console.error('\n架构检查未通过。');

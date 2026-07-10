@@ -36,14 +36,39 @@
                 ? settings[key]
                 : cloneValue(defaultValue ? defaultValue[key] : undefined);
         });
+        // v0.8.13 retires the unused Memory Brain runtime. Keep any existing payload
+        // in a temporary slot so repairLoadedData can preserve it in legacySnapshots.
+        if (settings.memoryBrain !== undefined) {
+            targetDb.__retiredMemoryBrainPayload = cloneValue(settings.memoryBrain);
+        }
         return settings;
+    }
+
+    function retireMemoryBrainState(targetDb) {
+        if (!targetDb.legacySnapshots || typeof targetDb.legacySnapshots !== 'object' || Array.isArray(targetDb.legacySnapshots)) {
+            targetDb.legacySnapshots = {};
+        }
+        const payload = targetDb.__retiredMemoryBrainPayload !== undefined
+            ? targetDb.__retiredMemoryBrainPayload
+            : targetDb.memoryBrain;
+        if (payload && typeof payload === 'object' && !targetDb.legacySnapshots.memoryBrain) {
+            targetDb.legacySnapshots.memoryBrain = {
+                feature: 'memoryBrain',
+                sourceVersion: '<=0.8.12',
+                retiredAt: new Date().toISOString(),
+                reason: 'retired-unused-shadow-runtime',
+                data: cloneValue(payload)
+            };
+        }
+        delete targetDb.__retiredMemoryBrainPayload;
+        delete targetDb.memoryBrain;
     }
 
     function ensureRootCollections(targetDb) {
         if (!Array.isArray(targetDb.stickerCategories)) targetDb.stickerCategories = [];
         if (!Array.isArray(targetDb.vectorMemoryTemplates)) targetDb.vectorMemoryTemplates = [];
         if (!Array.isArray(targetDb.vectorApiPresets)) targetDb.vectorApiPresets = [];
-        if (!targetDb.memoryBrain || typeof targetDb.memoryBrain !== 'object') targetDb.memoryBrain = null;
+        retireMemoryBrainState(targetDb);
         if (!targetDb.piggyBank) targetDb.piggyBank = { balance: 520, transactions: [], familyCards: [], receivedFamilyCards: [] };
         if (typeof targetDb.piggyBank.balance !== 'number') targetDb.piggyBank.balance = 520;
         if (!Array.isArray(targetDb.piggyBank.transactions)) targetDb.piggyBank.transactions = [];

@@ -1,5 +1,6 @@
 // --- App update log recent chunk (V10 canonical static data) ---
 const updateLogRecent = [
+    { version: "0.8.13", date: "2026-07-10", notes: ["退休未正式接管聊天的 Memory Brain 影子系统：删除 core/platform/features 代码、页面、样式与调度入口；旧数据加载时转存到 legacySnapshots；日记、档案和向量记忆保持原行为，等待统一 AI/Context Runtime 后再重构。"] },
     { version: "0.4.1", date: "2026-07-07", notes: ["历史大整理切片层：基于 archiveSources 生成带 overlap 的 archiveChunks、archiveCursors 和 archiveChunkRuns，支持最近切片批次回滚；仍不跑 AI、不总结历史、不迁移旧记忆、不正式注入 prompt。"] },
     { version: "0.4.0", date: "2026-07-07", notes: ["历史大整理入口：新增历史源扫描器，扫描全部单人/群聊的消息数量、时间范围、旧日记/表格/向量数量和预计切片数，写入 memoryBrain.archiveSources / archiveScanRuns / batches；不跑 AI、不总结、不迁移、不正式注入，为几万条历史回填做索引。"] },
     { version: "0.3.10", date: "2026-07-07", notes: ["旧记忆 owner 守门：Memory Brain 在 v0.9 前继续只读/影子，正式 prompt 只使用当前选择的旧记忆 owner；档案/表格模式不再空内容回退到日记，日记/表格/向量自动整理三选一互斥，修复档案记忆下日记总结偶发污染输出格式的问题。"] },

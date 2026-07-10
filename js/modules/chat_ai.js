@@ -1956,7 +1956,7 @@ function getLegacyMemoryOwnerSnapshot(chat) {
     const owner = getLegacyMemoryOwnerSemantics();
     return owner && typeof owner.buildOwnerSnapshot === 'function'
         ? owner.buildOwnerSnapshot(chat)
-        : { formalOwner: getActiveLegacyMemoryMode(chat), memoryBrainFormalInjection: false };
+        : { formalOwner: getActiveLegacyMemoryMode(chat) };
 }
 
 function generatePrivateSystemPrompt(character, opts) {

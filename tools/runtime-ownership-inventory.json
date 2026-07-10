@@ -1,0 +1,41 @@
+{
+  "version": "0.8.13",
+  "retired": [
+    "js/core/memoryBrain",
+    "js/platform/memoryBrain",
+    "js/features/memoryBrain",
+    "css/modules/memory_brain*.css",
+    "memory-brain-screen"
+  ],
+  "preserved": {
+    "journal": [
+      "js/modules/journal.js",
+      "js/features/journal",
+      "character.memoryJournals"
+    ],
+    "structuredArchive": [
+      "js/modules/memory_table.js",
+      "js/features/memoryTable",
+      "character.memoryTables"
+    ],
+    "vector": [
+      "js/modules/vector_memory.js",
+      "js/features/vectorMemory",
+      "js/platform/ai/embeddingAdapter.js",
+      "character.vectorMemory"
+    ]
+  },
+  "canonicalCurrentOwners": {
+    "chatPrompt": "js/modules/chat_ai.js",
+    "aiRouting": "js/platform/ai/aiRouter.js",
+    "aiConfig": "js/platform/ai/aiConfigStore.js",
+    "modelRegistry": "js/platform/ai/modelRegistry.js",
+    "worldBookContext": "js/features/worldBook/contextService.js",
+    "legacyMemoryChoice": "js/core/memory/legacyMemoryOwnerSemantics.js"
+  },
+  "nextContracts": [
+    "AiTask",
+    "ContextItem",
+    "invokeAiTask"
+  ]
+}

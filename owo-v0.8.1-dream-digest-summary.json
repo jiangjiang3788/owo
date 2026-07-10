@@ -1,0 +1,33 @@
+{
+  "version": "v0.8.1",
+  "name": "Dream Digest",
+  "rebuiltBecause": "之前对话中给出的 v0.8.1 下载文件实际不存在；本次在真实 v0.8.0 基础上重新实现并打包。",
+  "newFiles": [
+    "js/core/memoryBrain/dreamDigestSemantics.js",
+    "js/platform/memoryBrain/dreamDigestStore.js",
+    "js/features/memoryBrain/dreamDigestService.js",
+    "js/features/memoryBrain/dreamDigestView.js",
+    "css/modules/memory_brain_dream_digest.css",
+    "tools/dream-digest-gate.js",
+    "docs/0.8/release-v0.8.1-plan.md"
+  ],
+  "namespaces": [
+    "memoryBrain.dreamDigestRuns",
+    "memoryBrain.dreamPatterns",
+    "memoryBrain.dreamCandidates",
+    "memoryBrain.dreamHistory",
+    "memoryBrain.batches(kind=dream-digest)"
+  ],
+  "safety": {
+    "formalPromptInjection": false,
+    "automaticMemoryWrite": false,
+    "dreamAutonomy": false,
+    "dreamCannotCommitMemory": true,
+    "requiresApproval": true,
+    "proactiveDelivery": false,
+    "shouldNotify": false,
+    "writesLegacyMemory": false,
+    "cutoverGate": "blocked-until-v0.9"
+  },
+  "dependsOn": "v0.8.0 nightlyDigestCandidates / nightlyDigestHistory 可作为 dream replay 输入；没有夜间整理也能用事件、事实、关系回忆做低风险模式发现。"
+}

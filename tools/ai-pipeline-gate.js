@@ -52,7 +52,7 @@ console.log('OWO AI Pipeline gate · v0.3.9\n');
   ['js/modules/chat_ai.js', 'recordAiResponseBatch', '聊天回复必须写回复批次 trace'],
   ['js/modules/chat_render.js', 'suppressConsoleTrace', '子消息必须可被批次合并隐藏'],
   ['js/features/debugConsole/service.js', 'AI Response', '控制台必须有 AI Response 分类'],
-  ['js/features/debugConsole/service.js', 'Memory Brain', '控制台必须保留 Memory Brain 分类']
+  ['js/features/debugConsole/service.js', "memory: 'Memory'", '控制台必须保留通用 Memory 分类']
 ].forEach(([file, token, why]) => requireContains(file, token, why));
 forbidContains('js/platform/ai/aiRouter.js', 'document', 'AI Router 不能渲染 UI');
 forbidContains('js/platform/ai/aiRouter.js', 'getAiReply(', 'AI Router 不能反向依赖聊天旧入口');

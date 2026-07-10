@@ -1,6 +1,6 @@
 // --- Legacy memory owner semantics (v0.3.10) ---
 // 只负责旧记忆三件套的 owner 判断：journal / table / vector 三选一。
-// 不访问 DOM，不请求网络，不读写存储状态；Memory Brain 在 v0.9 前保持只读/影子，不参与正式 prompt 注入。
+// 不访问 DOM，不请求网络，不读写存储状态；v0.8.13 仅维持日记 / 档案 / 向量三套旧记忆的兼容选择。
 (function registerLegacyMemoryOwnerSemantics(app) {
     const core = app.core = app.core || {};
     core.memory = core.memory || {};
@@ -82,7 +82,6 @@
         return {
             formalOwner: mode,
             formalOwnerLabel: getModeLabel(mode),
-            memoryBrainFormalInjection: false,
             journalCanInject: mode === 'journal',
             tableCanInject: mode === 'table',
             vectorCanInject: mode === 'vector',

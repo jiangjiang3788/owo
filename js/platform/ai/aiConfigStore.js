@@ -111,7 +111,6 @@
             taskRoutes: buildTaskRoutes(sourceDb),
             policy: {
                 systemPromptOwner: 'user-settings',
-                memoryBrainUsesRouter: true,
                 providerFetchOwner: 'platform/ai/requestTraceStore',
                 externalBrainOrMcp: false
             }

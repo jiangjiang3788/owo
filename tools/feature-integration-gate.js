@@ -27,7 +27,6 @@ const publicFacades = [
   'js/features/quickDock/public.js',
   'js/features/dataManagement/public.js',
   'js/features/promptCenter/public.js',
-  'js/features/memoryBrain/public.js'
 ];
 for (const rel of publicFacades) {
   if (!exists(rel)) error(`缺少 public facade：${rel}`);
@@ -189,13 +188,6 @@ requireContains('js/modules/sticker.js', 'recordStickerOperation');
 requireContains('js/features/dataManagement/storagePanel.js', '存储分析刷新');
 
 
-// v0.3.0 Memory Brain gate: 新记忆系统必须是单独 owner，不能塞进旧 memory_table/vector_memory。
-requireContains('js/features/memoryBrain/public.js', 'getPublicContract');
-requireContains('js/features/memoryBrain/public.js', 'getRoutingReport');
-requireContains('js/platform/memoryBrain/public.js', 'getPublicContract');
-requireContains('js/core/memoryBrain/types.js', 'MIGRATION_STAGES');
-requireContains('js/features/memoryBrain/service.js', "legacyMode: 'read-only-source'");
-requireContains('js/app/featureIntegrationRegistry.js', 'memoryBrain');
 
 if (hasError) process.exit(1);
 console.log('✅ V33 feature integration gate passed');

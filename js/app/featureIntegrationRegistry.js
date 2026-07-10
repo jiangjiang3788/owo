@@ -6,7 +6,7 @@
         throw new Error('[featureIntegrationRegistry] OwoApp namespace 尚未初始化');
     }
 
-    const FEATURE_KEYS = ['forum', 'theater', 'peek', 'videoCall', 'wallet', 'memoryBrain'];
+    const FEATURE_KEYS = ['forum', 'theater', 'peek', 'videoCall', 'wallet'];
 
     function getFeaturePublicApi(name) {
         const feature = app.features && app.features[name];

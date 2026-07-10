@@ -78,36 +78,6 @@
     <link rel="stylesheet" href="css/modules/debug_console.css">
     <link rel="stylesheet" href="css/modules/quick_dock.css">
     <link rel="stylesheet" href="css/modules/data_management.css">
-    <link rel="stylesheet" href="css/modules/memory_brain.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_timeline.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_facts.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_families.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_graph.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_models.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_injection.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_scheduler.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_palace.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_archive.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_backfill.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_event_backfill.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_fact_backfill.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_lifecycle.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_rebuild.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_history_models.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_cutover.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_owner_gate.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_review.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_correction.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_conflict.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_family_adjust.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_model_correction.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_propagation.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_trust.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_trusted_gate.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_formal_adapter.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_realtime_trace.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_legacy_readonly.css">
-    <link rel="stylesheet" href="css/modules/memory_brain_owner_recovery.css">
 </head>
 
 <body>
@@ -3692,7 +3662,6 @@
 
         <div id="data-management-screen" class="screen"></div>
 
-        <div id="memory-brain-screen" class="screen"></div>
 
         <div id="storage-analysis-screen" class="screen" data-screen-template="storage-analysis-screen" data-template-hydrated="pending">
             <!-- V35: storage-analysis-screen static template moved to js/platform/storage/storageAnalysisScreenTemplate.js; hydrated by screenTemplateRegistry. -->
@@ -6120,135 +6089,6 @@
     <script src="js/features/vectorMemory/model.js"></script> <!-- V24 向量记忆 model：模板、状态、历史、自动总结游标 -->
     <script src="js/features/vectorMemory/contextService.js"></script> <!-- V24 向量记忆 context service：检索上下文和 embedding 补齐 -->
     <script src="js/features/vectorMemory/public.js"></script> <!-- V24 向量记忆 public facade -->
-    <script src="js/core/memoryBrain/types.js"></script> <!-- v0.3.5 记忆脑纯类型：事件/事实/家族/graph/长期模型/注入层 -->
-    <script src="js/core/memoryBrain/eventSemantics.js"></script> <!-- v0.3.1 记忆脑事件语义：prompt、JSON 解析、来源范围 -->
-    <script src="js/core/memoryBrain/factSemantics.js"></script> <!-- v0.3.5 记忆脑事实语义：事件拆原子事实 -->
-    <script src="js/core/memoryBrain/familySemantics.js"></script> <!-- v0.3.5 记忆脑家族语义：事实自动成团 -->
-    <script src="js/core/memoryBrain/graphSemantics.js"></script> <!-- v0.3.5 记忆脑 graph 语义：事实/家族关系边 -->
-    <script src="js/core/memoryBrain/modelSemantics.js"></script> <!-- v0.4.7 长期模型语义：6 类模型 -->
-    <script src="js/core/memoryBrain/historyModelRebuildSemantics.js"></script> <!-- v0.4.7 全历史长期模型证据筛选 / prompt -->
-    <script src="js/core/memoryBrain/injectionSemantics.js"></script> <!-- v0.6.1 注入召回语义：关键词 + trust + weight + recentness 排序 -->
-    <script src="js/core/memoryBrain/cutoverComparisonSemantics.js"></script> <!-- v0.4.8 新旧注入对照语义：旧正式 owner vs Memory Brain shadow -->
-    <script src="js/core/memoryBrain/ownerSwitchSemantics.js"></script> <!-- v0.4.9 单一 owner 切换门语义：legacy / memoryBrain / off 三态安全门 -->
-    <script src="js/core/memoryBrain/uiGroupSemantics.js"></script> <!-- v0.4.9 记忆脑 UI 功能分组和折叠设置语义 -->
-    <script src="js/core/memoryBrain/weightSemantics.js"></script> <!-- v0.3.7 权重语义：调度、成本档、浮现和衰减纯计算 -->
-    <script src="js/core/memoryBrain/productSemantics.js"></script> <!-- v0.3.8 产品化语义：记忆小屋、导出 manifest、切换前 safety gate -->
-    <script src="js/core/memoryBrain/archiveSourceSemantics.js"></script> <!-- v0.4.0 历史源扫描纯语义：聊天来源、消息统计、预计切片 -->
-    <script src="js/core/memoryBrain/archiveChunkSemantics.js"></script> <!-- v0.4.1 历史切片纯语义：archiveChunks / archiveCursors -->
-    <script src="js/core/memoryBrain/backfillQueueSemantics.js"></script> <!-- v0.4.2 回填队列纯语义：backfillJobs / backfillRuns -->
-    <script src="js/core/memoryBrain/historyEventBackfillSemantics.js"></script> <!-- v0.4.3 历史事件回填语义：chunk → 多事件 prompt/解析/来源范围 -->
-    <script src="js/core/memoryBrain/historyFactBackfillSemantics.js"></script> <!-- v0.4.4 历史事实回填语义：历史事件 → 原子事实 prompt/解析/来源 -->
-    <script src="js/core/memoryBrain/factLifecycleSemantics.js"></script> <!-- v0.4.5 事实生命周期语义：去重 / 冲突 / 过时事实纯计算 -->
-    <script src="js/core/memoryBrain/reviewInboxSemantics.js"></script> <!-- v0.5.0 可信记忆审查收件箱语义：低置信 / 冲突 / 重复 / 待确认 -->
-    <script src="js/core/memoryBrain/factCorrectionSemantics.js"></script> <!-- v0.5.1 事实纠错语义：人工改写计划 / 版本字段 / 回滚输入 -->
-    <script src="js/core/memoryBrain/conflictResolutionSemantics.js"></script> <!-- v0.5.2 冲突事实处理语义：选择真实版本 / 条件保留 / 过时处理 -->
-    <script src="js/core/memoryBrain/familyAdjustmentSemantics.js"></script> <!-- v0.5.3 家族合并 / 拆分 / 改名语义 -->
-    <script src="js/core/memoryBrain/modelCorrectionSemantics.js"></script> <!-- v0.5.4 长期模型人工修正语义 -->
-    <script src="js/core/memoryBrain/correctionPropagationSemantics.js"></script> <!-- v0.5.5 纠错影响传播语义：下游 family / graph / model 标记刷新 -->
-    <script src="js/core/memoryBrain/trustScoreSemantics.js"></script> <!-- v0.5.6 记忆信任分语义：facts / families / graph / models trust score -->
-    <script src="js/core/memoryBrain/trustedGateSemantics.js"></script> <!-- v0.5.7 可信记忆 gate 语义：审查 / 纠错 / 传播 / 信任分统一收口 -->
-    <script src="js/core/memoryBrain/formalInjectionAdapterSemantics.js"></script> <!-- v0.6.0 正式注入 adapter 语义：唯一 memory block 出口，blocked-until-v0.9 -->
-    <script src="js/core/memoryBrain/realtimeInjectionTraceSemantics.js"></script> <!-- v0.6.2 实时注入 trace 语义：命中 / 未命中 / 裁剪 / 阻断解释 -->
-    <script src="js/core/memoryBrain/legacyReadOnlySemantics.js"></script> <!-- v0.6.3 旧系统只读降级语义：旧档案 / 日记 / 向量降级准备度 -->
-    <script src="js/core/memoryBrain/ownerRecoverySemantics.js"></script> <!-- v0.6.4 一键关闭 / 回退语义：关闭影子候选，保留旧表格记忆总结 -->
-    <script src="js/core/memoryBrain/public.js"></script> <!-- v0.3.8 记忆脑 core public facade -->
-    <script src="js/platform/memoryBrain/memoryBrainStore.js"></script> <!-- v0.3.5 记忆脑 store：旧来源扫描、事件和批次 -->
-    <script src="js/platform/memoryBrain/memoryFactStore.js"></script> <!-- v0.3.5 事实 store：facts 和 fact-extraction batch -->
-    <script src="js/platform/memoryBrain/memoryEmbeddingService.js"></script> <!-- v0.3.5 记忆脑 embedding：facts 向量准备，失败时关键词 fallback -->
-    <script src="js/platform/memoryBrain/memoryFamilyStore.js"></script> <!-- v0.3.5 家族 store：families 和 family-clustering batch -->
-    <script src="js/platform/memoryBrain/memoryGraphStore.js"></script> <!-- v0.3.5 graph store：edges 和 graph-linking batch -->
-    <script src="js/platform/memoryBrain/memoryModelStore.js"></script> <!-- v0.4.7 长期模型 store：models 版本历史和回滚 -->
-    <script src="js/platform/memoryBrain/historyModelRebuildStore.js"></script> <!-- v0.4.7 全历史长期模型重建运行记录 -->
-    <script src="js/platform/memoryBrain/memoryInjectionStore.js"></script> <!-- v0.3.6 注入预览 store：injectionPreviews 和 batch 回滚 -->
-    <script src="js/platform/memoryBrain/memoryCutoverReportStore.js"></script> <!-- v0.4.8 接管演练 store：cutoverReports / cutoverRehearsalRuns -->
-    <script src="js/platform/memoryBrain/memoryOwnerGateStore.js"></script> <!-- v0.4.9 单一 owner 切换门 store：ownerState / ownerSwitchRuns / UI 分组设置 -->
-    <script src="js/platform/memoryBrain/memoryScheduleStore.js"></script> <!-- v0.3.7 调度 store：scheduleQueue、schedulerRuns 和维护回滚 -->
-    <script src="js/platform/memoryBrain/memoryExportAdapter.js"></script> <!-- v0.3.8 导出 adapter：memoryBrain 导出包和 manifest-only 记录 -->
-    <script src="js/platform/memoryBrain/historyArchiveScanner.js"></script> <!-- v0.4.0 历史归档 scanner：archiveSources / archiveScanRuns -->
-    <script src="js/platform/memoryBrain/historyChunkStore.js"></script> <!-- v0.4.1 历史切片 store：archiveChunks / archiveCursors / chunkRuns -->
-    <script src="js/platform/memoryBrain/backfillQueueStore.js"></script> <!-- v0.4.2 回填队列 store：backfillJobs / backfillRuns / queue batch -->
-    <script src="js/platform/memoryBrain/historyEventBackfillStore.js"></script> <!-- v0.4.3 历史事件回填 store：events / job 状态 / 批次回滚 -->
-    <script src="js/platform/memoryBrain/historyFactBackfillStore.js"></script> <!-- v0.4.4 历史事实回填 store：facts / job 状态 / 批次回滚 -->
-    <script src="js/platform/memoryBrain/factLifecycleStore.js"></script> <!-- v0.4.5 事实生命周期 store：标记 duplicate / obsolete / disputed 并可回滚 -->
-    <script src="js/platform/memoryBrain/familyGraphRebuildStore.js"></script> <!-- v0.4.6 全量家族 graph 重建 store：reset / meta batch / rollback -->
-    <script src="js/platform/memoryBrain/memoryReviewInboxStore.js"></script> <!-- v0.5.0 记忆审查收件箱 store：reviewInboxItems / runs / batch 回滚 -->
-    <script src="js/platform/memoryBrain/factCorrectionStore.js"></script> <!-- v0.5.1 事实纠错 store：factCorrections / correctionRuns / batch 回滚 -->
-    <script src="js/platform/memoryBrain/factConflictStore.js"></script> <!-- v0.5.2 冲突事实处理 store：conflictResolutions / conflictRuns / batch 回滚 -->
-    <script src="js/platform/memoryBrain/familyAdjustmentStore.js"></script> <!-- v0.5.3 家族调整 store：合并 / 拆分 / 改名 / batch 回滚 -->
-    <script src="js/platform/memoryBrain/modelCorrectionStore.js"></script> <!-- v0.5.4 长期模型修正 store：版本历史 / batch 回滚 -->
-    <script src="js/platform/memoryBrain/correctionPropagationStore.js"></script> <!-- v0.5.5 纠错影响传播 store：传播字段 / propagationRuns / batch 回滚 -->
-    <script src="js/platform/memoryBrain/memoryTrustScoreStore.js"></script> <!-- v0.5.6 记忆信任分 store：trustScoreRecords / runs / batch 回滚 -->
-    <script src="js/platform/memoryBrain/trustedGateStore.js"></script> <!-- v0.5.7 可信记忆 gate store：trustedMemoryGateReports / runs / batch 回滚 -->
-    <script src="js/platform/memoryBrain/memoryFormalInjectionStore.js"></script> <!-- v0.6.0 正式注入 adapter store：formalInjectionAdapterReports / runs / batch 回滚 -->
-    <script src="js/platform/memoryBrain/memoryRealtimeTraceStore.js"></script> <!-- v0.6.2 实时注入 trace store：realtimeInjectionTraceReports / runs / batch 回滚 -->
-    <script src="js/platform/memoryBrain/memoryLegacyReadOnlyStore.js"></script> <!-- v0.6.3 旧系统只读降级 store：legacyReadOnlyReports / runs / batch 回滚 -->
-    <script src="js/platform/memoryBrain/memoryOwnerRecoveryStore.js"></script> <!-- v0.6.4 一键关闭 / 回退 store：ownerRecoveryReports / shadowInjectionEnabled -->
-    <script src="js/platform/memoryBrain/public.js"></script> <!-- v0.3.8 记忆脑 platform public facade -->
-    <script src="js/features/memoryBrain/model.js"></script> <!-- v0.3.5 记忆脑 model：展示模型、时间线和事实摘要 -->
-    <script src="js/features/memoryBrain/service.js"></script> <!-- v0.3.5 记忆脑 service：扫描/替换计划/控制台记录 -->
-    <script src="js/features/memoryBrain/eventTimelineService.js"></script> <!-- v0.3.1 事件时间线 service：最近聊天整理为事件 -->
-    <script src="js/features/memoryBrain/factExtractionService.js"></script> <!-- v0.3.5 原子事实 service：事件拆事实候选 -->
-    <script src="js/features/memoryBrain/familyService.js"></script> <!-- v0.3.5 家族 service：事实聚类和命名 -->
-    <script src="js/features/memoryBrain/graphService.js"></script> <!-- v0.3.5 graph service：建立轻量关系边 -->
-    <script src="js/features/memoryBrain/longTermModelService.js"></script> <!-- v0.4.7 长期模型 service：生成长期模型 -->
-    <script src="js/features/memoryBrain/historyModelRebuildService.js"></script> <!-- v0.4.7 全历史长期模型重建 service -->
-    <script src="js/features/memoryBrain/injectionPreviewService.js"></script> <!-- v0.3.6 注入预览 service：影子注入包和旧系统对照 -->
-    <script src="js/features/memoryBrain/cutoverRehearsalService.js"></script> <!-- v0.4.8 新旧注入对照 / 接管演练 service -->
-    <script src="js/features/memoryBrain/ownerGateService.js"></script> <!-- v0.4.9 单一 owner 切换门 service：只记录演练，不接正式 prompt -->
-    <script src="js/features/memoryBrain/reviewInboxService.js"></script> <!-- v0.5.0 可信记忆审查收件箱 service -->
-    <script src="js/features/memoryBrain/factCorrectionService.js"></script> <!-- v0.5.1 事实纠错 / 改写 service -->
-    <script src="js/features/memoryBrain/factConflictService.js"></script> <!-- v0.5.2 冲突事实处理 service -->
-    <script src="js/features/memoryBrain/familyAdjustmentService.js"></script> <!-- v0.5.3 家族合并 / 拆分 / 改名 service -->
-    <script src="js/features/memoryBrain/modelCorrectionService.js"></script> <!-- v0.5.4 长期模型人工修正 service -->
-    <script src="js/features/memoryBrain/correctionPropagationService.js"></script> <!-- v0.5.5 纠错影响传播 service -->
-    <script src="js/features/memoryBrain/trustScoreService.js"></script> <!-- v0.5.6 记忆信任分 service -->
-    <script src="js/features/memoryBrain/trustedGateService.js"></script> <!-- v0.5.7 可信记忆 gate service -->
-    <script src="js/features/memoryBrain/formalInjectionAdapterService.js"></script> <!-- v0.6.0 正式注入 adapter service：只做演练不接 prompt -->
-    <script src="js/features/memoryBrain/realtimeInjectionTraceService.js"></script> <!-- v0.6.2 实时注入 trace service：解释候选注入与阻断原因 -->
-    <script src="js/features/memoryBrain/legacyReadOnlyService.js"></script> <!-- v0.6.3 旧系统只读降级 service：只做演练不改旧记忆 -->
-    <script src="js/features/memoryBrain/ownerRecoveryService.js"></script> <!-- v0.6.4 一键关闭 / 回退 service：只改 Memory Brain 影子设置，不改旧记忆 -->
-    <script src="js/features/memoryBrain/memorySchedulerService.js"></script> <!-- v0.3.7 调度 service：成本档、整理队列、浮现/衰减维护 -->
-    <script src="js/features/memoryBrain/productizationService.js"></script> <!-- v0.3.8 产品化 service：记忆小屋、导出包和 safety gate -->
-    <script src="js/features/memoryBrain/historyArchiveService.js"></script> <!-- v0.4.0 历史整理室 service：扫描全部聊天来源 -->
-    <script src="js/features/memoryBrain/historyChunkService.js"></script> <!-- v0.4.1 历史切片 service：准备 archiveChunks 和游标 -->
-    <script src="js/features/memoryBrain/historyBackfillService.js"></script> <!-- v0.4.2 回填队列 service：暂停 / 继续 / 重试 / 回滚 -->
-    <script src="js/features/memoryBrain/historyEventBackfillService.js"></script> <!-- v0.4.3 历史事件回填 service：运行 memory-event 回填 -->
-    <script src="js/features/memoryBrain/historyFactBackfillService.js"></script> <!-- v0.4.4 历史事实回填 service：运行 memory-fact 回填 -->
-    <script src="js/features/memoryBrain/factLifecycleService.js"></script> <!-- v0.4.5 事实生命周期 service：整理重复、过时和冲突事实 -->
-    <script src="js/features/memoryBrain/familyGraphRebuildService.js"></script> <!-- v0.4.6 全量家族 graph 重建 service：active facts → family → graph -->
-    <script src="js/features/memoryBrain/timelineView.js"></script> <!-- v0.3.5 事件时间线 view：卡片和来源范围展示 -->
-    <script src="js/features/memoryBrain/factView.js"></script> <!-- v0.3.5 原子事实 view：事实候选和证据展示 -->
-    <script src="js/features/memoryBrain/familyView.js"></script> <!-- v0.3.5 家族 view：主题簇卡片 -->
-    <script src="js/features/memoryBrain/graphView.js"></script> <!-- v0.3.5 graph view：关系卡片 -->
-    <script src="js/features/memoryBrain/modelView.js"></script> <!-- v0.3.5 长期模型 view：版本卡片 -->
-    <script src="js/features/memoryBrain/injectionView.js"></script> <!-- v0.3.6 注入预览 view：shadow package 卡片 -->
-    <script src="js/features/memoryBrain/schedulerView.js"></script> <!-- v0.3.7 调度 view：成本档、队列和浮现卡片 -->
-    <script src="js/features/memoryBrain/memoryPalaceView.js"></script> <!-- v0.3.8 记忆小屋 view：房间、今日浮现、安全门和导出记录 -->
-    <script src="js/features/memoryBrain/historyArchiveView.js"></script> <!-- v0.4.0 历史整理室 view：历史来源和扫描记录 -->
-    <script src="js/features/memoryBrain/historyChunkView.js"></script> <!-- v0.4.1 历史切片 view：游标和切片卡片 -->
-    <script src="js/features/memoryBrain/historyBackfillView.js"></script> <!-- v0.4.2 回填队列 view：任务和运行记录卡片 -->
-    <script src="js/features/memoryBrain/historyEventBackfillView.js"></script> <!-- v0.4.3 历史事件回填 view：运行批次和回填事件卡片 -->
-    <script src="js/features/memoryBrain/historyFactBackfillView.js"></script> <!-- v0.4.4 历史事实回填 view：运行批次和回填事实卡片 -->
-    <script src="js/features/memoryBrain/factLifecycleView.js"></script> <!-- v0.4.5 事实生命周期 view：重复 / 冲突 / 过时事实卡片 -->
-    <script src="js/features/memoryBrain/familyGraphRebuildView.js"></script> <!-- v0.4.6 全量家族 graph 重建 view：运行记录和可用事实统计 -->
-    <script src="js/features/memoryBrain/historyModelRebuildView.js"></script> <!-- v0.4.7 全历史长期模型重建 view -->
-    <script src="js/features/memoryBrain/cutoverRehearsalView.js"></script> <!-- v0.4.8 接管演练报告 view -->
-    <script src="js/features/memoryBrain/ownerGateView.js"></script> <!-- v0.4.9 单一 owner 切换门 view -->
-    <script src="js/features/memoryBrain/reviewInboxView.js"></script> <!-- v0.5.0 可信记忆审查收件箱 view -->
-    <script src="js/features/memoryBrain/factCorrectionView.js"></script> <!-- v0.5.1 事实纠错 / 改写 view -->
-    <script src="js/features/memoryBrain/factConflictView.js"></script> <!-- v0.5.2 冲突事实处理 view -->
-    <script src="js/features/memoryBrain/familyAdjustmentView.js"></script> <!-- v0.5.3 家族合并 / 拆分 / 改名 view -->
-    <script src="js/features/memoryBrain/modelCorrectionView.js"></script> <!-- v0.5.4 长期模型人工修正 view -->
-    <script src="js/features/memoryBrain/correctionPropagationView.js"></script> <!-- v0.5.5 纠错影响传播 view -->
-    <script src="js/features/memoryBrain/trustScoreView.js"></script> <!-- v0.5.6 记忆信任分 view -->
-    <script src="js/features/memoryBrain/trustedGateView.js"></script> <!-- v0.5.7 可信记忆 gate view -->
-    <script src="js/features/memoryBrain/formalInjectionAdapterView.js"></script> <!-- v0.6.0 正式注入 adapter view -->
-    <script src="js/features/memoryBrain/realtimeInjectionTraceView.js"></script> <!-- v0.6.2 实时注入 trace view -->
-    <script src="js/features/memoryBrain/legacyReadOnlyView.js"></script> <!-- v0.6.3 旧系统只读降级 view -->
-    <script src="js/features/memoryBrain/ownerRecoveryView.js"></script> <!-- v0.6.4 一键关闭 / 回退 view -->
-    <script src="js/features/memoryBrain/groupedUiView.js"></script> <!-- v0.4.9 记忆脑功能分组折叠 view helper -->
-    <script src="js/features/memoryBrain/view.js"></script> <!-- v0.3.8 记忆脑 view：产品化收口 UI 骨架 -->
-    <script src="js/features/memoryBrain/public.js"></script> <!-- v0.3.8 记忆脑 public facade -->
     <script src="js/modules/memory_table.js"></script> <!-- 结构化记忆 -->
     <script src="js/modules/vector_memory.js"></script> <!-- 向量记忆 -->
     <script src="js/modules/reminder.js"></script> <!-- 提醒事项 -->

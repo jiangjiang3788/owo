@@ -1,0 +1,88 @@
+{
+  "base": "owo-v0.8.1-dream-digest-fixed.zip",
+  "releaseRange": "v0.8.2-v0.8.7",
+  "generatedAt": "2026-07-08",
+  "model": "GPT-5.5 Pro",
+  "features": [
+    {
+      "version": "v0.8.2",
+      "slug": "cycle-model-rebuild",
+      "title": "长期模型周期重建",
+      "desc": "把旧长期模型、Dream Pattern、关系回忆和夜间整理结果重新计算成候选版本；保留旧模型，可比较、可回滚，不自动覆盖。",
+      "arrays": [
+        "cycleModelRebuildReports",
+        "cycleModelRebuildCandidates",
+        "cycleModelRebuildRuns"
+      ],
+      "policy": "cycleModelCannotCommitMemory"
+    },
+    {
+      "version": "v0.8.3",
+      "slug": "memory-decay",
+      "title": "记忆衰减解释化",
+      "desc": "解释哪些记忆应该降权、保持观察或保留高权重；只写衰减解释和候选，不直接改旧记忆权重。",
+      "arrays": [
+        "memoryDecayExplanations",
+        "memoryDecayCandidates",
+        "memoryDecayRuns"
+      ],
+      "policy": "decayCannotChangeWeightsDirectly"
+    },
+    {
+      "version": "v0.8.4",
+      "slug": "open-thread-review",
+      "title": "未完成线索复盘",
+      "desc": "复盘长期 open thread，给出继续、关闭、保持观察三类候选；不主动催、不通知，只在用户打开 Memory Brain 时展示。",
+      "arrays": [
+        "openThreadReviewItems",
+        "openThreadReviewCandidates",
+        "openThreadReviewRuns"
+      ],
+      "policy": "openThreadCannotNotify"
+    },
+    {
+      "version": "v0.8.5",
+      "slug": "anniversary-relationship",
+      "title": "周年与关系回忆增强",
+      "desc": "把情绪节点、关系回忆和项目里程碑整理成周年/纪念候选；默认只做可读回忆，不自动提醒。",
+      "arrays": [
+        "anniversaryRelationshipCards",
+        "anniversaryRelationshipCandidates",
+        "anniversaryRelationshipRuns"
+      ],
+      "policy": "anniversaryCannotNotify"
+    },
+    {
+      "version": "v0.8.6",
+      "slug": "self-repair-gate",
+      "title": "自我修复 Gate",
+      "desc": "检测 Memory Brain 的结构异常、候选堆积、双写风险和不安全主动性；只生成修复建议，不自动修复。",
+      "arrays": [
+        "selfRepairGateReports",
+        "selfRepairCandidates",
+        "selfRepairGateRuns"
+      ],
+      "policy": "repairCannotAutoFix"
+    },
+    {
+      "version": "v0.8.7",
+      "slug": "low-cost-maintenance",
+      "title": "低成本后台维护",
+      "desc": "把夜间整理、梦境消化、周期重建和自修复排成低成本维护计划；默认手动触发，不后台偷跑。",
+      "arrays": [
+        "lowCostMaintenancePlans",
+        "lowCostMaintenanceQueue",
+        "lowCostMaintenanceRuns"
+      ],
+      "policy": "lowCostCannotRunUnattended"
+    }
+  ],
+  "safety": {
+    "formalPromptInjection": false,
+    "automaticMemoryWrite": false,
+    "writesLegacyMemory": false,
+    "proactiveDelivery": false,
+    "shouldNotify": false,
+    "cutoverGate": "blocked-until-v0.9"
+  }
+}

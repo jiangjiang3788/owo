@@ -50,7 +50,7 @@ const switchScreen = (targetId) => {
         customStyles.forEach(style => style.remove());
         
         // 防止串线：仅在返回大厅类主页面时清空当前聊天目标ID，防止影响聊天设置页等二级页面
-        const mainScreens = ['chat-list-screen', 'contacts-screen', 'more-screen', 'phone-screen', 'home-screen', 'forum-screen', 'piggy-bank-screen', 'data-management-screen', 'magic-room-screen', 'appearance-settings-screen', 'memory-brain-screen'];
+        const mainScreens = ['chat-list-screen', 'contacts-screen', 'more-screen', 'phone-screen', 'home-screen', 'forum-screen', 'piggy-bank-screen', 'data-management-screen', 'magic-room-screen', 'appearance-settings-screen'];
         if (mainScreens.includes(targetId)) {
             if (typeof currentChatId !== 'undefined') currentChatId = null;
             if (typeof currentChatType !== 'undefined') currentChatType = null;
@@ -119,9 +119,6 @@ const switchScreen = (targetId) => {
         }
         if (targetId === 'data-management-screen' && window.OwoApp && window.OwoApp.features && window.OwoApp.features.dataManagement && window.OwoApp.features.dataManagement.publicApi) {
             window.OwoApp.features.dataManagement.publicApi.render();
-        }
-        if (targetId === 'memory-brain-screen' && window.OwoApp && window.OwoApp.features && window.OwoApp.features.memoryBrain && window.OwoApp.features.memoryBrain.publicApi) {
-            window.OwoApp.features.memoryBrain.publicApi.render();
         }
     }
 };
